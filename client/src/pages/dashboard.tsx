@@ -9,6 +9,16 @@ interface DashboardProps {
   workspaceId: number | undefined;
 }
 
+const iconMap: { [key: string]: React.ReactNode } = {
+  'PieChart': <PieChart size={20} />,
+  'TrendingUp': <TrendingUp size={20} />,
+  'TrendingDown': <TrendingDown size={20} />,
+  'DollarSign': <DollarSign size={20} />,
+  'Wallet': <Wallet size={20} />,
+  'CreditCard': <CreditCard size={20} />,
+  'Receipt': <Receipt size={20} />,
+};
+
 export default function Dashboard({ workspaceId }: DashboardProps) {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/dashboard`],
@@ -39,6 +49,13 @@ export default function Dashboard({ workspaceId }: DashboardProps) {
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(num);
+  };
+
+  const getCategoryName = (categoryId: number) => {
+    const category = categories?.find(cat => cat.id === categoryId);
+    if (!category) return 'Unknown Category';
+    const displayIcon = iconMap[category.icon] || category.icon;
+    return `${displayIcon} ${category.name}`;
   };
 
   if (!workspaceId) {

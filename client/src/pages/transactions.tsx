@@ -23,6 +23,19 @@ const iconMap: Record<string, string> = {
   'home': '🏠',
   'car': '🚗',
   'heart': '❤️',
+  'gamepad': '🎮',
+  'coffee': '☕',
+  'utensils': '🍽️',
+  'shirt': '👕',
+  'plane': '✈️',
+  'graduation-cap': '🎓',
+  'stethoscope': '🩺',
+  'gift': '🎁',
+  'phone': '📱',
+  'wifi': '📶',
+  'credit-card': '💳',
+  'banknote': '💸',
+  'piggy-bank': '🐷',
 };
 
 export default function Transactions({ workspaceId }: TransactionsProps) {
@@ -56,15 +69,15 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
   const getAccountName = (accountId: number) => {
     return accounts?.find(acc => acc.id === accountId)?.name || 'Unknown Account';
   };
-
-  const getCategoryName = (categoryId?: number) => {
-    if (!categoryId) return '';
+  const getCategoryName = (categoryId: number) => {
     const category = categories?.find(cat => cat.id === categoryId);
-    if (!category) return '';
+    return category?.name || 'Unknown';
+  };
 
-    // Convert icon name to emoji if it's a string
-    const emoji = iconMap[category.icon] || category.icon;
-    return `${emoji} ${category.name}`;
+  const getCategoryIcon = (categoryId: number) => {
+    const category = categories?.find(cat => cat.id === categoryId);
+    if (!category) return '📄';
+    return iconMap[category.icon] || category.icon;
   };
 
   const getTransactionTypeColor = (type: string) => {

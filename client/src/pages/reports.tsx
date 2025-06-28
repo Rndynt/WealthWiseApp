@@ -17,6 +17,30 @@ import {
 } from 'lucide-react';
 import { Transaction, Budget, Category, Debt } from '@/types';
 
+const iconMap: Record<string, string> = {
+  'briefcase': '💼',
+  'shopping-cart': '🛒',
+  'bolt': '⚡',
+  'bus': '🚌',
+  'tv': '📺',
+  'home': '🏠',
+  'car': '🚗',
+  'heart': '❤️',
+  'gamepad': '🎮',
+  'coffee': '☕',
+  'utensils': '🍽️',
+  'shirt': '👕',
+  'plane': '✈️',
+  'graduation-cap': '🎓',
+  'stethoscope': '🩺',
+  'gift': '🎁',
+  'phone': '📱',
+  'wifi': '📶',
+  'credit-card': '💳',
+  'banknote': '💸',
+  'piggy-bank': '🐷',
+};
+
 interface ReportsProps {
   workspaceId: number | undefined;
 }
@@ -292,7 +316,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
                   <div key={category.categoryId} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium flex items-center gap-2">
-                        <span className="text-lg">{category.icon}</span>
+                        <span className="text-lg">{iconMap[category.icon] || category.icon}</span>
                         {category.name}
                       </span>
                       <div className="text-right">
