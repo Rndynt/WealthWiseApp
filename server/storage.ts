@@ -1,11 +1,33 @@
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { db } from './db';
+import {
+  users,
+  workspaces,
+  workspaceMembers,
+  categories,
+  accounts,
+  transactions,
+  budgets,
+  debts,
+  type User,
+  type Workspace,
+  type Category,
+  type Account,
+  type Transaction,
+  type Budget,
+  type Debt,
+  type InsertUser,
+  type InsertWorkspace,
+  type InsertCategory,
+  type InsertAccount,
+  type InsertTransaction,
+  type InsertBudget,
+  type InsertDebt,
+} from '@shared/schema';
 import { 
-  users, workspaces, workspaceMembers, categories, accounts, transactions, budgets, debts,
-  type User, type InsertUser, type Workspace, type InsertWorkspace, type WorkspaceMember,
-  type InsertWorkspaceMember, type Category, type InsertCategory, type Account, type InsertAccount,
-  type Transaction, type InsertTransaction, type Budget, type InsertBudget, type Debt, type InsertDebt
+  type WorkspaceMember,
+  type InsertWorkspaceMember,
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -17,43 +39,43 @@ export interface IStorage {
   getWorkspace(id: number): Promise<Workspace | undefined>;
   getUserWorkspaces(userId: number): Promise<Workspace[]>;
   createWorkspace(workspace: InsertWorkspace): Promise<Workspace>;
-  
+
   // Workspace Members
   getWorkspaceMembers(workspaceId: number): Promise<WorkspaceMember[]>;
   addWorkspaceMember(member: InsertWorkspaceMember): Promise<WorkspaceMember>;
-  
+
   // Categories
   getWorkspaceCategories(workspaceId: number): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
   deleteCategory(id: number): Promise<void>;
-  
+
   // Accounts
   getWorkspaceAccounts(workspaceId: number): Promise<Account[]>;
   getAccount(id: number): Promise<Account | undefined>;
   createAccount(account: InsertAccount): Promise<Account>;
   updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account>;
   deleteAccount(id: number): Promise<void>;
-  
+
   // Transactions
   getWorkspaceTransactions(workspaceId: number, limit?: number): Promise<Transaction[]>;
   getAccountTransactions(accountId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
-  
+
   // Budgets
   getWorkspaceBudgets(workspaceId: number, year: number, month?: number): Promise<Budget[]>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget>;
   deleteBudget(id: number): Promise<void>;
-  
+
   // Debts
   getWorkspaceDebts(workspaceId: number): Promise<Debt[]>;
   createDebt(debt: InsertDebt): Promise<Debt>;
   updateDebt(id: number, debt: Partial<InsertDebt>): Promise<Debt>;
   deleteDebt(id: number): Promise<void>;
-  
+
   // Dashboard data
   getDashboardData(workspaceId: number): Promise<{
     totalBalance: string;
@@ -99,20 +121,20 @@ export class DatabaseStorage implements IStorage {
       .from(workspaces)
       .leftJoin(workspaceMembers, eq(workspaces.id, workspaceMembers.workspaceId))
       .where(eq(workspaceMembers.userId, userId));
-    
+
     return results;
   }
 
   async createWorkspace(insertWorkspace: InsertWorkspace): Promise<Workspace> {
     const [workspace] = await db.insert(workspaces).values(insertWorkspace).returning();
-    
+
     // Add the owner as a member
     await db.insert(workspaceMembers).values({
       workspaceId: workspace.id,
       userId: workspace.ownerId,
       role: 'owner'
     });
-    
+
     return workspace;
   }
 
@@ -197,13 +219,13 @@ export class DatabaseStorage implements IStorage {
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTransaction] = await db.insert(transactions).values(transaction).returning();
-    
+
     // Update account balance
     const account = await this.getAccount(transaction.accountId);
     if (account) {
       const currentBalance = parseFloat(account.balance);
       let newBalance = currentBalance;
-      
+
       if (transaction.type === 'income') {
         newBalance += parseFloat(transaction.amount);
       } else if (transaction.type === 'expense') {
@@ -211,7 +233,7 @@ export class DatabaseStorage implements IStorage {
       } else if (transaction.type === 'transfer' && transaction.toAccountId) {
         // Subtract from source account
         newBalance -= parseFloat(transaction.amount);
-        
+
         // Add to destination account
         const toAccount = await this.getAccount(transaction.toAccountId);
         if (toAccount) {
@@ -219,10 +241,10 @@ export class DatabaseStorage implements IStorage {
           await this.updateAccount(transaction.toAccountId, { balance: toBalance.toString() });
         }
       }
-      
+
       await this.updateAccount(transaction.accountId, { balance: newBalance.toString() });
     }
-    
+
     return newTransaction;
   }
 
@@ -242,11 +264,11 @@ export class DatabaseStorage implements IStorage {
   // Budgets
   async getWorkspaceBudgets(workspaceId: number, year: number, month?: number): Promise<Budget[]> {
     let conditions = [eq(budgets.workspaceId, workspaceId), eq(budgets.year, year)];
-    
+
     if (month) {
       conditions.push(eq(budgets.month, month));
     }
-    
+
     return await db
       .select()
       .from(budgets)
@@ -307,13 +329,13 @@ export class DatabaseStorage implements IStorage {
       .select({ balance: accounts.balance })
       .from(accounts)
       .where(eq(accounts.workspaceId, workspaceId));
-    
+
     const totalBalance = accountsResult.reduce((sum, account) => sum + parseFloat(account.balance), 0);
 
     // Get current month's income and expenses
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    
+
     const monthlyIncomeResult = await db
       .select({ amount: transactions.amount })
       .from(transactions)
@@ -324,7 +346,7 @@ export class DatabaseStorage implements IStorage {
           sql`${transactions.date} >= ${firstDayOfMonth}`
         )
       );
-    
+
     const monthlyIncome = monthlyIncomeResult.reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     const monthlyExpensesResult = await db
@@ -337,7 +359,7 @@ export class DatabaseStorage implements IStorage {
           sql`${transactions.date} >= ${firstDayOfMonth}`
         )
       );
-    
+
     const monthlyExpenses = monthlyExpensesResult.reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     // Get recent transactions
