@@ -94,14 +94,14 @@ export default function AddCategoryModal({ open, onOpenChange, workspaceId }: Ad
                 <SelectValue placeholder="Select icon..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="briefcase">💼 Briefcase</SelectItem>
-                <SelectItem value="shopping-cart">🛒 Shopping Cart</SelectItem>
-                <SelectItem value="bolt">⚡ Electricity</SelectItem>
-                <SelectItem value="bus">🚌 Transportation</SelectItem>
-                <SelectItem value="tv">📺 Entertainment</SelectItem>
-                <SelectItem value="home">🏠 Housing</SelectItem>
-                <SelectItem value="car">🚗 Vehicle</SelectItem>
-                <SelectItem value="heart">❤️ Healthcare</SelectItem>
+                <SelectItem value="briefcase">💼</SelectItem>
+                <SelectItem value="shopping-cart">🛒</SelectItem>
+                <SelectItem value="bolt">⚡</SelectItem>
+                <SelectItem value="bus">🚌</SelectItem>
+                <SelectItem value="tv">📺</SelectItem>
+                <SelectItem value="home">🏠</SelectItem>
+                <SelectItem value="car">🚗</SelectItem>
+                <SelectItem value="heart">❤️</SelectItem>
               </SelectContent>
             </Select>
           </div>
