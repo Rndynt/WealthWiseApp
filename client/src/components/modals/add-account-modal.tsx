@@ -20,7 +20,6 @@ export default function AddAccountModal({ open, onOpenChange, workspaceId }: Add
     name: '',
     type: '' as 'transaction' | 'asset' | '',
     currency: 'IDR',
-    balance: '0',
     notes: '',
   });
 
@@ -36,7 +35,7 @@ export default function AddAccountModal({ open, onOpenChange, workspaceId }: Add
         title: "Account created",
         description: "Your new account has been created successfully.",
       });
-      setForm({ name: '', type: '', currency: 'IDR', balance: '0', notes: '' });
+      setForm({ name: '', type: '', currency: 'IDR', notes: '' });
       onOpenChange(false);
     },
     onError: (error: any) => {
@@ -101,18 +100,7 @@ export default function AddAccountModal({ open, onOpenChange, workspaceId }: Add
             </Select>
           </div>
           
-          <div className="form-field">
-            <Label htmlFor="account-balance">Initial Balance</Label>
-            <Input
-              id="account-balance"
-              type="number"
-              value={form.balance}
-              onChange={(e) => setForm({ ...form, balance: e.target.value })}
-              placeholder="0"
-              min="0"
-              step="0.01"
-            />
-          </div>
+
           
           <div className="form-field">
             <Label htmlFor="account-notes">Notes</Label>
