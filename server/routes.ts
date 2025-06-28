@@ -240,11 +240,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const accountData = insertAccountSchema.parse({
         ...req.body,
         workspaceId,
+        balance: req.body.balance ? req.body.balance.toString() : "0",
       });
       
       const account = await storage.createAccount(accountData);
       res.json(account);
     } catch (error) {
+      console.error("Account creation error:", error);
       res.status(400).json({ message: "Failed to create account" });
     }
   });
@@ -253,10 +255,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
+      if (updates.balance) {
+        updates.balance = updates.balance.toString();
+      }
       
       const account = await storage.updateAccount(id, updates);
       res.json(account);
     } catch (error) {
+      console.error("Account update error:", error);
       res.status(400).json({ message: "Failed to update account" });
     }
   });
@@ -289,6 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionData = insertTransactionSchema.parse({
         ...req.body,
         workspaceId,
+        amount: req.body.amount.toString(), // Convert amount to string
         date: new Date(req.body.date), // Ensure date is properly formatted
       });
       
@@ -310,6 +317,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       if (updates.date) {
         updates.date = new Date(updates.date);
+      }
+      if (updates.amount) {
+        updates.amount = updates.amount.toString();
       }
       
       const transaction = await storage.updateTransaction(id, updates);
@@ -362,6 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         workspaceId,
+        amount: req.body.amount.toString(), // Convert amount to string
         year: parseInt(req.body.year) || new Date().getFullYear(),
         month: req.body.month ? parseInt(req.body.month) : null,
       });
@@ -387,6 +398,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (updates.month) {
         updates.month = parseInt(updates.month);
+      }
+      if (updates.amount) {
+        updates.amount = updates.amount.toString();
       }
       
       const budget = await storage.updateBudget(id, updates);
@@ -425,6 +439,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const debtData = insertDebtSchema.parse({
         ...req.body,
         workspaceId,
+        totalAmount: req.body.totalAmount.toString(),
+        remainingAmount: req.body.remainingAmount.toString(),
+        interestRate: req.body.interestRate ? req.body.interestRate.toString() : null,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
       });
       
@@ -446,6 +463,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       if (updates.dueDate) {
         updates.dueDate = new Date(updates.dueDate);
+      }
+      if (updates.totalAmount) {
+        updates.totalAmount = updates.totalAmount.toString();
+      }
+      if (updates.remainingAmount) {
+        updates.remainingAmount = updates.remainingAmount.toString();
+      }
+      if (updates.interestRate) {
+        updates.interestRate = updates.interestRate.toString();
       }
       
       const debt = await storage.updateDebt(id, updates);
