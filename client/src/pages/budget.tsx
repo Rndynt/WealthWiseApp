@@ -9,6 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Budget as BudgetType, Category, Transaction } from '@/types';
 import AddBudgetModal from '@/components/modals/add-budget-modal';
 
+const iconMap: Record<string, string> = {
+  'briefcase': '💼',
+  'shopping-cart': '🛒',
+  'bolt': '⚡',
+  'bus': '🚌',
+  'tv': '📺',
+  'home': '🏠',
+  'car': '🚗',
+  'heart': '❤️',
+};
+
 interface BudgetProps {
   workspaceId: number | undefined;
 }
@@ -52,7 +63,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
     const startDate = budget.period === 'monthly' 
       ? new Date(budget.year, (budget.month || 1) - 1, 1)
       : new Date(budget.year, 0, 1);
-    
+
     const endDate = budget.period === 'monthly'
       ? new Date(budget.year, budget.month || 1, 0)
       : new Date(budget.year, 11, 31);
@@ -193,9 +204,9 @@ export default function Budget({ workspaceId }: BudgetProps) {
                       <span>Spent: Rp {spent.toLocaleString('id-ID')}</span>
                       <span>Budget: Rp {budgetAmount.toLocaleString('id-ID')}</span>
                     </div>
-                    
+
                     <Progress value={percentage} className="h-2" />
-                    
+
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-gray-600">
                         {percentage.toFixed(1)}% used
