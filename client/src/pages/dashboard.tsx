@@ -10,25 +10,27 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ workspaceId }: DashboardProps) {
-  const { data: dashboardData } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/dashboard`],
     enabled: !!workspaceId,
   });
 
-  const { data: budgets } = useQuery<Budget[]>({
+  const { data: budgets, isLoading: budgetsLoading } = useQuery<Budget[]>({
     queryKey: [`/api/workspaces/${workspaceId}/budgets`],
     enabled: !!workspaceId,
   });
 
-  const { data: categories } = useQuery<Category[]>({
+  const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: [`/api/workspaces/${workspaceId}/categories`],
     enabled: !!workspaceId,
   });
 
-  const { data: transactions } = useQuery<Transaction[]>({
+  const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: [`/api/workspaces/${workspaceId}/transactions`],
     enabled: !!workspaceId,
   });
+
+  const isLoading = dashboardLoading || budgetsLoading || categoriesLoading || transactionsLoading;
 
   const formatCurrency = (amount: string) => {
     const num = parseFloat(amount);
