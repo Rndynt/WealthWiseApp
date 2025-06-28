@@ -1,12 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { DatabaseStorage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { 
   insertUserSchema, insertWorkspaceSchema, insertCategorySchema, 
   insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema 
 } from "@shared/schema";
+
+const storage = new DatabaseStorage();
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -287,12 +289,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionData = insertTransactionSchema.parse({
         ...req.body,
         workspaceId,
+        date: new Date(req.body.date), // Ensure date is properly formatted
       });
       
       const transaction = await storage.createTransaction(transactionData);
       res.json(transaction);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create transaction" });
+      console.error("Transaction creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Failed to create transaction" });
+      }
+    }
+  });
+
+  app.put("/api/transactions/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.date) {
+        updates.date = new Date(updates.date);
+      }
+      
+      const transaction = await storage.updateTransaction(id, updates);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Transaction update error:", error);
+      res.status(400).json({ message: "Failed to update transaction" });
+    }
+  });
+
+  app.delete("/api/transactions/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTransaction(id);
+      res.json({ message: "Transaction deleted successfully" });
+    } catch (error) {
+      console.error("Transaction delete error:", error);
+      res.status(400).json({ message: "Failed to delete transaction" });
     }
   });
 
@@ -327,12 +362,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         workspaceId,
+        year: parseInt(req.body.year) || new Date().getFullYear(),
+        month: req.body.month ? parseInt(req.body.month) : null,
       });
       
       const budget = await storage.createBudget(budgetData);
       res.json(budget);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create budget" });
+      console.error("Budget creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Failed to create budget" });
+      }
+    }
+  });
+
+  app.put("/api/budgets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.year) {
+        updates.year = parseInt(updates.year);
+      }
+      if (updates.month) {
+        updates.month = parseInt(updates.month);
+      }
+      
+      const budget = await storage.updateBudget(id, updates);
+      res.json(budget);
+    } catch (error) {
+      console.error("Budget update error:", error);
+      res.status(400).json({ message: "Failed to update budget" });
+    }
+  });
+
+  app.delete("/api/budgets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBudget(id);
+      res.json({ message: "Budget deleted successfully" });
+    } catch (error) {
+      console.error("Budget delete error:", error);
+      res.status(400).json({ message: "Failed to delete budget" });
     }
   });
 
@@ -353,12 +425,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const debtData = insertDebtSchema.parse({
         ...req.body,
         workspaceId,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
       });
       
       const debt = await storage.createDebt(debtData);
       res.json(debt);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create debt" });
+      console.error("Debt creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Failed to create debt" });
+      }
+    }
+  });
+
+  app.put("/api/debts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.dueDate) {
+        updates.dueDate = new Date(updates.dueDate);
+      }
+      
+      const debt = await storage.updateDebt(id, updates);
+      res.json(debt);
+    } catch (error) {
+      console.error("Debt update error:", error);
+      res.status(400).json({ message: "Failed to update debt" });
+    }
+  });
+
+  app.delete("/api/debts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteDebt(id);
+      res.json({ message: "Debt deleted successfully" });
+    } catch (error) {
+      console.error("Debt delete error:", error);
+      res.status(400).json({ message: "Failed to delete debt" });
     }
   });
 
