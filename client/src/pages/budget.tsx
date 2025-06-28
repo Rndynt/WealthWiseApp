@@ -18,6 +18,19 @@ const iconMap: Record<string, string> = {
   'home': '🏠',
   'car': '🚗',
   'heart': '❤️',
+  'gamepad': '🎮',
+  'coffee': '☕',
+  'utensils': '🍽️',
+  'shirt': '👕',
+  'plane': '✈️',
+  'graduation-cap': '🎓',
+  'stethoscope': '🩺',
+  'gift': '🎁',
+  'phone': '📱',
+  'wifi': '📶',
+  'credit-card': '💳',
+  'banknote': '💸',
+  'piggy-bank': '🐷',
 };
 
 interface BudgetProps {
@@ -54,7 +67,9 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   const getCategoryName = (categoryId: number) => {
     const category = categories?.find(cat => cat.id === categoryId);
-    return category ? `${category.icon} ${category.name}` : 'Unknown Category';
+    if (!category) return 'Unknown Category';
+    const displayIcon = iconMap[category.icon] || category.icon;
+    return `${displayIcon} ${category.name}`;
   };
 
   const getSpentAmount = (budget: BudgetType) => {
