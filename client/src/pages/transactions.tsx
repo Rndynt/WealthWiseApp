@@ -14,6 +14,17 @@ interface TransactionsProps {
   workspaceId: number | undefined;
 }
 
+const iconMap: Record<string, string> = {
+  'briefcase': '💼',
+  'shopping-cart': '🛒',
+  'bolt': '⚡',
+  'bus': '🚌',
+  'tv': '📺',
+  'home': '🏠',
+  'car': '🚗',
+  'heart': '❤️',
+};
+
 export default function Transactions({ workspaceId }: TransactionsProps) {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,7 +78,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
   const getAmountDisplay = (transaction: Transaction) => {
     const amount = parseFloat(transaction.amount);
     const formatted = `Rp ${amount.toLocaleString('id-ID')}`;
-    
+
     if (transaction.type === 'income') {
       return { text: `+${formatted}`, color: 'text-green-600' };
     } else if (transaction.type === 'expense') {
@@ -158,7 +169,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
                         </Badge>
                         <h3 className="font-medium">{transaction.description}</h3>
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
                         <span>• {getAccountName(transaction.accountId)}</span>
@@ -173,7 +184,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       <p className={`font-semibold text-lg ${amount.color}`}>
                         {amount.text}
