@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,9 +75,9 @@ export default function Reports({ workspaceId }: ReportsProps) {
   const getExpensesByCategory = () => {
     const periodTransactions = getCurrentPeriodTransactions();
     const expenses = periodTransactions.filter(t => t.type === 'expense');
-    
+
     const categoryExpenses: Record<number, { amount: number; count: number; name: string; icon: string }> = {};
-    
+
     expenses.forEach(expense => {
       const category = categories?.find(c => c.id === expense.categoryId);
       if (category) {
@@ -105,7 +104,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
     const income = periodTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
+
     const expense = periodTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
@@ -135,7 +134,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
         spent,
         percentage: Math.min(percentage, 100),
         remaining: Math.max(budgetAmount - spent, 0),
-        categoryName: category ? `${category.icon} ${category.name}` : 'Unknown',
+        categoryName: category ? category.name : 'Unknown',
         status: percentage >= 100 ? 'over' : percentage >= 80 ? 'warning' : 'good'
       };
     }).sort((a, b) => b.percentage - a.percentage);
