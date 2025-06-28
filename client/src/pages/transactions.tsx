@@ -60,7 +60,11 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
   const getCategoryName = (categoryId?: number) => {
     if (!categoryId) return '';
     const category = categories?.find(cat => cat.id === categoryId);
-    return category ? `${category.icon} ${category.name}` : '';
+    if (!category) return '';
+    
+    // Convert icon name to emoji if it's a string
+    const emoji = iconMap[category.icon] || category.icon;
+    return `${emoji} ${category.name}`;
   };
 
   const getTransactionTypeColor = (type: string) => {
@@ -159,41 +163,67 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
-              <Card key={transaction.id} className="hover:shadow-md transition-shadow">
+              <Card key={transaction.id} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-transparent hover:border-l-blue-500 group">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getTransactionTypeColor(transaction.type)}>
-                          {transaction.type}
-                        </Badge>
-                        <h3 className="font-medium">{transaction.description}</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      {/* Category Icon */}
+                      <div className="flex-shrink-0">
+                        {transaction.categoryId ? (
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
+                            {(() => {
+                              const category = categories?.find(cat => cat.id === transaction.categoryId);
+                              return category ? (iconMap[category.icon] || category.icon) : '📝';
+                            })()}
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            <ArrowUpDown className="h-5 w-5 text-gray-500" />
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
-                        <span>• {getAccountName(transaction.accountId)}</span>
-                        {transaction.categoryId && (
-                          <span>• {getCategoryName(transaction.categoryId)}</span>
-                        )}
-                        {transaction.toAccountId && (
-                          <span className="flex items-center gap-1">
-                            <ArrowRight className="h-3 w-3" />
-                            {getAccountName(transaction.toAccountId)}
-                          </span>
-                        )}
+                      {/* Transaction Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate">{transaction.description}</h3>
+                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs`}>
+                            {transaction.type}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-sm text-gray-600">
+                          <span className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
+                          <span>•</span>
+                          <span>{getAccountName(transaction.accountId)}</span>
+                          {transaction.categoryId && (
+                            <>
+                              <span>•</span>
+                              <span>{categories?.find(cat => cat.id === transaction.categoryId)?.name}</span>
+                            </>
+                          )}
+                          {transaction.toAccountId && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <ArrowRight className="h-3 w-3" />
+                                {getAccountName(transaction.toAccountId)}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
 
+                    {/* Amount and Actions */}
                     <div className="flex items-center gap-3">
-                      <p className={`font-semibold text-lg ${amount.color}`}>
+                      <p className={`font-bold text-lg ${amount.color} text-right`}>
                         {amount.text}
                       </p>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -204,21 +234,23 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
             );
           })
         ) : (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <ArrowUpDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <Card className="border-dashed border-2 border-gray-200">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ArrowUpDown className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {searchTerm || filterType !== 'all' ? 'No matching transactions' : 'No transactions yet'}
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
                 {searchTerm || filterType !== 'all' 
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Start tracking your income and expenses by adding your first transaction.'
+                  ? 'Try adjusting your search or filter criteria to find the transactions you\'re looking for.'
+                  : 'Start tracking your financial activity by adding your first transaction. It only takes a few seconds!'
                 }
               </p>
-              <Button onClick={() => setShowTransactionModal(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Transaction
+              <Button onClick={() => setShowTransactionModal(true)} size="lg" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="mr-2 h-5 w-5" />
+                Add Your First Transaction
               </Button>
             </CardContent>
           </Card>
