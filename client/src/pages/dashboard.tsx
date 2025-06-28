@@ -1,15 +1,32 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
-import { DashboardData } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { PieChart, TrendingUp, TrendingDown, DollarSign, Wallet, CreditCard, Receipt } from 'lucide-react';
+import { Budget, Category, Transaction } from '@/types';
 
 interface DashboardProps {
   workspaceId: number | undefined;
 }
 
 export default function Dashboard({ workspaceId }: DashboardProps) {
-  const { data: dashboardData, isLoading } = useQuery<DashboardData>({
+  const { data: dashboardData } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/dashboard`],
+    enabled: !!workspaceId,
+  });
+
+  const { data: budgets } = useQuery<Budget[]>({
+    queryKey: [`/api/workspaces/${workspaceId}/budgets`],
+    enabled: !!workspaceId,
+  });
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: [`/api/workspaces/${workspaceId}/categories`],
+    enabled: !!workspaceId,
+  });
+
+  const { data: transactions } = useQuery<Transaction[]>({
+    queryKey: [`/api/workspaces/${workspaceId}/transactions`],
     enabled: !!workspaceId,
   });
 
@@ -150,7 +167,7 @@ export default function Dashboard({ workspaceId }: DashboardProps) {
                   </span>
                 </div>
               ))}
-              
+
               {(!dashboardData?.recentTransactions || dashboardData.recentTransactions.length === 0) && (
                 <div className="text-center py-8 text-gray-500">
                   <p>No transactions yet</p>
