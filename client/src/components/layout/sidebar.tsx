@@ -122,17 +122,15 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
             
             return (
-              <Link key={item.path} href={item.path}>
-                <a className={`
-                  flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                  ${isActive 
-                    ? 'bg-primary/10 text-primary' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                  }
-                `}>
-                  <Icon size={20} />
-                  <span>{item.label}</span>
-                </a>
+              <Link key={item.path} href={item.path} className={`
+                flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+                ${isActive 
+                  ? 'bg-blue-50 text-primary' 
+                  : 'text-gray-700 hover:bg-gray-100'
+                }
+              `}>
+                <Icon size={20} />
+                <span>{item.label}</span>
               </Link>
             );
           })}
