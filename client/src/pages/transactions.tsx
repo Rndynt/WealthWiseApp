@@ -61,7 +61,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
     if (!categoryId) return '';
     const category = categories?.find(cat => cat.id === categoryId);
     if (!category) return '';
-    
+
     // Convert icon name to emoji if it's a string
     const emoji = iconMap[category.icon] || category.icon;
     return `${emoji} ${category.name}`;
@@ -191,7 +191,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
                             {transaction.type}
                           </Badge>
                         </div>
-                        
+
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                           <span className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
                           <span>•</span>
