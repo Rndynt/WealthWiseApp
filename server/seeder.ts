@@ -137,6 +137,9 @@ async function seedPermissions() {
 async function seedRolePermissions() {
   console.log("Seeding role permissions...");
   
+  // Clear existing role permissions first to avoid duplicates
+  await db.delete(rolePermissions);
+  
   // Get all permissions
   const allPermissions = await db.select().from(permissions);
   
@@ -163,7 +166,9 @@ async function seedRolePermissions() {
       permission.name.includes("debts.") ||
       permission.name.includes("accounts.") ||
       permission.name.includes("categories.") ||
-      permission.name.includes("reports.")
+      permission.name.includes("reports.") ||
+      permission.name.includes("dashboard.") ||
+      permission.name.includes("collaboration.")
     )
     .map(permission => ({
       roleId: 3,
@@ -174,7 +179,7 @@ async function seedRolePermissions() {
     ...rootPermissions,
     ...adminPermissions,
     ...userPermissions
-  ]).onConflictDoNothing();
+  ]);
 }
 
 async function seedSubscriptionPackages() {
@@ -336,6 +341,43 @@ async function seedWorkspaces() {
   ]).onConflictDoNothing();
 }
 
+async function seedWorkspaceMembers() {
+  console.log("Seeding workspace members...");
+  
+  await db.insert(workspaceMembers).values([
+    // Personal Finance workspace - owner: demo user (id: 3)
+    {
+      workspaceId: 1,
+      userId: 3,
+      role: 'owner'
+    },
+    // Family Budget workspace - owner: user1 (id: 4)
+    {
+      workspaceId: 2,
+      userId: 4,
+      role: 'owner'
+    },
+    // Add demo user as editor to Family Budget
+    {
+      workspaceId: 2,
+      userId: 3,
+      role: 'editor'
+    },
+    // Small Business workspace - owner: user1 (id: 4)
+    {
+      workspaceId: 3,
+      userId: 4,
+      role: 'owner'
+    },
+    // Add user2 as viewer to Small Business
+    {
+      workspaceId: 3,
+      userId: 5,
+      role: 'viewer'
+    }
+  ]).onConflictDoNothing();
+}
+
 async function seedCategories() {
   console.log("Seeding categories...");
   
@@ -407,6 +449,7 @@ export async function runSeeder(reset = false) {
     await seedUsers();
     await seedUserSubscriptions();
     await seedWorkspaces();
+    await seedWorkspaceMembers();
     await seedCategories();
     await seedAccounts();
     
