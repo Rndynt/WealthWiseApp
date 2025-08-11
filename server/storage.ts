@@ -116,14 +116,15 @@ export interface IStorage {
 
   // RBAC - Role Permissions
   getRolePermissions(roleId: number): Promise<Permission[]>;
+  getUserPermissions(userId: number): Promise<string[]>;
   addRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission>;
   removeRolePermission(roleId: number, permissionId: number): Promise<void>;
 
   // Subscription Packages
   getAllSubscriptionPackages(): Promise<SubscriptionPackage[]>;
   getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined>;
-  createSubscriptionPackage(package: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
-  updateSubscriptionPackage(id: number, package: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage>;
+  createSubscriptionPackage(subscriptionPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
+  updateSubscriptionPackage(id: number, subscriptionPackage: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage>;
   deleteSubscriptionPackage(id: number): Promise<void>;
 
   // User Subscriptions
@@ -491,10 +492,10 @@ export class DatabaseStorage implements IStorage {
         createdAt: permissions.createdAt,
       })
       .from(rolePermissions)
-      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
       .where(eq(rolePermissions.roleId, roleId));
     
-    return results;
+    return results as Permission[];
   }
 
   async addRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission> {
@@ -521,13 +522,13 @@ export class DatabaseStorage implements IStorage {
     return pkg || undefined;
   }
 
-  async createSubscriptionPackage(insertPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
-    const [pkg] = await db.insert(subscriptionPackages).values(insertPackage).returning();
+  async createSubscriptionPackage(subscriptionPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
+    const [pkg] = await db.insert(subscriptionPackages).values(subscriptionPackage).returning();
     return pkg;
   }
 
-  async updateSubscriptionPackage(id: number, pkg: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage> {
-    const [updatedPackage] = await db.update(subscriptionPackages).set(pkg).where(eq(subscriptionPackages.id, id)).returning();
+  async updateSubscriptionPackage(id: number, subscriptionPackage: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage> {
+    const [updatedPackage] = await db.update(subscriptionPackages).set(subscriptionPackage).where(eq(subscriptionPackages.id, id)).returning();
     return updatedPackage;
   }
 
@@ -548,7 +549,7 @@ export class DatabaseStorage implements IStorage {
         package: subscriptionPackages,
       })
       .from(userSubscriptions)
-      .leftJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id))
+      .innerJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id))
       .where(eq(userSubscriptions.userId, userId));
     
     return result || undefined;
@@ -576,7 +577,7 @@ export class DatabaseStorage implements IStorage {
         role: roles,
       })
       .from(users)
-      .leftJoin(roles, eq(users.roleId, roles.id))
+      .innerJoin(roles, eq(users.roleId, roles.id))
       .where(eq(users.id, id));
     
     return result || undefined;
@@ -622,6 +623,23 @@ export class DatabaseStorage implements IStorage {
     if (!limits) return false;
     
     return limits.currentWorkspaces < limits.maxWorkspaces;
+  }
+
+  async getUserPermissions(userId: number): Promise<string[]> {
+    // Get user's role
+    const user = await this.getUser(userId);
+    if (!user) return [];
+
+    // Get permissions for user's role
+    const userRolePermissions = await db
+      .select({
+        permission: permissions.name
+      })
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, user.roleId));
+
+    return userRolePermissions.map(rp => rp.permission);
   }
 }
 
