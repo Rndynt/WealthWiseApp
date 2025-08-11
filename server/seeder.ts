@@ -195,15 +195,15 @@ async function seedSubscriptionPackages() {
       price: "0.00",
       features: [
         "1 workspace pribadi",
-        "Maksimal 3 kategori tambahan", 
-        "Maksimal 2 budget plan",
+        "Maksimal 6 kategori total (3 default + 3 tambahan)", 
+        "Maksimal 2 budget plan per periode",
         "Unlimited transaksi",
         "Laporan dasar",
         "Export PDF"
       ],
       maxWorkspaces: 1,
       maxMembers: 1,
-      maxCategories: 3,
+      maxCategories: 6,
       maxBudgets: 2,
       description: "Paket gratis untuk pengelolaan keuangan pribadi",
       isActive: true
