@@ -116,16 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "owner"
       });
 
-      // Create default categories (limit to 3 for basic package)
-      const defaultCategories = [
-        { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: workspace.id },
-        { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: workspace.id },
-        { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: workspace.id },
-      ];
-
-      for (const category of defaultCategories) {
-        await storage.createCategory(category);
-      }
+      // Basic package users start with 0 categories, they can create up to 3
 
       // Create default accounts
       const defaultAccounts = [
@@ -291,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       if (!categoryLimit.canCreate) {
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal kategori untuk paket basic (${categoryLimit.current}/${categoryLimit.limit}). Paket basic memungkinkan 3 kategori default + 3 kategori tambahan. Upgrade ke paket premium untuk kategori unlimited.`,
+          message: `Anda telah mencapai batas maksimal kategori untuk paket basic (${categoryLimit.current}/${categoryLimit.limit}). Upgrade ke paket premium untuk kategori unlimited.`,
           limits: categoryLimit
         });
       }
