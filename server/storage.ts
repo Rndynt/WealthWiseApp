@@ -142,6 +142,10 @@ export interface IStorage {
   // Subscription validation
   getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
+  
+  // Category & Budget Limits Validation
+  checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -615,6 +619,49 @@ export class DatabaseStorage implements IStorage {
         maxMembers: 1,
         currentWorkspaces
       };
+    }
+  }
+
+  // Category & Budget Limits Validation
+  async checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+    // Get user subscription with package
+    const userSubResult = await this.getUserSubscriptionWithPackage(userId);
+    
+    // Get current category count
+    const currentCategories = await this.getWorkspaceCategories(workspaceId);
+    const current = currentCategories.length;
+
+    if (userSubResult) {
+      // Check package limit (null means unlimited)
+      const limit = userSubResult.package.maxCategories;
+      const canCreate = limit === null || current < limit;
+      return { canCreate, limit, current };
+    } else {
+      // Default basic package limits for users without subscription
+      const limit = 3; // Basic package max categories
+      const canCreate = current < limit;
+      return { canCreate, limit, current };
+    }
+  }
+
+  async checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+    // Get user subscription with package
+    const userSubResult = await this.getUserSubscriptionWithPackage(userId);
+    
+    // Get current budget count for the year/month
+    const currentBudgets = await this.getWorkspaceBudgets(workspaceId, year, month);
+    const current = currentBudgets.length;
+
+    if (userSubResult) {
+      // Check package limit (null means unlimited)
+      const limit = userSubResult.package.maxBudgets;
+      const canCreate = limit === null || current < limit;
+      return { canCreate, limit, current };
+    } else {
+      // Default basic package limits for users without subscription
+      const limit = 2; // Basic package max budgets
+      const canCreate = current < limit;
+      return { canCreate, limit, current };
     }
   }
 

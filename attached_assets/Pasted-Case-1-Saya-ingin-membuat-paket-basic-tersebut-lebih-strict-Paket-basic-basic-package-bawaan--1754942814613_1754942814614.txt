@@ -1,0 +1,16 @@
+Case : 
+1 : 
+Saya ingin membuat paket basic tersebut lebih strict.
+Paket basic/basic package bawaan user saat registrasi atau role user basic mendapatkan : 
+ 
+- 1 workspace bawaan yaitu “Personal”.
+- Maksimal 
+- Maksimal 3 category tambahan
+- Maksimal 2 budget plan.
+
+——————
+2. Bug saat registrasi muncul pesan error “registration failed”, tolong di cek dan resolve. 
+3. Bug saat orang orang/user lain yang sedang collaboration, nama workspace pada akun owner contoh “bisnisku”, tapi di halaman user yang join dengan dia malah muncul “personal”, seharusnya nama workspace nya sama kaya akun owner, coba deh kamu cek user id 5, kok muncul workspace personal, padahal workspace personal di database itu bukan miliknya, tapi milik user id 3.  
+    1. User yang memiliki workspace collaboration selain owner, tidak bisa mengedit transaction orang lain atau user lain didalam workspace collaboration, dia harusnya hanya boleh mengedit/menghapus transaction yang dibuat oleh nya sendiri didalam workspace collaboration tersebut. Tolong di perbaiki tombolnya jangan muncul, jika action edit dan hapus belum jalan, tolong dibuatkan, dan jika dibutuhkan buatkan permissions untuk memilah collaboration owner dengan collaboration anggota dan di assign saat dia join collaboration workspace tersebut. 
+4. Tolong perbaiki data seeder, user apapun seharusnya tetap memiliki workspace “Personal” nya masing masing, karna case nya bukan hanya data seeder, secara real saat user setelah registrasi pun memiliki workspace bawaan “Personal”. 
+5. (Premium package/workspace collaboration) Buatkan invite link collaboration workspace di owner yang di generate berdasarkan workspace, untuk di bagikan secara private oleh owner workspace, jika user tersebut belum login, masukkan parameter ke halaman loginnya, jika dia belum terdaftar, masukkan kedalam halaman registrasinya, dan saat berhasil login/registrasi langsung menjadi anggota workspace collaboration tersebut. Jika dia sudah memiliki akun dan telah login, dia juga tetap bisa accept invitation muncul dihalaman nya jika dia mengklik link invite tersebut. 

@@ -126,6 +126,9 @@ async function seedPermissions() {
     // Collaboration
     { name: "collaboration.view", description: "Mengakses halaman kolaborasi", resource: "collaboration", action: "view" },
     { name: "collaboration.manage", description: "Mengelola anggota workspace", resource: "collaboration", action: "manage" },
+    { name: "collaboration.owner", description: "Owner penuh atas workspace kolaborasi", resource: "collaboration", action: "owner" },
+    { name: "collaboration.edit_own", description: "Edit transaksi sendiri di workspace kolaborasi", resource: "collaboration", action: "edit_own" },
+    { name: "collaboration.edit_all", description: "Edit semua transaksi di workspace kolaborasi", resource: "collaboration", action: "edit_all" },
     
     // Dashboard
     { name: "dashboard.view", description: "Mengakses dashboard", resource: "dashboard", action: "view" },
@@ -192,13 +195,16 @@ async function seedSubscriptionPackages() {
       price: "0.00",
       features: [
         "1 workspace pribadi",
+        "Maksimal 3 kategori tambahan", 
+        "Maksimal 2 budget plan",
         "Unlimited transaksi",
-        "Budget tracking",
         "Laporan dasar",
         "Export PDF"
       ],
       maxWorkspaces: 1,
       maxMembers: 1,
+      maxCategories: 3,
+      maxBudgets: 2,
       description: "Paket gratis untuk pengelolaan keuangan pribadi",
       isActive: true
     },
@@ -208,8 +214,10 @@ async function seedSubscriptionPackages() {
       price: "99000.00",
       features: [
         "5 workspace",
-        "Kolaborasi hingga 10 anggota",
+        "Kolaborasi hingga 10 anggota", 
         "Unlimited transaksi",
+        "Unlimited kategori",
+        "Unlimited budget plan",
         "Advanced budget tracking",
         "Debt & credit management",
         "Advanced reports & analytics",
@@ -219,6 +227,8 @@ async function seedSubscriptionPackages() {
       ],
       maxWorkspaces: 5,
       maxMembers: 10,
+      maxCategories: null, // unlimited
+      maxBudgets: null, // unlimited
       description: "Paket premium untuk keluarga dan bisnis kecil",
       isActive: true
     }
@@ -320,20 +330,46 @@ async function seedWorkspaces() {
   console.log("Seeding workspaces...");
   
   await db.insert(workspaces).values([
+    // Personal workspaces - setiap user harus punya workspace Personal sendiri
     {
       id: 1,
-      name: "Personal Finance",
+      name: "Personal",
       type: "personal",
-      ownerId: 3
+      ownerId: 1 // Root user
     },
     {
       id: 2,
+      name: "Personal", 
+      type: "personal",
+      ownerId: 2 // Admin user
+    },
+    {
+      id: 3,
+      name: "Personal",
+      type: "personal", 
+      ownerId: 3 // Demo user
+    },
+    {
+      id: 4,
+      name: "Personal",
+      type: "personal",
+      ownerId: 4 // John Doe
+    },
+    {
+      id: 5,
+      name: "Personal", 
+      type: "personal",
+      ownerId: 5 // Jane Smith - PENTING: sekarang punya Personal workspace sendiri
+    },
+    // Collaboration workspaces
+    {
+      id: 6,
       name: "Family Budget",
       type: "family",
       ownerId: 4
     },
     {
-      id: 3,
+      id: 7, 
       name: "Small Business",
       type: "business",
       ownerId: 4
@@ -345,36 +381,18 @@ async function seedWorkspaceMembers() {
   console.log("Seeding workspace members...");
   
   await db.insert(workspaceMembers).values([
-    // Personal Finance workspace - owner: demo user (id: 3)
-    {
-      workspaceId: 1,
-      userId: 3,
-      role: 'owner'
-    },
-    // Family Budget workspace - owner: user1 (id: 4)
-    {
-      workspaceId: 2,
-      userId: 4,
-      role: 'owner'
-    },
-    // Add demo user as editor to Family Budget
-    {
-      workspaceId: 2,
-      userId: 3,
-      role: 'editor'
-    },
-    // Small Business workspace - owner: user1 (id: 4)
-    {
-      workspaceId: 3,
-      userId: 4,
-      role: 'owner'
-    },
-    // Add user2 as viewer to Small Business
-    {
-      workspaceId: 3,
-      userId: 5,
-      role: 'viewer'
-    }
+    // Personal workspace memberships (setiap user owner di Personal workspace mereka sendiri)
+    { workspaceId: 1, userId: 1, role: 'owner' }, // Root - Personal
+    { workspaceId: 2, userId: 2, role: 'owner' }, // Admin - Personal  
+    { workspaceId: 3, userId: 3, role: 'owner' }, // Demo - Personal
+    { workspaceId: 4, userId: 4, role: 'owner' }, // John - Personal
+    { workspaceId: 5, userId: 5, role: 'owner' }, // Jane - Personal (FIXED: sekarang punya Personal sendiri)
+    
+    // Collaboration workspace memberships
+    { workspaceId: 6, userId: 4, role: 'owner' }, // John owner Family Budget
+    { workspaceId: 6, userId: 3, role: 'editor' }, // Demo sebagai editor di Family Budget
+    { workspaceId: 7, userId: 4, role: 'owner' }, // John owner Small Business  
+    { workspaceId: 7, userId: 5, role: 'editor' }, // Jane sebagai editor di Small Business John
   ]).onConflictDoNothing();
 }
 
@@ -382,33 +400,46 @@ async function seedCategories() {
   console.log("Seeding categories...");
   
   await db.insert(categories).values([
-    // Income categories for workspace 1
+    // Basic categories untuk Personal workspaces (setiap personal workspace dapat basic categories)
+    // Root Personal workspace (id: 1)
     { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: 1 },
-    { name: "Freelance", type: "income", icon: "💻", description: "Pendapatan freelance", workspaceId: 1 },
-    { name: "Investasi", type: "income", icon: "📈", description: "Hasil investasi", workspaceId: 1 },
-    
-    // Needs categories for workspace 1
     { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: 1 },
-    { name: "Transportasi", type: "needs", icon: "🚗", description: "Biaya transportasi", workspaceId: 1 },
-    { name: "Listrik", type: "needs", icon: "⚡", description: "Tagihan listrik", workspaceId: 1 },
-    { name: "Internet", type: "needs", icon: "🌐", description: "Tagihan internet", workspaceId: 1 },
-    
-    // Wants categories for workspace 1
     { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: 1 },
-    { name: "Shopping", type: "wants", icon: "🛍️", description: "Belanja non-essential", workspaceId: 1 },
-    { name: "Liburan", type: "wants", icon: "✈️", description: "Biaya liburan", workspaceId: 1 },
     
-    // Categories for workspace 2 (Family)
-    { name: "Gaji Suami", type: "income", icon: "💰", description: "Pendapatan suami", workspaceId: 2 },
-    { name: "Gaji Istri", type: "income", icon: "💰", description: "Pendapatan istri", workspaceId: 2 },
-    { name: "Belanja Bulanan", type: "needs", icon: "🛒", description: "Belanja kebutuhan bulanan", workspaceId: 2 },
-    { name: "Pendidikan Anak", type: "needs", icon: "🎓", description: "Biaya pendidikan", workspaceId: 2 },
-    { name: "Kesehatan", type: "needs", icon: "🏥", description: "Biaya kesehatan", workspaceId: 2 },
+    // Admin Personal workspace (id: 2) 
+    { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: 2 },
+    { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: 2 },
+    { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: 2 },
     
-    // Categories for workspace 3 (Business)
-    { name: "Penjualan", type: "income", icon: "💵", description: "Pendapatan penjualan", workspaceId: 3 },
-    { name: "Operasional", type: "needs", icon: "⚙️", description: "Biaya operasional", workspaceId: 3 },
-    { name: "Marketing", type: "wants", icon: "📢", description: "Biaya marketing", workspaceId: 3 },
+    // Demo Personal workspace (id: 3) - basic package = max 3 categories tambahan
+    { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: 3 },
+    { name: "Freelance", type: "income", icon: "💻", description: "Pendapatan freelance", workspaceId: 3 },
+    { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: 3 },
+    { name: "Transportasi", type: "needs", icon: "🚗", description: "Biaya transportasi", workspaceId: 3 }, // Total: 4 categories (basic limit akan dicek di aplikasi)
+    
+    // John Personal workspace (id: 4) - premium package
+    { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: 4 },
+    { name: "Freelance", type: "income", icon: "💻", description: "Pendapatan freelance", workspaceId: 4 },
+    { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: 4 },
+    { name: "Transportasi", type: "needs", icon: "🚗", description: "Biaya transportasi", workspaceId: 4 },
+    { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: 4 },
+    
+    // Jane Personal workspace (id: 5) - basic package = max 3 categories tambahan
+    { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: 5 },
+    { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: 5 },
+    { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: 5 }, // Total: 3 categories (sesuai basic limit)
+    
+    // Categories for Family Budget workspace (id: 6)
+    { name: "Gaji Suami", type: "income", icon: "💰", description: "Pendapatan suami", workspaceId: 6 },
+    { name: "Gaji Istri", type: "income", icon: "💰", description: "Pendapatan istri", workspaceId: 6 },
+    { name: "Belanja Bulanan", type: "needs", icon: "🛒", description: "Belanja kebutuhan bulanan", workspaceId: 6 },
+    { name: "Pendidikan Anak", type: "needs", icon: "🎓", description: "Biaya pendidikan", workspaceId: 6 },
+    { name: "Kesehatan", type: "needs", icon: "🏥", description: "Biaya kesehatan", workspaceId: 6 },
+    
+    // Categories for Small Business workspace (id: 7)
+    { name: "Penjualan", type: "income", icon: "💵", description: "Pendapatan penjualan", workspaceId: 7 },
+    { name: "Operasional", type: "needs", icon: "⚙️", description: "Biaya operasional", workspaceId: 7 },
+    { name: "Marketing", type: "wants", icon: "📢", description: "Biaya marketing", workspaceId: 7 },
   ]).onConflictDoNothing();
 }
 
@@ -416,21 +447,36 @@ async function seedAccounts() {
   console.log("Seeding accounts...");
   
   await db.insert(accounts).values([
-    // Accounts for workspace 1
+    // Root Personal workspace (id: 1)
     { name: "Bank BCA", type: "transaction", currency: "IDR", workspaceId: 1 },
     { name: "Cash", type: "transaction", currency: "IDR", workspaceId: 1 },
-    { name: "E-Wallet", type: "transaction", currency: "IDR", workspaceId: 1 },
-    { name: "Tabungan", type: "asset", currency: "IDR", workspaceId: 1 },
     
-    // Accounts for workspace 2
-    { name: "Rekening Keluarga", type: "transaction", currency: "IDR", workspaceId: 2 },
-    { name: "Kas Kecil", type: "transaction", currency: "IDR", workspaceId: 2 },
-    { name: "Tabungan Anak", type: "asset", currency: "IDR", workspaceId: 2 },
+    // Admin Personal workspace (id: 2)
+    { name: "Bank BCA", type: "transaction", currency: "IDR", workspaceId: 2 },
+    { name: "Cash", type: "transaction", currency: "IDR", workspaceId: 2 },
     
-    // Accounts for workspace 3
-    { name: "Rekening Bisnis", type: "transaction", currency: "IDR", workspaceId: 3 },
-    { name: "Petty Cash", type: "transaction", currency: "IDR", workspaceId: 3 },
-    { name: "Investasi", type: "asset", currency: "IDR", workspaceId: 3 },
+    // Demo Personal workspace (id: 3)
+    { name: "Bank BCA", type: "transaction", currency: "IDR", workspaceId: 3 },
+    { name: "Cash", type: "transaction", currency: "IDR", workspaceId: 3 },
+    
+    // John Personal workspace (id: 4)
+    { name: "Bank BCA", type: "transaction", currency: "IDR", workspaceId: 4 },
+    { name: "Cash", type: "transaction", currency: "IDR", workspaceId: 4 },
+    { name: "E-Wallet", type: "transaction", currency: "IDR", workspaceId: 4 },
+    
+    // Jane Personal workspace (id: 5)
+    { name: "Bank BCA", type: "transaction", currency: "IDR", workspaceId: 5 },
+    { name: "Cash", type: "transaction", currency: "IDR", workspaceId: 5 },
+    
+    // Family Budget workspace (id: 6)
+    { name: "Rekening Keluarga", type: "transaction", currency: "IDR", workspaceId: 6 },
+    { name: "Kas Kecil", type: "transaction", currency: "IDR", workspaceId: 6 },
+    { name: "Tabungan Anak", type: "asset", currency: "IDR", workspaceId: 6 },
+    
+    // Small Business workspace (id: 7)
+    { name: "Rekening Bisnis", type: "transaction", currency: "IDR", workspaceId: 7 },
+    { name: "Petty Cash", type: "transaction", currency: "IDR", workspaceId: 7 },
+    { name: "Investasi", type: "asset", currency: "IDR", workspaceId: 7 },
   ]).onConflictDoNothing();
 }
 
