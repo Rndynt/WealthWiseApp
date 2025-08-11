@@ -74,7 +74,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
 
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-40 transition-transform duration-300
+        fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-40 transition-transform duration-300 flex flex-col
         ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Header */}
@@ -122,7 +122,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1 flex-1">
+        <div className="flex-1 overflow-y-auto">
+          <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
@@ -140,32 +141,33 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
               </Link>
             );
           })}
-        </nav>
+          </nav>
 
-        {/* Admin Section */}
-        <div className="px-4 py-2">
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Admin
-            </h3>
-            <div className="space-y-1">
-              {adminNavigationItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location === item.path;
-                
-                return (
-                  <Link key={item.path} href={item.path} className={`
-                    flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-50 text-primary' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                    }
-                  `}>
-                    <Icon size={18} />
-                    <span className="text-sm">{item.label}</span>
-                  </Link>
-                );
-              })}
+          {/* Admin Section */}
+          <div className="px-4 py-2">
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Admin
+              </h3>
+              <div className="space-y-1">
+                {adminNavigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location === item.path;
+                  
+                  return (
+                    <Link key={item.path} href={item.path} className={`
+                      flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+                      ${isActive 
+                        ? 'bg-blue-50 text-primary' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }
+                    `}>
+                      <Icon size={18} />
+                      <span className="text-sm">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
