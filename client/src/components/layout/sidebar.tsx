@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  ChevronDown, Plus
+  ChevronDown, Plus, Shield, UserCog, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +29,12 @@ const navigationItems = [
   { path: '/reports', label: 'Reports', icon: BarChart3 },
   { path: '/debts', label: 'Debts', icon: CreditCard },
   { path: '/collaboration', label: 'Collaboration', icon: Users },
+];
+
+const adminNavigationItems = [
+  { path: '/users', label: 'User Management', icon: UserCog },
+  { path: '/roles', label: 'Role Management', icon: Shield },
+  { path: '/subscription-packages', label: 'Subscription Packages', icon: Package },
 ];
 
 export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceChange }: SidebarProps) {
@@ -135,6 +141,34 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             );
           })}
         </nav>
+
+        {/* Admin Section */}
+        <div className="px-4 py-2">
+          <div className="border-t border-gray-200 pt-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Admin
+            </h3>
+            <div className="space-y-1">
+              {adminNavigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location === item.path;
+                
+                return (
+                  <Link key={item.path} href={item.path} className={`
+                    flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+                    ${isActive 
+                      ? 'bg-blue-50 text-primary' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                    }
+                  `}>
+                    <Icon size={18} />
+                    <span className="text-sm">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* User Info */}
         <div className="p-4 border-t border-gray-200 mt-auto">

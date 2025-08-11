@@ -3,12 +3,63 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Roles table
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // 'root', 'admin', 'user'
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Permissions table
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  resource: text("resource").notNull(), // 'users', 'workspaces', 'transactions', etc.
+  action: text("action").notNull(), // 'create', 'read', 'update', 'delete'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Role permissions table
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  permissionId: integer("permission_id").references(() => permissions.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Subscription packages table
+export const subscriptionPackages = pgTable("subscription_packages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // 'basic', 'premium'
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  features: text("features").array().notNull(),
+  maxWorkspaces: integer("max_workspaces").notNull(),
+  maxMembers: integer("max_members").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User subscriptions table
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("active"), // 'active', 'expired', 'cancelled'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
+  roleId: integer("role_id").references(() => roles.id).notNull().default(3), // Default to 'user' role
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -94,9 +145,49 @@ export const debts = pgTable("debts", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+  rolePermissions: many(rolePermissions),
+}));
+
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id],
+  }),
+  permission: one(permissions, {
+    fields: [rolePermissions.permissionId],
+    references: [permissions.id],
+  }),
+}));
+
+export const subscriptionPackagesRelations = relations(subscriptionPackages, ({ many }) => ({
+  userSubscriptions: many(userSubscriptions),
+}));
+
+export const userSubscriptionsRelations = relations(userSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSubscriptions.userId],
+    references: [users.id],
+  }),
+  package: one(subscriptionPackages, {
+    fields: [userSubscriptions.packageId],
+    references: [subscriptionPackages.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
   ownedWorkspaces: many(workspaces),
   workspaceMembers: many(workspaceMembers),
+  userSubscriptions: many(userSubscriptions),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -179,6 +270,31 @@ export const debtsRelations = relations(debts, ({ one }) => ({
 }));
 
 // Insert schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSubscriptionPackageSchema = createInsertSchema(subscriptionPackages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -220,6 +336,21 @@ export const insertDebtSchema = createInsertSchema(debts).omit({
 });
 
 // Types
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+
+export type SubscriptionPackage = typeof subscriptionPackages.$inferSelect;
+export type InsertSubscriptionPackage = z.infer<typeof insertSubscriptionPackageSchema>;
+
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 

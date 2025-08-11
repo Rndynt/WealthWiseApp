@@ -5,7 +5,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { 
   insertUserSchema, insertWorkspaceSchema, insertCategorySchema, 
-  insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema 
+  insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema,
+  insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
+  insertSubscriptionPackageSchema, insertUserSubscriptionSchema
 } from "@shared/schema";
 
 const storage = new DatabaseStorage();
@@ -490,6 +492,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Debt delete error:", error);
       res.status(400).json({ message: "Failed to delete debt" });
+    }
+  });
+
+  // RBAC - Roles Management
+  app.get("/api/roles", authenticateToken, async (req, res) => {
+    try {
+      const roles = await storage.getAllRoles();
+      res.json(roles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get roles" });
+    }
+  });
+
+  app.post("/api/roles", authenticateToken, async (req, res) => {
+    try {
+      const roleData = insertRoleSchema.parse(req.body);
+      const role = await storage.createRole(roleData);
+      res.json(role);
+    } catch (error) {
+      console.error("Role creation error:", error);
+      res.status(400).json({ message: "Failed to create role" });
+    }
+  });
+
+  app.put("/api/roles/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const role = await storage.updateRole(id, req.body);
+      res.json(role);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/roles/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteRole(id);
+      res.json({ message: "Role deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete role" });
+    }
+  });
+
+  // RBAC - Permissions Management
+  app.get("/api/permissions", authenticateToken, async (req, res) => {
+    try {
+      const permissions = await storage.getAllPermissions();
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get permissions" });
+    }
+  });
+
+  app.get("/api/roles/:roleId/permissions", authenticateToken, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const permissions = await storage.getRolePermissions(roleId);
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get role permissions" });
+    }
+  });
+
+  app.post("/api/roles/:roleId/permissions", authenticateToken, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const { permissionId } = req.body;
+      const rolePermission = await storage.addRolePermission({ roleId, permissionId });
+      res.json(rolePermission);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to add role permission" });
+    }
+  });
+
+  app.delete("/api/roles/:roleId/permissions/:permissionId", authenticateToken, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const permissionId = parseInt(req.params.permissionId);
+      await storage.removeRolePermission(roleId, permissionId);
+      res.json({ message: "Role permission removed successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to remove role permission" });
+    }
+  });
+
+  // Subscription Packages Management
+  app.get("/api/subscription-packages", authenticateToken, async (req, res) => {
+    try {
+      const packages = await storage.getAllSubscriptionPackages();
+      res.json(packages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get subscription packages" });
+    }
+  });
+
+  app.post("/api/subscription-packages", authenticateToken, async (req, res) => {
+    try {
+      const packageData = insertSubscriptionPackageSchema.parse({
+        ...req.body,
+        price: req.body.price.toString(),
+      });
+      const pkg = await storage.createSubscriptionPackage(packageData);
+      res.json(pkg);
+    } catch (error) {
+      console.error("Package creation error:", error);
+      res.status(400).json({ message: "Failed to create subscription package" });
+    }
+  });
+
+  app.put("/api/subscription-packages/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.price) {
+        updates.price = updates.price.toString();
+      }
+      const pkg = await storage.updateSubscriptionPackage(id, updates);
+      res.json(pkg);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update subscription package" });
+    }
+  });
+
+  app.delete("/api/subscription-packages/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSubscriptionPackage(id);
+      res.json({ message: "Subscription package deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete subscription package" });
+    }
+  });
+
+  // User Management
+  app.get("/api/users", authenticateToken, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove password from response
+      const safeUsers = users.map(user => {
+        const { password, ...safeUser } = user;
+        return safeUser;
+      });
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get users" });
+    }
+  });
+
+  app.get("/api/users/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.getUserWithRole(id);
+      if (result) {
+        const { password, ...safeUser } = result.user;
+        res.json({ user: safeUser, role: result.role });
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
+  app.put("/api/users/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Hash password if provided
+      if (updates.password) {
+        updates.password = await bcrypt.hash(updates.password, 10);
+      }
+      
+      const user = await storage.updateUser(id, updates);
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // User Subscriptions
+  app.get("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const result = await storage.getUserSubscriptionWithPackage(userId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user subscription" });
+    }
+  });
+
+  app.post("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscriptionData = insertUserSubscriptionSchema.parse({
+        ...req.body,
+        userId,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+      });
+      const subscription = await storage.createUserSubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Subscription creation error:", error);
+      res.status(400).json({ message: "Failed to create user subscription" });
     }
   });
 

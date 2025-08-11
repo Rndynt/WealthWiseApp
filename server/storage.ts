@@ -9,6 +9,11 @@ import {
   transactions,
   budgets,
   debts,
+  roles,
+  permissions,
+  rolePermissions,
+  subscriptionPackages,
+  userSubscriptions,
   type User,
   type Workspace,
   type Category,
@@ -16,6 +21,11 @@ import {
   type Transaction,
   type Budget,
   type Debt,
+  type Role,
+  type Permission,
+  type RolePermission,
+  type SubscriptionPackage,
+  type UserSubscription,
   type InsertUser,
   type InsertWorkspace,
   type InsertCategory,
@@ -23,6 +33,11 @@ import {
   type InsertTransaction,
   type InsertBudget,
   type InsertDebt,
+  type InsertRole,
+  type InsertPermission,
+  type InsertRolePermission,
+  type InsertSubscriptionPackage,
+  type InsertUserSubscription,
 } from '@shared/schema';
 import { 
   type WorkspaceMember,
@@ -84,6 +99,44 @@ export interface IStorage {
     netWorth: string;
     recentTransactions: Transaction[];
   }>;
+
+  // RBAC - Roles
+  getAllRoles(): Promise<Role[]>;
+  getRole(id: number): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: Partial<InsertRole>): Promise<Role>;
+  deleteRole(id: number): Promise<void>;
+
+  // RBAC - Permissions
+  getAllPermissions(): Promise<Permission[]>;
+  getPermission(id: number): Promise<Permission | undefined>;
+  createPermission(permission: InsertPermission): Promise<Permission>;
+  updatePermission(id: number, permission: Partial<InsertPermission>): Promise<Permission>;
+  deletePermission(id: number): Promise<void>;
+
+  // RBAC - Role Permissions
+  getRolePermissions(roleId: number): Promise<Permission[]>;
+  addRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission>;
+  removeRolePermission(roleId: number, permissionId: number): Promise<void>;
+
+  // Subscription Packages
+  getAllSubscriptionPackages(): Promise<SubscriptionPackage[]>;
+  getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined>;
+  createSubscriptionPackage(package: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
+  updateSubscriptionPackage(id: number, package: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage>;
+  deleteSubscriptionPackage(id: number): Promise<void>;
+
+  // User Subscriptions
+  getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
+  getUserSubscriptionWithPackage(userId: number): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined>;
+  createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
+  updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription>;
+
+  // User Management
+  getAllUsers(): Promise<User[]>;
+  getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -372,6 +425,166 @@ export class DatabaseStorage implements IStorage {
       netWorth: totalBalance.toString(), // Simplified calculation
       recentTransactions,
     };
+  }
+
+  // RBAC - Roles
+  async getAllRoles(): Promise<Role[]> {
+    return await db.select().from(roles);
+  }
+
+  async getRole(id: number): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async createRole(insertRole: InsertRole): Promise<Role> {
+    const [role] = await db.insert(roles).values(insertRole).returning();
+    return role;
+  }
+
+  async updateRole(id: number, role: Partial<InsertRole>): Promise<Role> {
+    const [updatedRole] = await db.update(roles).set(role).where(eq(roles.id, id)).returning();
+    return updatedRole;
+  }
+
+  async deleteRole(id: number): Promise<void> {
+    await db.delete(roles).where(eq(roles.id, id));
+  }
+
+  // RBAC - Permissions
+  async getAllPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions);
+  }
+
+  async getPermission(id: number): Promise<Permission | undefined> {
+    const [permission] = await db.select().from(permissions).where(eq(permissions.id, id));
+    return permission || undefined;
+  }
+
+  async createPermission(insertPermission: InsertPermission): Promise<Permission> {
+    const [permission] = await db.insert(permissions).values(insertPermission).returning();
+    return permission;
+  }
+
+  async updatePermission(id: number, permission: Partial<InsertPermission>): Promise<Permission> {
+    const [updatedPermission] = await db.update(permissions).set(permission).where(eq(permissions.id, id)).returning();
+    return updatedPermission;
+  }
+
+  async deletePermission(id: number): Promise<void> {
+    await db.delete(permissions).where(eq(permissions.id, id));
+  }
+
+  // RBAC - Role Permissions
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    const results = await db
+      .select({
+        id: permissions.id,
+        name: permissions.name,
+        description: permissions.description,
+        resource: permissions.resource,
+        action: permissions.action,
+        createdAt: permissions.createdAt,
+      })
+      .from(rolePermissions)
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, roleId));
+    
+    return results;
+  }
+
+  async addRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission> {
+    const [result] = await db.insert(rolePermissions).values(rolePermission).returning();
+    return result;
+  }
+
+  async removeRolePermission(roleId: number, permissionId: number): Promise<void> {
+    await db.delete(rolePermissions).where(
+      and(
+        eq(rolePermissions.roleId, roleId),
+        eq(rolePermissions.permissionId, permissionId)
+      )
+    );
+  }
+
+  // Subscription Packages
+  async getAllSubscriptionPackages(): Promise<SubscriptionPackage[]> {
+    return await db.select().from(subscriptionPackages);
+  }
+
+  async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
+    const [pkg] = await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.id, id));
+    return pkg || undefined;
+  }
+
+  async createSubscriptionPackage(insertPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
+    const [pkg] = await db.insert(subscriptionPackages).values(insertPackage).returning();
+    return pkg;
+  }
+
+  async updateSubscriptionPackage(id: number, pkg: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage> {
+    const [updatedPackage] = await db.update(subscriptionPackages).set(pkg).where(eq(subscriptionPackages.id, id)).returning();
+    return updatedPackage;
+  }
+
+  async deleteSubscriptionPackage(id: number): Promise<void> {
+    await db.delete(subscriptionPackages).where(eq(subscriptionPackages.id, id));
+  }
+
+  // User Subscriptions
+  async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
+    const [subscription] = await db.select().from(userSubscriptions).where(eq(userSubscriptions.userId, userId));
+    return subscription || undefined;
+  }
+
+  async getUserSubscriptionWithPackage(userId: number): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined> {
+    const [result] = await db
+      .select({
+        subscription: userSubscriptions,
+        package: subscriptionPackages,
+      })
+      .from(userSubscriptions)
+      .leftJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id))
+      .where(eq(userSubscriptions.userId, userId));
+    
+    return result || undefined;
+  }
+
+  async createUserSubscription(insertSubscription: InsertUserSubscription): Promise<UserSubscription> {
+    const [subscription] = await db.insert(userSubscriptions).values(insertSubscription).returning();
+    return subscription;
+  }
+
+  async updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription> {
+    const [updatedSubscription] = await db.update(userSubscriptions).set(subscription).where(eq(userSubscriptions.id, id)).returning();
+    return updatedSubscription;
+  }
+
+  // User Management
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined> {
+    const [result] = await db
+      .select({
+        user: users,
+        role: roles,
+      })
+      .from(users)
+      .leftJoin(roles, eq(users.roleId, roles.id))
+      .where(eq(users.id, id));
+    
+    return result || undefined;
+  }
+
+  async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
+    const [updatedUser] = await db.update(users).set(user).where(eq(users.id, id)).returning();
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 }
 
