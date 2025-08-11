@@ -42,13 +42,19 @@ FinanceFlow is a full-stack personal finance management application built with a
 - Hierarchical data organization
 
 ### Financial Data Models
-- **Users**: Core user authentication and profile data
-- **Workspaces**: Organization units for financial data
+- **Users**: Core user authentication and profile data with role-based access control
+- **Workspaces**: Organization units for financial data (subscription-limited)
 - **Accounts**: Financial accounts (transaction, asset types)
 - **Categories**: Expense/income categorization (income, needs, wants)
 - **Transactions**: Financial transactions with detailed metadata
 - **Budgets**: Budget planning and tracking
 - **Debts**: Debt and credit management
+
+### RBAC and Subscription System
+- **Roles**: Four-tier role system (root, admin, user basic, user premium)
+- **Permissions**: Granular permission system for resource access control
+- **Subscription Packages**: Configurable subscription tiers with workspace/member limits
+- **User Subscriptions**: Active subscription tracking with automatic limit enforcement
 
 ### UI Component System
 - Comprehensive shadcn/ui component library
@@ -70,6 +76,7 @@ FinanceFlow is a full-stack personal finance management application built with a
 2. All subsequent API calls include workspace context
 3. Data filtered by workspace permissions and membership
 4. Real-time updates through React Query cache invalidation
+5. Workspace creation limited by subscription tier (1 for basic, unlimited for premium)
 
 ### Transaction Management Flow
 1. User creates/edits transactions through modal forms
@@ -151,6 +158,7 @@ FinanceFlow is a full-stack personal finance management application built with a
 
 ## Changelog
 - June 28, 2025. Initial setup
+- August 11, 2025. Implemented comprehensive RBAC system with subscription-based workspace limits
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
