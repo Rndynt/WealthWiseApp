@@ -638,7 +638,8 @@ export class DatabaseStorage implements IStorage {
       return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
-      const limit = 3; // Basic package max categories
+      // Basic package allows 3 default categories + 3 additional = 6 total
+      const limit = 6; // 3 default + 3 additional
       const canCreate = current < limit;
       return { canCreate, limit, current };
     }
@@ -659,7 +660,7 @@ export class DatabaseStorage implements IStorage {
       return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
-      const limit = 2; // Basic package max budgets
+      const limit = 2; // Basic package max budgets per period
       const canCreate = current < limit;
       return { canCreate, limit, current };
     }

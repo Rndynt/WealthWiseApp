@@ -291,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       if (!categoryLimit.canCreate) {
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal kategori (${categoryLimit.current}/${categoryLimit.limit}). Upgrade ke paket premium untuk menambah kategori lebih banyak.`,
+          message: `Anda telah mencapai batas maksimal kategori untuk paket basic (${categoryLimit.current}/${categoryLimit.limit}). Paket basic memungkinkan 3 kategori default + 3 kategori tambahan. Upgrade ke paket premium untuk kategori unlimited.`,
           limits: categoryLimit
         });
       }
@@ -484,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       if (!budgetLimit.canCreate) {
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal budget plan (${budgetLimit.current}/${budgetLimit.limit}). Upgrade ke paket premium untuk menambah budget lebih banyak.`,
+          message: `Anda telah mencapai batas maksimal budget plan untuk paket basic (${budgetLimit.current}/${budgetLimit.limit} per periode). Upgrade ke paket premium untuk budget unlimited.`,
           limits: budgetLimit
         });
       }
