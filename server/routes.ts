@@ -47,10 +47,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       
-      // Create user
+      // Create user with basic role
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword,
+        roleId: 3, // user basic role ID from seeder
       });
 
       // Create personal workspace
@@ -153,6 +154,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/user/subscription-limits", authenticateToken, async (req: any, res) => {
+    try {
+      const limits = await storage.getUserSubscriptionLimits(req.user.userId);
+      res.json(limits);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get subscription limits" });
+    }
+  });
+
   // Workspace routes
   app.get("/api/workspaces", authenticateToken, async (req: any, res) => {
     try {
@@ -165,6 +175,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user can create more workspaces
+      const canCreate = await storage.canCreateWorkspace(req.user.userId);
+      if (!canCreate) {
+        const limits = await storage.getUserSubscriptionLimits(req.user.userId);
+        return res.status(403).json({ 
+          message: "Anda telah mencapai batas maksimal workspace. Upgrade ke paket premium untuk membuat workspace lebih banyak.",
+          limits 
+        });
+      }
+
       const workspaceData = insertWorkspaceSchema.parse({
         ...req.body,
         ownerId: req.user.userId,
@@ -173,6 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workspace = await storage.createWorkspace(workspaceData);
       res.json(workspace);
     } catch (error) {
+      console.error("Workspace creation error:", error);
       res.status(400).json({ message: "Failed to create workspace" });
     }
   });
