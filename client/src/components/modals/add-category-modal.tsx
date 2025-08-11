@@ -39,9 +39,10 @@ export default function AddCategoryModal({ open, onOpenChange, workspaceId }: Ad
       onOpenChange(false);
     },
     onError: (error: any) => {
+      const isLimitError = error.message?.includes('batas maksimal');
       toast({
         variant: "destructive",
-        title: "Failed to create category",
+        title: isLimitError ? "Limit Kategori Tercapai" : "Failed to create category",
         description: error.message || "Something went wrong",
       });
     },

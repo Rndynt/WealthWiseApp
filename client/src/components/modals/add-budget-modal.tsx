@@ -50,9 +50,10 @@ export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddB
       onOpenChange(false);
     },
     onError: (error: any) => {
+      const isLimitError = error.message?.includes('batas maksimal');
       toast({
         variant: "destructive",
-        title: "Failed to create budget",
+        title: isLimitError ? "Limit Budget Tercapai" : "Failed to create budget",
         description: error.message || "Something went wrong",
       });
     },

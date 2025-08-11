@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, AlertCircle, Heart, Edit } from 'lucide-react';
+import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock } from 'lucide-react';
 import { Category } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CategoriesProps {
   workspaceId: number | undefined;
@@ -50,6 +51,12 @@ export default function Categories({ workspaceId }: CategoriesProps) {
     enabled: !!workspaceId,
   });
 
+  // Check category limits
+  const { data: categoryLimits } = useQuery({
+    queryKey: [`/api/workspaces/${workspaceId}/category-limits`],
+    enabled: !!workspaceId,
+  });
+
   const groupedCategories = categories?.reduce((acc, category) => {
     if (!acc[category.type]) {
       acc[category.type] = [];
@@ -57,6 +64,10 @@ export default function Categories({ workspaceId }: CategoriesProps) {
     acc[category.type].push(category);
     return acc;
   }, {} as Record<string, Category[]>) || {};
+
+  const isLimitReached = categoryLimits && !categoryLimits.canCreate;
+  const limitText = categoryLimits ? `${categoryLimits.current}/${categoryLimits.limit || '∞'}` : '';
+  const packageType = categoryLimits?.limit === 3 ? 'Basic' : categoryLimits?.limit === null ? 'Premium' : 'Standard';
 
   if (!workspaceId) {
     return (
@@ -70,12 +81,43 @@ export default function Categories({ workspaceId }: CategoriesProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Transaction Categories</h3>
-        <Button onClick={() => setShowAddModal(true)} className="mt-4 sm:mt-0">
-          <Plus className="mr-2" size={16} />
-          Add Category
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Transaction Categories</h3>
+          {categoryLimits && (
+            <p className="text-sm text-gray-500 mt-1">
+              {limitText} categories used • {packageType} Package
+            </p>
+          )}
+        </div>
+        <Button 
+          onClick={() => setShowAddModal(true)} 
+          className="mt-4 sm:mt-0"
+          disabled={isLimitReached}
+        >
+          {isLimitReached ? (
+            <>
+              <Lock className="mr-2" size={16} />
+              Limit Reached
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2" size={16} />
+              Add Category
+            </>
+          )}
         </Button>
       </div>
+
+      {/* Limit Warning */}
+      {isLimitReached && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            Anda telah mencapai batas maksimal kategori untuk paket {packageType} ({categoryLimits.current}/{categoryLimits.limit}). 
+            Upgrade ke paket Premium untuk kategori unlimited.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Category Types */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
