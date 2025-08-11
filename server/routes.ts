@@ -89,6 +89,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roleId: 3, // user basic role ID from seeder
       });
 
+      // Create default basic subscription for new user
+      const now = new Date();
+      const oneYearLater = new Date();
+      oneYearLater.setFullYear(now.getFullYear() + 1);
+      
+      await storage.createUserSubscription({
+        userId: user.id,
+        packageId: 1, // Basic package ID from seeder
+        startDate: now,
+        endDate: oneYearLater,
+        status: "active"
+      });
+
       // Create personal workspace
       const workspace = await storage.createWorkspace({
         name: "Personal",
@@ -96,13 +109,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownerId: user.id,
       });
 
-      // Create default categories
+      // Add user as owner of their personal workspace
+      await storage.addWorkspaceMember({
+        workspaceId: workspace.id,
+        userId: user.id,
+        role: "owner"
+      });
+
+      // Create default categories (limit to 3 for basic package)
       const defaultCategories = [
-        { name: "Gaji", type: "income", icon: "briefcase", description: "Monthly salary", workspaceId: workspace.id },
-        { name: "Groceries", type: "needs", icon: "shopping-cart", description: "Food and groceries", workspaceId: workspace.id },
-        { name: "Electricity", type: "needs", icon: "bolt", description: "Electricity bills", workspaceId: workspace.id },
-        { name: "Transportation", type: "needs", icon: "bus", description: "Transportation costs", workspaceId: workspace.id },
-        { name: "Subscriptions", type: "wants", icon: "tv", description: "Entertainment subscriptions", workspaceId: workspace.id },
+        { name: "Gaji", type: "income", icon: "💰", description: "Pendapatan dari pekerjaan", workspaceId: workspace.id },
+        { name: "Makanan", type: "needs", icon: "🍽️", description: "Kebutuhan makanan sehari-hari", workspaceId: workspace.id },
+        { name: "Hiburan", type: "wants", icon: "🎬", description: "Pengeluaran hiburan", workspaceId: workspace.id },
       ];
 
       for (const category of defaultCategories) {
@@ -112,19 +130,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create default accounts
       const defaultAccounts = [
         { 
-          name: "BCA Debit", 
+          name: "Bank BCA", 
           type: "transaction", 
           currency: "IDR", 
-          balance: "12500000",
+          balance: "0",
           notes: "Primary transaction account",
           workspaceId: workspace.id 
         },
         { 
-          name: "BSI Debit", 
+          name: "Cash", 
           type: "transaction", 
           currency: "IDR", 
-          balance: "3250000",
-          notes: "Secondary transaction account",
+          balance: "0",
+          notes: "Cash money",
           workspaceId: workspace.id 
         },
       ];
@@ -265,9 +283,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/workspaces/:workspaceId/categories", authenticateToken, async (req, res) => {
+  app.post("/api/workspaces/:workspaceId/categories", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
+      
+      // Check category limits untuk basic package users
+      const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
+      if (!categoryLimit.canCreate) {
+        return res.status(403).json({
+          message: `Anda telah mencapai batas maksimal kategori (${categoryLimit.current}/${categoryLimit.limit}). Upgrade ke paket premium untuk menambah kategori lebih banyak.`,
+          limits: categoryLimit
+        });
+      }
+      
       const categoryData = insertCategorySchema.parse({
         ...req.body,
         workspaceId,
@@ -276,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.createCategory(categoryData);
       res.json(category);
     } catch (error) {
+      console.error("Category creation error:", error);
       res.status(400).json({ message: "Failed to create category" });
     }
   });
@@ -445,15 +474,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req, res) => {
+  app.post("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
+      const year = parseInt(req.body.year) || new Date().getFullYear();
+      const month = req.body.month ? parseInt(req.body.month) : undefined;
+      
+      // Check budget limits untuk basic package users
+      const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
+      if (!budgetLimit.canCreate) {
+        return res.status(403).json({
+          message: `Anda telah mencapai batas maksimal budget plan (${budgetLimit.current}/${budgetLimit.limit}). Upgrade ke paket premium untuk menambah budget lebih banyak.`,
+          limits: budgetLimit
+        });
+      }
+      
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         workspaceId,
         amount: req.body.amount.toString(), // Convert amount to string
-        year: parseInt(req.body.year) || new Date().getFullYear(),
-        month: req.body.month ? parseInt(req.body.month) : null,
+        year,
+        month,
       });
       
       const budget = await storage.createBudget(budgetData);

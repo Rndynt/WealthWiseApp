@@ -37,6 +37,8 @@ export const subscriptionPackages = pgTable("subscription_packages", {
   features: text("features").array().notNull(),
   maxWorkspaces: integer("max_workspaces").notNull(),
   maxMembers: integer("max_members").notNull(),
+  maxCategories: integer("max_categories"), // null = unlimited
+  maxBudgets: integer("max_budgets"), // null = unlimited  
   description: text("description"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
