@@ -32,6 +32,41 @@ async function authenticateToken(req: any, res: any, next: any) {
   }
 }
 
+// Permission middleware
+const requirePermission = (permission: string) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const permissions = await storage.getUserPermissions(req.user.userId);
+      if (!permissions.includes(permission)) {
+        return res.status(403).json({ message: "Akses ditolak. Permission tidak memadai." });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Gagal mengecek permission" });
+    }
+  };
+};
+
+// Role middleware
+const requireRole = (roleName: string) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+      
+      const role = await storage.getRole(user.roleId);
+      if (!role || role.name !== roleName) {
+        return res.status(403).json({ message: `Akses ditolak. Role ${roleName} diperlukan.` });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Gagal mengecek role" });
+    }
+  };
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
@@ -160,6 +195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(limits);
     } catch (error) {
       res.status(500).json({ message: "Failed to get subscription limits" });
+    }
+  });
+
+  app.get("/api/user/permissions", authenticateToken, async (req: any, res) => {
+    try {
+      const permissions = await storage.getUserPermissions(req.user.userId);
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get permissions" });
     }
   });
 
@@ -517,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // RBAC - Roles Management
-  app.get("/api/roles", authenticateToken, async (req, res) => {
+  app.get("/api/roles", authenticateToken, requirePermission('roles.read'), async (req, res) => {
     try {
       const roles = await storage.getAllRoles();
       res.json(roles);
@@ -526,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/roles", authenticateToken, async (req, res) => {
+  app.post("/api/roles", authenticateToken, requirePermission('roles.create'), async (req, res) => {
     try {
       const roleData = insertRoleSchema.parse(req.body);
       const role = await storage.createRole(roleData);
@@ -600,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subscription Packages Management
-  app.get("/api/subscription-packages", authenticateToken, async (req, res) => {
+  app.get("/api/subscription-packages", authenticateToken, requirePermission('subscriptions.read'), async (req, res) => {
     try {
       const packages = await storage.getAllSubscriptionPackages();
       res.json(packages);
@@ -648,7 +692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Management
-  app.get("/api/users", authenticateToken, async (req, res) => {
+  app.get("/api/users", authenticateToken, requirePermission('users.read'), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       // Remove password from response
@@ -677,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id", authenticateToken, async (req, res) => {
+  app.put("/api/users/:id", authenticateToken, requirePermission('users.update'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
