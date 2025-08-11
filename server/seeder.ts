@@ -7,10 +7,35 @@ import {
   users, 
   userSubscriptions,
   workspaces,
+  workspaceMembers,
   categories,
-  accounts
+  accounts,
+  transactions,
+  budgets,
+  debts
 } from "@shared/schema";
 import bcrypt from "bcrypt";
+
+async function resetDatabase() {
+  console.log("Resetting database...");
+  
+  // Hapus data dalam urutan yang benar (mengikuti foreign key constraints)
+  await db.delete(transactions);
+  await db.delete(budgets);  
+  await db.delete(debts);
+  await db.delete(accounts);
+  await db.delete(categories);
+  await db.delete(workspaceMembers);
+  await db.delete(workspaces);
+  await db.delete(userSubscriptions);
+  await db.delete(users);
+  await db.delete(subscriptionPackages);
+  await db.delete(rolePermissions);
+  await db.delete(permissions);
+  await db.delete(roles);
+  
+  console.log("Database reset completed!");
+}
 
 async function seedRoles() {
   console.log("Seeding roles...");
@@ -367,9 +392,13 @@ async function seedAccounts() {
   ]).onConflictDoNothing();
 }
 
-export async function runSeeder() {
+export async function runSeeder(reset = false) {
   try {
     console.log("Starting database seeding...");
+    
+    if (reset) {
+      await resetDatabase();
+    }
     
     await seedRoles();
     await seedPermissions();
@@ -391,7 +420,9 @@ export async function runSeeder() {
 
 // Run seeder if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runSeeder()
+  const shouldReset = process.argv.includes('--reset');
+  
+  runSeeder(shouldReset)
     .then(() => {
       console.log("Seeder finished successfully");
       process.exit(0);
