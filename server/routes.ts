@@ -207,6 +207,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/user/role", authenticateToken, async (req: any, res) => {
+    try {
+      const userWithRole = await storage.getUserWithRole(req.user.userId);
+      if (!userWithRole) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(userWithRole.role);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user role" });
+    }
+  });
+
   // Workspace routes
   app.get("/api/workspaces", authenticateToken, async (req: any, res) => {
     try {

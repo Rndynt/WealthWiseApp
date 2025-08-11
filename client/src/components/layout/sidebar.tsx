@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
+import { usePermissions, PERMISSIONS } from '@/lib/permissions';
 import { Workspace } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 
@@ -21,28 +22,29 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/accounts', label: 'Accounts', icon: Wallet },
-  { path: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { path: '/categories', label: 'Categories', icon: Tags },
-  { path: '/budget', label: 'Budget', icon: Calculator },
-  { path: '/reports', label: 'Reports', icon: BarChart3 },
-  { path: '/debts', label: 'Debts', icon: CreditCard },
-  { path: '/collaboration', label: 'Collaboration', icon: Users },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
+  { path: '/accounts', label: 'Accounts', icon: Wallet, permission: PERMISSIONS.ACCOUNTS_VIEW },
+  { path: '/transactions', label: 'Transactions', icon: ArrowLeftRight, permission: PERMISSIONS.TRANSACTIONS_VIEW },
+  { path: '/categories', label: 'Categories', icon: Tags, permission: PERMISSIONS.CATEGORIES_VIEW },
+  { path: '/budget', label: 'Budget', icon: Calculator, permission: PERMISSIONS.BUDGETS_VIEW },
+  { path: '/reports', label: 'Reports', icon: BarChart3, permission: PERMISSIONS.REPORTS_VIEW },
+  { path: '/debts', label: 'Debts', icon: CreditCard, permission: PERMISSIONS.DEBTS_VIEW },
+  { path: '/collaboration', label: 'Collaboration', icon: Users, permission: PERMISSIONS.COLLABORATION_VIEW },
 ];
 
 const adminNavigationItems = [
-  { path: '/users', label: 'User Management', icon: UserCog },
-  { path: '/roles', label: 'Role Management', icon: Shield },
-  { path: '/subscription-packages', label: 'Subscription Packages', icon: Package },
+  { path: '/users', label: 'User Management', icon: UserCog, permission: PERMISSIONS.USERS_VIEW },
+  { path: '/roles', label: 'Role Management', icon: Shield, permission: PERMISSIONS.ROLES_VIEW },
+  { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
 ];
 
 export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceChange }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { hasPermission, isAdmin, isRoot, isLoading: permissionsLoading } = usePermissions();
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
 
-  const { data: workspaces, isLoading } = useQuery<Workspace[]>({
+  const { data: workspaces, isLoading: workspacesLoading } = useQuery<Workspace[]>({
     queryKey: ['/api/workspaces'],
     enabled: !!user,
   });
@@ -97,7 +99,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             <Select 
               value={currentWorkspace?.id.toString() || ''} 
               onValueChange={handleWorkspaceChange}
-              disabled={isLoading}
+              disabled={workspacesLoading || permissionsLoading}
             >
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Select workspace..." />
@@ -125,6 +127,9 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         <div className="flex-1 overflow-y-auto">
           <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
+            // Skip item if user doesn't have permission
+            if (!hasPermission(item.permission)) return null;
+            
             const Icon = item.icon;
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
             
@@ -144,32 +149,37 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           </nav>
 
           {/* Admin Section */}
-          <div className="px-4 py-2">
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Admin
-              </h3>
-              <div className="space-y-1">
-                {adminNavigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location === item.path;
-                  
-                  return (
-                    <Link key={item.path} href={item.path} className={`
-                      flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                      ${isActive 
-                        ? 'bg-blue-50 text-primary' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }
-                    `}>
-                      <Icon size={18} />
-                      <span className="text-sm">{item.label}</span>
-                    </Link>
-                  );
-                })}
+          {(isAdmin || isRoot) && (
+            <div className="px-4 py-2">
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Admin
+                </h3>
+                <div className="space-y-1">
+                  {adminNavigationItems.map((item) => {
+                    // Skip item if user doesn't have permission  
+                    if (!hasPermission(item.permission)) return null;
+                    
+                    const Icon = item.icon;
+                    const isActive = location === item.path;
+                    
+                    return (
+                      <Link key={item.path} href={item.path} className={`
+                        flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+                        ${isActive 
+                          ? 'bg-blue-50 text-primary' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
+                      `}>
+                        <Icon size={18} />
+                        <span className="text-sm">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* User Info */}

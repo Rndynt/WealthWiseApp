@@ -1,132 +1,133 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { User } from '@shared/schema';
 
 // Hook untuk mengecek permission user
 export function usePermissions() {
   const { user } = useAuth();
   
-  const { data: permissions = [] } = useQuery({
+  const { data: permissions = [], isLoading: permissionsLoading } = useQuery({
     queryKey: ['/api/user/permissions'],
     enabled: !!user,
   });
 
+  const { data: userRole, isLoading: roleLoading } = useQuery({
+    queryKey: ['/api/user/role'],
+    enabled: !!user,
+  });
+
   const hasPermission = (permission: string) => {
-    return permissions.includes(permission);
+    if (permissionsLoading) return false;
+    return Array.isArray(permissions) && permissions.includes(permission);
   };
 
   const hasRole = (roleName: string) => {
-    if (!user) return false;
-    
-    // Simple role check based on user ID for now
-    // Root user (ID 1)
-    if (user.id === 1) return ['root'].includes(roleName);
-    // Admin user (ID 2)  
-    if (user.id === 2) return ['admin', 'user'].includes(roleName);
-    // Regular users (ID > 2)
-    return ['user'].includes(roleName);
+    if (roleLoading || !userRole) return false;
+    return userRole.name === roleName;
   };
 
   const isRoot = () => hasRole('root');
-  const isAdmin = () => hasRole('admin');
+  const isAdmin = () => hasRole('admin');  
   const isUser = () => hasRole('user');
+
+  // Alias untuk konsistensi - untuk mengecek akses halaman
+  const hasPageAccess = (resource: string) => {
+    return hasPermission(`${resource}.view`) || hasPermission(`${resource}.access`);
+  };
 
   return {
     permissions,
+    userRole,
     hasPermission,
     hasRole,
+    hasPageAccess,
     isRoot,
     isAdmin, 
-    isUser
+    isUser,
+    isLoading: permissionsLoading || roleLoading
   };
 }
 
-// Higher-order component untuk protect routes berdasarkan permission
-export function withPermission(permission: string) {
-  return function<T extends {}>(Component: React.ComponentType<T>) {
-    return function PermissionWrapper(props: T) {
-      const { hasPermission } = usePermissions();
-      
-      if (!hasPermission(permission)) {
-        return (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Akses Ditolak
-              </h3>
-              <p className="text-gray-600">
-                Anda tidak memiliki permission untuk mengakses halaman ini.
-              </p>
-            </div>
-          </div>
-        );
-      }
-
-      return <Component {...props} />;
-    };
-  };
-}
-
-// Higher-order component untuk protect routes berdasarkan role
-export function withRole(roleName: string) {
-  return function<T extends {}>(Component: React.ComponentType<T>) {
-    return function RoleWrapper(props: T) {
-      const { hasRole } = usePermissions();
-      
-      if (!hasRole(roleName)) {
-        return (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Akses Ditolak
-              </h3>
-              <p className="text-gray-600">
-                Anda tidak memiliki role {roleName} untuk mengakses halaman ini.
-              </p>
-            </div>
-          </div>
-        );
-      }
-
-      return <Component {...props} />;
-    };
-  };
-}
-
-// Component untuk conditional rendering berdasarkan permission
-export function PermissionGate({ 
-  permission, 
-  children, 
-  fallback = null 
-}: {
-  permission: string;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}) {
-  const { hasPermission } = usePermissions();
+// Constants untuk permission names
+export const PERMISSIONS = {
+  // Users
+  USERS_VIEW: 'users.view',
+  USERS_CREATE: 'users.create',
+  USERS_READ: 'users.read',
+  USERS_UPDATE: 'users.update',
+  USERS_DELETE: 'users.delete',
   
-  if (!hasPermission(permission)) {
-    return <>{fallback}</>;
-  }
+  // Roles
+  ROLES_VIEW: 'roles.view',
+  ROLES_CREATE: 'roles.create',
+  ROLES_READ: 'roles.read',
+  ROLES_UPDATE: 'roles.update',
+  ROLES_DELETE: 'roles.delete',
   
-  return <>{children}</>;
-}
+  // Permissions
+  PERMISSIONS_VIEW: 'permissions.view',
+  PERMISSIONS_READ: 'permissions.read',
+  
+  // Subscriptions
+  SUBSCRIPTIONS_VIEW: 'subscriptions.view',
+  SUBSCRIPTIONS_CREATE: 'subscriptions.create',
+  SUBSCRIPTIONS_READ: 'subscriptions.read',
+  SUBSCRIPTIONS_UPDATE: 'subscriptions.update',
+  SUBSCRIPTIONS_DELETE: 'subscriptions.delete',
+  
+  // Workspace
+  WORKSPACES_VIEW: 'workspaces.view',
+  WORKSPACES_CREATE: 'workspaces.create',
+  WORKSPACES_READ: 'workspaces.read',
+  WORKSPACES_UPDATE: 'workspaces.update',
+  WORKSPACES_DELETE: 'workspaces.delete',
+  
+  // Transactions
+  TRANSACTIONS_VIEW: 'transactions.view',
+  TRANSACTIONS_CREATE: 'transactions.create',
+  TRANSACTIONS_READ: 'transactions.read',
+  TRANSACTIONS_UPDATE: 'transactions.update',
+  TRANSACTIONS_DELETE: 'transactions.delete',
+  
+  // Budgets
+  BUDGETS_VIEW: 'budgets.view',
+  BUDGETS_CREATE: 'budgets.create',
+  BUDGETS_READ: 'budgets.read',
+  BUDGETS_UPDATE: 'budgets.update',
+  BUDGETS_DELETE: 'budgets.delete',
+  
+  // Debts
+  DEBTS_VIEW: 'debts.view',
+  DEBTS_CREATE: 'debts.create',
+  DEBTS_READ: 'debts.read',
+  DEBTS_UPDATE: 'debts.update',
+  DEBTS_DELETE: 'debts.delete',
+  
+  // Accounts
+  ACCOUNTS_VIEW: 'accounts.view',
+  ACCOUNTS_CREATE: 'accounts.create',
+  ACCOUNTS_READ: 'accounts.read',
+  ACCOUNTS_UPDATE: 'accounts.update',
+  ACCOUNTS_DELETE: 'accounts.delete',
+  
+  // Categories
+  CATEGORIES_VIEW: 'categories.view',
+  CATEGORIES_CREATE: 'categories.create',
+  CATEGORIES_READ: 'categories.read',
+  CATEGORIES_UPDATE: 'categories.update',
+  CATEGORIES_DELETE: 'categories.delete',
+  
+  // Reports
+  REPORTS_VIEW: 'reports.view',
+  REPORTS_READ: 'reports.read',
+  REPORTS_EXPORT: 'reports.export',
+  
+  // Collaboration
+  COLLABORATION_VIEW: 'collaboration.view',
+  COLLABORATION_MANAGE: 'collaboration.manage',
+  
+  // Dashboard
+  DASHBOARD_VIEW: 'dashboard.view',
+} as const;
 
-// Component untuk conditional rendering berdasarkan role
-export function RoleGate({ 
-  role, 
-  children, 
-  fallback = null 
-}: {
-  role: string;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}) {
-  const { hasRole } = usePermissions();
-  
-  if (!hasRole(role)) {
-    return <>{fallback}</>;
-  }
-  
-  return <>{children}</>;
-}
+// Type for permission values
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
