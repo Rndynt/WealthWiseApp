@@ -13,6 +13,9 @@ import Budget from "@/pages/budget";
 import Reports from "@/pages/reports";
 import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
+import UsersManagement from "@/pages/users";
+import RolesManagement from "@/pages/roles";
+import SubscriptionPackagesManagement from "@/pages/subscription-packages";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
@@ -72,6 +75,9 @@ function AppRouter() {
             <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
+            <Route path="/users" component={UsersManagement} />
+            <Route path="/roles" component={RolesManagement} />
+            <Route path="/subscription-packages" component={SubscriptionPackagesManagement} />
             <Route component={NotFound} />
           </Switch>
         </main>
