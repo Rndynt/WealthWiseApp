@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Calculator, TrendingUp, AlertTriangle, Target, Edit, Trash2 } from 'lucide-react';
+import { Plus, Calculator, TrendingUp, AlertTriangle, Target, Edit, Trash2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Budget as BudgetType, Category, Transaction } from '@/types';
 import AddBudgetModal from '@/components/modals/add-budget-modal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const iconMap: Record<string, string> = {
   'briefcase': '💼',
@@ -62,6 +63,12 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   const { data: transactions } = useQuery<Transaction[]>({
     queryKey: [`/api/workspaces/${workspaceId}/transactions`],
+    enabled: !!workspaceId,
+  });
+
+  // Check budget limits
+  const { data: budgetLimits } = useQuery({
+    queryKey: [`/api/workspaces/${workspaceId}/budget-limits`, selectedYear, selectedMonth],
     enabled: !!workspaceId,
   });
 
@@ -139,12 +146,42 @@ export default function Budget({ workspaceId }: BudgetProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Budget Planning</h1>
-        <Button onClick={() => setShowBudgetModal(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Set Budget
+        <div>
+          <h1 className="text-2xl font-bold">Budget Planning</h1>
+          {budgetLimits && (
+            <p className="text-sm text-gray-500 mt-1">
+              {budgetLimits.current}/{budgetLimits.limit || '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+            </p>
+          )}
+        </div>
+        <Button 
+          onClick={() => setShowBudgetModal(true)}
+          disabled={budgetLimits && !budgetLimits.canCreate}
+        >
+          {budgetLimits && !budgetLimits.canCreate ? (
+            <>
+              <Lock className="mr-2 h-4 w-4" />
+              Limit Reached
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2 h-4 w-4" />
+              Set Budget
+            </>
+          )}
         </Button>
       </div>
+
+      {/* Limit Warning */}
+      {budgetLimits && !budgetLimits.canCreate && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            Anda telah mencapai batas maksimal budget untuk periode ini pada paket {budgetLimits.limit === 2 ? 'Basic' : 'Standard'} ({budgetLimits.current}/{budgetLimits.limit}). 
+            Upgrade ke paket Premium untuk budget unlimited.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex gap-4">
         <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
@@ -249,9 +286,21 @@ export default function Budget({ workspaceId }: BudgetProps) {
             <p className="text-gray-600 mb-4">
               Start managing your finances by setting budgets for your expense categories.
             </p>
-            <Button onClick={() => setShowBudgetModal(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Set Your First Budget
+            <Button 
+              onClick={() => setShowBudgetModal(true)}
+              disabled={budgetLimits && !budgetLimits.canCreate}
+            >
+              {budgetLimits && !budgetLimits.canCreate ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Set Your First Budget
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>

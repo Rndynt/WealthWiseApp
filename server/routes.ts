@@ -55,7 +55,7 @@ const requireRole = (roleName: string) => {
       if (!user) {
         return res.status(404).json({ message: "User tidak ditemukan" });
       }
-      
+
       const role = await storage.getRole(user.roleId);
       if (!role || role.name !== roleName) {
         return res.status(403).json({ message: `Akses ditolak. Role ${roleName} diperlukan.` });
@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
@@ -81,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      
+
       // Create user with basic role
       const user = await storage.createUser({
         ...userData,
@@ -93,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const oneYearLater = new Date();
       oneYearLater.setFullYear(now.getFullYear() + 1);
-      
+
       await storage.createUserSubscription({
         userId: user.id,
         packageId: 1, // Basic package ID from seeder
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         ownerId: req.user.userId,
       });
-      
+
       const workspace = await storage.createWorkspace(workspaceData);
       res.json(workspace);
     } catch (error) {
@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workspaces/:workspaceId/categories", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      
+
       // Check category limits untuk basic package users
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       if (!categoryLimit.canCreate) {
@@ -286,12 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limits: categoryLimit
         });
       }
-      
+
       const categoryData = insertCategorySchema.parse({
         ...req.body,
         workspaceId,
       });
-      
+
       const category = await storage.createCategory(categoryData);
       res.json(category);
     } catch (error) {
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const category = await storage.updateCategory(id, updates);
       res.json(category);
     } catch (error) {
@@ -341,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workspaceId,
         balance: req.body.balance ? req.body.balance.toString() : "0",
       });
-      
+
       const account = await storage.createAccount(accountData);
       res.json(account);
     } catch (error) {
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.balance) {
         updates.balance = updates.balance.toString();
       }
-      
+
       const account = await storage.updateAccount(id, updates);
       res.json(account);
     } catch (error) {
@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: req.body.amount.toString(), // Convert amount to string
         date: new Date(req.body.date), // Ensure date is properly formatted
       });
-      
+
       const transaction = await storage.createTransaction(transactionData);
       res.json(transaction);
     } catch (error) {
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.amount) {
         updates.amount = updates.amount.toString();
       }
-      
+
       const transaction = await storage.updateTransaction(id, updates);
       res.json(transaction);
     } catch (error) {
@@ -457,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workspaceId = parseInt(req.params.workspaceId);
       const year = parseInt(req.query.year as string) || new Date().getFullYear();
       const month = req.query.month ? parseInt(req.query.month as string) : undefined;
-      
+
       const budgets = await storage.getWorkspaceBudgets(workspaceId, year, month);
       res.json(budgets);
     } catch (error) {
@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workspaceId = parseInt(req.params.workspaceId);
       const year = parseInt(req.body.year) || new Date().getFullYear();
       const month = req.body.month ? parseInt(req.body.month) : undefined;
-      
+
       // Check budget limits untuk basic package users
       const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       if (!budgetLimit.canCreate) {
@@ -479,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limits: budgetLimit
         });
       }
-      
+
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         workspaceId,
@@ -487,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         year,
         month,
       });
-      
+
       const budget = await storage.createBudget(budgetData);
       res.json(budget);
     } catch (error) {
@@ -513,7 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.amount) {
         updates.amount = updates.amount.toString();
       }
-      
+
       const budget = await storage.updateBudget(id, updates);
       res.json(budget);
     } catch (error) {
@@ -555,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         interestRate: req.body.interestRate ? req.body.interestRate.toString() : null,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
       });
-      
+
       const debt = await storage.createDebt(debtData);
       res.json(debt);
     } catch (error) {
@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.interestRate) {
         updates.interestRate = updates.interestRate.toString();
       }
-      
+
       const debt = await storage.updateDebt(id, updates);
       res.json(debt);
     } catch (error) {
@@ -769,12 +769,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       // Hash password if provided
       if (updates.password) {
         updates.password = await bcrypt.hash(updates.password, 10);
       }
-      
+
       const user = await storage.updateUser(id, updates);
       const { password, ...safeUser } = user;
       res.json(safeUser);
@@ -818,6 +818,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Subscription creation error:", error);
       res.status(400).json({ message: "Failed to create user subscription" });
+    }
+  });
+
+  // Check category limits
+  app.get('/api/workspaces/:workspaceId/category-limits', authenticateToken, async (req, res) => {
+    const workspaceId = parseInt(req.params.workspaceId);
+
+    try {
+      const limits = await storage.checkCategoryLimit(workspaceId, req.user.userId);
+      res.json(limits);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to check category limits' });
+    }
+  });
+
+  // Check budget limits
+  app.get('/api/workspaces/:workspaceId/budget-limits', authenticateToken, async (req, res) => {
+    const workspaceId = parseInt(req.params.workspaceId);
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+
+    try {
+      const limits = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
+      res.json(limits);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to check budget limits' });
     }
   });
 
