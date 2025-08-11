@@ -137,6 +137,10 @@ export interface IStorage {
   getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
+  
+  // Subscription validation
+  getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
+  canCreateWorkspace(userId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -585,6 +589,39 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  // Subscription validation
+  async getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null> {
+    // Get current user subscription with package details
+    const userSubResult = await this.getUserSubscriptionWithPackage(userId);
+    
+    // Count current workspaces for this user
+    const userWorkspaces = await this.getUserWorkspaces(userId);
+    const currentWorkspaces = userWorkspaces.length;
+    
+    if (userSubResult) {
+      // User has active subscription
+      return {
+        maxWorkspaces: userSubResult.package.maxWorkspaces,
+        maxMembers: userSubResult.package.maxMembers,
+        currentWorkspaces
+      };
+    } else {
+      // User has no subscription (free/basic user) - gets 1 workspace only
+      return {
+        maxWorkspaces: 1,
+        maxMembers: 1,
+        currentWorkspaces
+      };
+    }
+  }
+
+  async canCreateWorkspace(userId: number): Promise<boolean> {
+    const limits = await this.getUserSubscriptionLimits(userId);
+    if (!limits) return false;
+    
+    return limits.currentWorkspaces < limits.maxWorkspaces;
   }
 }
 
