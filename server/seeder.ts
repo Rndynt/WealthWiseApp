@@ -27,58 +27,83 @@ async function seedPermissions() {
   
   const permissionList = [
     // User management
+    { name: "users.view", description: "Mengakses halaman manajemen user", resource: "users", action: "view" },
     { name: "users.create", description: "Membuat user baru", resource: "users", action: "create" },
     { name: "users.read", description: "Melihat data user", resource: "users", action: "read" },
     { name: "users.update", description: "Mengupdate data user", resource: "users", action: "update" },
     { name: "users.delete", description: "Menghapus user", resource: "users", action: "delete" },
     
     // Role management
+    { name: "roles.view", description: "Mengakses halaman manajemen role", resource: "roles", action: "view" },
     { name: "roles.create", description: "Membuat role baru", resource: "roles", action: "create" },
     { name: "roles.read", description: "Melihat data role", resource: "roles", action: "read" },
     { name: "roles.update", description: "Mengupdate role", resource: "roles", action: "update" },
     { name: "roles.delete", description: "Menghapus role", resource: "roles", action: "delete" },
     
+    // Permission management
+    { name: "permissions.view", description: "Mengakses halaman manajemen permission", resource: "permissions", action: "view" },
+    { name: "permissions.read", description: "Melihat data permission", resource: "permissions", action: "read" },
+    
     // Subscription management
+    { name: "subscriptions.view", description: "Mengakses halaman paket langganan", resource: "subscriptions", action: "view" },
     { name: "subscriptions.create", description: "Membuat paket langganan", resource: "subscriptions", action: "create" },
     { name: "subscriptions.read", description: "Melihat paket langganan", resource: "subscriptions", action: "read" },
     { name: "subscriptions.update", description: "Mengupdate paket langganan", resource: "subscriptions", action: "update" },
     { name: "subscriptions.delete", description: "Menghapus paket langganan", resource: "subscriptions", action: "delete" },
     
     // Workspace management
+    { name: "workspaces.view", description: "Mengakses halaman workspace", resource: "workspaces", action: "view" },
     { name: "workspaces.create", description: "Membuat workspace", resource: "workspaces", action: "create" },
     { name: "workspaces.read", description: "Melihat workspace", resource: "workspaces", action: "read" },
     { name: "workspaces.update", description: "Mengupdate workspace", resource: "workspaces", action: "update" },
     { name: "workspaces.delete", description: "Menghapus workspace", resource: "workspaces", action: "delete" },
     
-    // Financial data
+    // Financial data - Transactions
+    { name: "transactions.view", description: "Mengakses halaman transaksi", resource: "transactions", action: "view" },
     { name: "transactions.create", description: "Membuat transaksi", resource: "transactions", action: "create" },
     { name: "transactions.read", description: "Melihat transaksi", resource: "transactions", action: "read" },
     { name: "transactions.update", description: "Mengupdate transaksi", resource: "transactions", action: "update" },
     { name: "transactions.delete", description: "Menghapus transaksi", resource: "transactions", action: "delete" },
     
+    // Budget management
+    { name: "budgets.view", description: "Mengakses halaman budget", resource: "budgets", action: "view" },
     { name: "budgets.create", description: "Membuat budget", resource: "budgets", action: "create" },
     { name: "budgets.read", description: "Melihat budget", resource: "budgets", action: "read" },
     { name: "budgets.update", description: "Mengupdate budget", resource: "budgets", action: "update" },
     { name: "budgets.delete", description: "Menghapus budget", resource: "budgets", action: "delete" },
     
+    // Debt management
+    { name: "debts.view", description: "Mengakses halaman hutang", resource: "debts", action: "view" },
     { name: "debts.create", description: "Membuat data hutang", resource: "debts", action: "create" },
     { name: "debts.read", description: "Melihat data hutang", resource: "debts", action: "read" },
     { name: "debts.update", description: "Mengupdate data hutang", resource: "debts", action: "update" },
     { name: "debts.delete", description: "Menghapus data hutang", resource: "debts", action: "delete" },
     
+    // Account management
+    { name: "accounts.view", description: "Mengakses halaman akun", resource: "accounts", action: "view" },
     { name: "accounts.create", description: "Membuat akun", resource: "accounts", action: "create" },
     { name: "accounts.read", description: "Melihat akun", resource: "accounts", action: "read" },
     { name: "accounts.update", description: "Mengupdate akun", resource: "accounts", action: "update" },
     { name: "accounts.delete", description: "Menghapus akun", resource: "accounts", action: "delete" },
     
+    // Category management
+    { name: "categories.view", description: "Mengakses halaman kategori", resource: "categories", action: "view" },
     { name: "categories.create", description: "Membuat kategori", resource: "categories", action: "create" },
     { name: "categories.read", description: "Melihat kategori", resource: "categories", action: "read" },
     { name: "categories.update", description: "Mengupdate kategori", resource: "categories", action: "update" },
     { name: "categories.delete", description: "Menghapus kategori", resource: "categories", action: "delete" },
     
     // Reports
+    { name: "reports.view", description: "Mengakses halaman laporan", resource: "reports", action: "view" },
     { name: "reports.read", description: "Melihat laporan", resource: "reports", action: "read" },
     { name: "reports.export", description: "Export laporan", resource: "reports", action: "export" },
+    
+    // Collaboration
+    { name: "collaboration.view", description: "Mengakses halaman kolaborasi", resource: "collaboration", action: "view" },
+    { name: "collaboration.manage", description: "Mengelola anggota workspace", resource: "collaboration", action: "manage" },
+    
+    // Dashboard
+    { name: "dashboard.view", description: "Mengakses dashboard", resource: "dashboard", action: "view" },
   ];
   
   await db.insert(permissions).values(permissionList).onConflictDoNothing();
