@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -37,6 +38,11 @@ interface PackageFormData {
   features: string[];
   maxWorkspaces: number;
   maxMembers: number;
+  maxCategories: number | null;
+  maxBudgets: number | null;
+  maxSharedWorkspaces: number | null;
+  canCreateSharedWorkspace: boolean;
+  type: string;
   description: string;
   isActive: boolean;
 }
@@ -50,6 +56,11 @@ export default function SubscriptionPackagesManagement() {
     features: [''],
     maxWorkspaces: 1,
     maxMembers: 1,
+    maxCategories: null,
+    maxBudgets: null,
+    maxSharedWorkspaces: 0,
+    canCreateSharedWorkspace: false,
+    type: 'personal',
     description: '',
     isActive: true
   });
