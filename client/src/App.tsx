@@ -27,7 +27,7 @@ import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
-import { TransactionFAB } from "@/components/ui/floating-action-button";
+
 import AddTransactionModal from "@/components/modals/add-transaction-modal";
 import AddAccountModal from "@/components/modals/add-account-modal";
 import AddDebtModal from "@/components/modals/add-debt-modal";
@@ -82,17 +82,9 @@ function AppRouter() {
       />
 
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        <Header 
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          onAddAction={() => {
-            const path = window.location.pathname;
-            if (path === '/transactions') setShowTransactionModal(true);
-            else if (path === '/accounts') setShowAccountModal(true);
-            else if (path === '/debts') setShowDebtModal(true);
-          }}
-        />
+        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="p-6">
+        <main className="p-4 sm:p-6">
           <Switch>
             <Route path="/" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
             <Route path="/dashboard" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
@@ -141,14 +133,6 @@ function AppRouter() {
             <Route component={NotFound} />
           </Switch>
         </main>
-
-        {/* Floating Action Button */}
-        <TransactionFAB
-          onAddTransaction={() => setShowTransactionModal(true)}
-          onAddAccount={() => setShowAccountModal(true)}
-          onAddDebt={() => setShowDebtModal(true)}
-          className="fixed bottom-4 right-4 z-40"
-        />
 
         {/* Modals */}
         <AddTransactionModal 

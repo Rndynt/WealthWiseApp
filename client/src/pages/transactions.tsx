@@ -138,12 +138,20 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
 
   return (
     <PageContainer>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
-        <Button onClick={() => setShowTransactionModal(true)} className="sm:hidden">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Transactions</h1>
+        
+        {/* Add Transaction button - centered on mobile, right-aligned on desktop */}
+        <div className="flex justify-center sm:justify-end mb-4">
+          <Button 
+            onClick={() => setShowTransactionModal(true)}
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Budget as BudgetType, Category, Transaction } from '@/types';
 import AddBudgetModal from '@/components/modals/add-budget-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageContainer } from '@/components/ui/page-container';
 
 const iconMap: Record<string, string> = {
   'briefcase': '💼',
@@ -45,9 +46,11 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   if (!workspaceId) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Please select a workspace to view budget</p>
-      </div>
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view budget</p>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -123,53 +126,57 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Budget Planning</h1>
+      <PageContainer>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Budget Planning</h1>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardContent className="p-4">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Budget Planning</h1>
-          {budgetLimits && (
-            <p className="text-sm text-gray-500 mt-1">
-              {budgetLimits.current}/{budgetLimits.limit || '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
-            </p>
-          )}
+    <PageContainer>
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Budget Planning</h1>
+            {budgetLimits && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {budgetLimits.current}/{budgetLimits.limit || '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+              </p>
+            )}
+          </div>
+          <Button 
+            onClick={() => setShowBudgetModal(true)}
+            disabled={budgetLimits && !budgetLimits.canCreate}
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            {budgetLimits && !budgetLimits.canCreate ? (
+              <>
+                <Lock className="mr-2 h-4 w-4" />
+                Limit Reached
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Set Budget
+              </>
+            )}
+          </Button>
         </div>
-        <Button 
-          onClick={() => setShowBudgetModal(true)}
-          disabled={budgetLimits && !budgetLimits.canCreate}
-        >
-          {budgetLimits && !budgetLimits.canCreate ? (
-            <>
-              <Lock className="mr-2 h-4 w-4" />
-              Limit Reached
-            </>
-          ) : (
-            <>
-              <Plus className="mr-2 h-4 w-4" />
-              Set Budget
-            </>
-          )}
-        </Button>
       </div>
 
       {/* Limit Warning */}
@@ -311,6 +318,6 @@ export default function Budget({ workspaceId }: BudgetProps) {
         onOpenChange={setShowBudgetModal}
         workspaceId={workspaceId}
       />
-    </div>
+    </PageContainer>
   );
 }
