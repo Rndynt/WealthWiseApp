@@ -205,31 +205,85 @@ async function seedSubscriptionPackages() {
       maxMembers: 1,
       maxCategories: 3,
       maxBudgets: 2,
+      maxSharedWorkspaces: 0,
+      canCreateSharedWorkspace: false,
+      type: "personal",
       description: "Paket gratis untuk pengelolaan keuangan pribadi",
       isActive: true
     },
     {
       id: 2,
-      name: "premium",
-      price: "99000.00",
+      name: "pro",
+      price: "15000.00",
       features: [
-        "5 workspace",
-        "Kolaborasi hingga 10 anggota", 
-        "Unlimited transaksi",
+        "1 workspace pribadi",
         "Unlimited kategori",
         "Unlimited budget plan",
-        "Advanced budget tracking",
-        "Debt & credit management",
+        "Unlimited transaksi",
         "Advanced reports & analytics",
         "Export ke Excel & CSV",
-        "Priority support",
-        "Backup otomatis"
+        "Priority support"
       ],
-      maxWorkspaces: 5,
+      maxWorkspaces: 1,
+      maxMembers: 1,
+      maxCategories: null, // unlimited
+      maxBudgets: null, // unlimited
+      maxSharedWorkspaces: 0,
+      canCreateSharedWorkspace: false,
+      type: "personal",
+      description: "Paket personal pro untuk fitur unlimited",
+      isActive: true
+    },
+    {
+      id: 3,
+      name: "professional",
+      price: "25000.00",
+      features: [
+        "1 workspace pribadi unlimited",
+        "1 shared workspace",
+        "Kolaborasi hingga 3 anggota per shared workspace",
+        "Unlimited kategori",
+        "Unlimited budget plan",
+        "Advanced collaboration tools",
+        "Team reports & analytics",
+        "Export ke Excel & CSV",
+        "Priority support"
+      ],
+      maxWorkspaces: 1,
+      maxMembers: 1,
+      maxCategories: null, // unlimited
+      maxBudgets: null, // unlimited
+      maxSharedWorkspaces: 1,
+      canCreateSharedWorkspace: true,
+      type: "hybrid",
+      description: "Paket professional dengan 1 shared workspace",
+      isActive: true
+    },
+    {
+      id: 4,
+      name: "business",
+      price: "50000.00",
+      features: [
+        "Unlimited workspace pribadi",
+        "Unlimited shared workspace",
+        "Kolaborasi hingga 10 anggota per shared workspace",
+        "Unlimited kategori",
+        "Unlimited budget plan",
+        "Advanced team management",
+        "Custom roles & permissions",
+        "Advanced analytics & insights",
+        "API access",
+        "White-label options",
+        "Priority support"
+      ],
+      maxWorkspaces: null, // unlimited
       maxMembers: 10,
       maxCategories: null, // unlimited
       maxBudgets: null, // unlimited
-      description: "Paket premium untuk keluarga dan bisnis kecil",
+      maxSharedWorkspaces: null, // unlimited
+      canCreateSharedWorkspace: true,
+      type: "hybrid",
+      description: "Paket business untuk tim dan organisasi",
       isActive: true
     }
   ]).onConflictDoNothing();

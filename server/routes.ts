@@ -240,14 +240,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user can create more workspaces
-      const canCreate = await storage.canCreateWorkspace(req.user.userId);
-      if (!canCreate) {
-        const limits = await storage.getUserSubscriptionLimits(req.user.userId);
-        return res.status(403).json({ 
-          message: "Anda telah mencapai batas maksimal workspace. Upgrade ke paket premium untuk membuat workspace lebih banyak.",
-          limits 
-        });
+      const { type } = req.body; // 'personal' | 'shared'
+      
+      if (type === 'shared') {
+        // Check if user can create shared workspaces
+        const userSub = await storage.getUserSubscriptionWithPackage(req.user.userId);
+        if (!userSub || !userSub.package.canCreateSharedWorkspace) {
+          return res.status(403).json({ 
+            message: "Anda perlu upgrade ke paket Professional atau Business untuk membuat shared workspace." 
+          });
+        }
+
+        // Check shared workspace limits
+        const ownedSharedSubs = await storage.getUserOwnedWorkspaceSubscriptions(req.user.userId);
+        const maxSharedWorkspaces = userSub.package.maxSharedWorkspaces;
+        
+        if (maxSharedWorkspaces !== null && ownedSharedSubs.length >= maxSharedWorkspaces) {
+          return res.status(403).json({ 
+            message: `Anda telah mencapai batas maksimal shared workspace (${ownedSharedSubs.length}/${maxSharedWorkspaces}). Upgrade ke paket Business untuk unlimited shared workspace.` 
+          });
+        }
+      } else {
+        // Check personal workspace limits
+        const canCreate = await storage.canCreateWorkspace(req.user.userId);
+        if (!canCreate) {
+          const limits = await storage.getUserSubscriptionLimits(req.user.userId);
+          return res.status(403).json({ 
+            message: "Anda telah mencapai batas maksimal workspace pribadi. Upgrade paket untuk membuat workspace lebih banyak.",
+            limits 
+          });
+        }
       }
 
       const workspaceData = insertWorkspaceSchema.parse({
@@ -256,6 +278,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const workspace = await storage.createWorkspace(workspaceData);
+      
+      // If shared workspace, create workspace subscription
+      if (type === 'shared') {
+        const now = new Date();
+        const oneMonthLater = new Date();
+        oneMonthLater.setMonth(now.getMonth() + 1);
+
+        await storage.createWorkspaceSubscription({
+          workspaceId: workspace.id,
+          packageId: 3, // Professional package by default for shared workspaces
+          ownerId: req.user.userId,
+          startDate: now,
+          endDate: oneMonthLater,
+          status: "active"
+        });
+      }
+      
       res.json(workspace);
     } catch (error) {
       console.error("Workspace creation error:", error);
@@ -801,6 +840,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user subscription" });
+    }
+  });
+
+  // Workspace Subscriptions
+  app.get("/api/workspaces/:workspaceId/subscription", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const result = await storage.getWorkspaceSubscriptionWithPackage(workspaceId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get workspace subscription" });
+    }
+  });
+
+  app.post("/api/workspaces/:workspaceId/subscription", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      
+      // Check if user can create shared workspace
+      const userSub = await storage.getUserSubscriptionWithPackage(req.user.userId);
+      if (!userSub || !userSub.package.canCreateSharedWorkspace) {
+        return res.status(403).json({ 
+          message: "Anda perlu upgrade ke paket Professional atau Business untuk membuat shared workspace." 
+        });
+      }
+
+      const subscriptionData = {
+        ...req.body,
+        workspaceId,
+        ownerId: req.user.userId,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+      };
+      
+      const subscription = await storage.createWorkspaceSubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Workspace subscription creation error:", error);
+      res.status(400).json({ message: "Failed to create workspace subscription" });
+    }
+  });
+
+  app.get("/api/users/:userId/workspace-subscriptions", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscriptions = await storage.getUserOwnedWorkspaceSubscriptions(userId);
+      res.json(subscriptions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user workspace subscriptions" });
     }
   });
 
