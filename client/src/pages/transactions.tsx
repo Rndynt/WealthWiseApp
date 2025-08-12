@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Transaction, Account, Category } from '@/types';
 import AddTransactionModal from '@/components/modals/add-transaction-modal';
 import { format } from 'date-fns';
+import { PageContainer, TableContainer } from '@/components/ui/page-container';
 
 interface TransactionsProps {
   workspaceId: number | undefined;
@@ -45,9 +46,11 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
 
   if (!workspaceId) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Please select a workspace to view transactions</p>
-      </div>
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view transactions</p>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -113,37 +116,37 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Transactions</h1>
+      <PageContainer>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardContent className="p-4">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Transactions</h1>
-        <Button onClick={() => setShowTransactionModal(true)}>
+    <PageContainer>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+        <Button onClick={() => setShowTransactionModal(true)} className="sm:hidden">
           <Plus className="mr-2 h-4 w-4" />
           Add Transaction
         </Button>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -156,7 +159,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
           </div>
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
@@ -275,6 +278,6 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
         onOpenChange={setShowTransactionModal}
         workspaceId={workspaceId}
       />
-    </div>
+    </PageContainer>
   );
 }

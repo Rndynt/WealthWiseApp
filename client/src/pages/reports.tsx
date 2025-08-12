@@ -16,6 +16,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Transaction, Budget, Category, Debt } from '@/types';
+import { PageContainer, CardContainer } from '@/components/ui/page-container';
 
 const iconMap: Record<string, string> = {
   'briefcase': '💼',
@@ -52,9 +53,11 @@ export default function Reports({ workspaceId }: ReportsProps) {
 
   if (!workspaceId) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Please select a workspace to view reports</p>
-      </div>
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view reports</p>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -196,12 +199,12 @@ export default function Reports({ workspaceId }: ReportsProps) {
   const years = Array.from({ length: 5 }, (_, i) => currentYear + i - 2);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Financial Reports</h1>
-        <div className="flex gap-2">
+    <PageContainer>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Reports</h1>
+        <div className="flex flex-wrap gap-2">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,7 +215,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
 
           {selectedPeriod === 'monthly' && (
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-full sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -226,7 +229,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
           )}
 
           <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-            <SelectTrigger className="w-24">
+            <SelectTrigger className="w-full sm:w-24">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -241,7 +244,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
       </div>
 
       {/* Income vs Expense Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -414,6 +417,6 @@ export default function Reports({ workspaceId }: ReportsProps) {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }
