@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  ChevronDown, Plus, Shield, UserCog, Package, User, Crown, Star
+  Crown, Plus, Shield, UserCog, Package, User, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,7 +57,7 @@ function UserSubscriptionBadge() {
 
   // Get package name from user subscription or default to 'basic'
   const packageName = userSubscription?.package?.name || subscriptionLimits?.packageName || 'basic';
-  
+
   const getBadgeVariant = () => {
     switch (packageName?.toLowerCase()) {
       case 'premium':
@@ -186,10 +186,10 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           {navigationItems.map((item) => {
             // Skip item if user doesn't have permission
             if (!hasPermission(item.permission)) return null;
-            
+
             const Icon = item.icon;
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
-            
+
             return (
               <Link key={item.path} href={item.path} className={`
                 flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
@@ -218,10 +218,10 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
                       {adminNavigationItems.map((item) => {
                         // Skip item if user doesn't have permission  
                         if (!hasPermission(item.permission)) return null;
-                        
+
                         const Icon = item.icon;
                         const isActive = location === item.path;
-                        
+
                         return (
                           <Link key={item.path} href={item.path} className={`
                             flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
