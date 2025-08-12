@@ -15,6 +15,20 @@ import { usePermissions, PERMISSIONS } from '@/lib/permissions';
 import { Workspace } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 
+// UserSubscriptionBadge component
+function UserSubscriptionBadge({ packageName }: { packageName?: string }) {
+  if (!packageName) return null;
+  
+  const badgeVariant = packageName.toLowerCase() === 'premium' ? 'default' : 'secondary';
+  const badgeText = packageName.toLowerCase() === 'premium' ? 'Premium' : 'Basic';
+  
+  return (
+    <Badge variant={badgeVariant} className="text-xs">
+      {badgeText}
+    </Badge>
+  );
+}
+
 interface SidebarProps {
   open: boolean;
   onToggle: () => void;
