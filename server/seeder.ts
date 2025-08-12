@@ -226,8 +226,8 @@ async function seedSubscriptionPackages() {
       ],
       maxWorkspaces: 1,
       maxMembers: 1,
-      maxCategories: null, // unlimited
-      maxBudgets: null, // unlimited
+      maxCategories: 999999, // unlimited (using large number)
+      maxBudgets: 999999, // unlimited (using large number)
       maxSharedWorkspaces: 0,
       canCreateSharedWorkspace: false,
       type: "personal",
@@ -252,8 +252,8 @@ async function seedSubscriptionPackages() {
       ],
       maxWorkspaces: 1,
       maxMembers: 7,
-      maxCategories: null, // unlimited
-      maxBudgets: null, // unlimited
+      maxCategories: 999999, // unlimited (using large number)
+      maxBudgets: 999999, // unlimited (using large number)
       maxSharedWorkspaces: 1,
       canCreateSharedWorkspace: true,
       type: "hybrid",
@@ -277,11 +277,11 @@ async function seedSubscriptionPackages() {
         "White-label options",
         "Dedicated support"
       ],
-      maxWorkspaces: null, // unlimited
+      maxWorkspaces: 999999, // unlimited (using large number)
       maxMembers: 15,
-      maxCategories: null, // unlimited
-      maxBudgets: null, // unlimited
-      maxSharedWorkspaces: null, // unlimited
+      maxCategories: 999999, // unlimited (using large number)
+      maxBudgets: 999999, // unlimited (using large number)
+      maxSharedWorkspaces: 999999, // unlimited (using large number)
       canCreateSharedWorkspace: true,
       type: "hybrid",
       description: "Paket business untuk tim dan organisasi",
