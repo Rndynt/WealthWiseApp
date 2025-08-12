@@ -13,8 +13,10 @@ interface SubscriptionPackage {
   name: string;
   price: string;
   features: string[];
-  maxWorkspaces: number;
-  maxMembers: number;
+  maxWorkspaces: number | null;
+  maxMembers: number | null;
+  maxCategories: number | null;
+  maxBudgets: number | null;
   maxSharedWorkspaces: number | null;
   canCreateSharedWorkspace: boolean;
   type: string;
@@ -221,10 +223,34 @@ export default function SubscriptionPage() {
                 ))}
               </tr>
               <tr>
+                <td className="border border-gray-300 p-3 font-medium">Max Anggota per Shared Workspace</td>
+                {packages?.filter(pkg => pkg.isActive).map(pkg => (
+                  <td key={pkg.id} className="border border-gray-300 p-3 text-center">
+                    {pkg.canCreateSharedWorkspace ? (pkg.maxMembers || '∞') : '✗'}
+                  </td>
+                ))}
+              </tr>
+              <tr>
                 <td className="border border-gray-300 p-3 font-medium">Kategori</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
                     {pkg.maxCategories || '∞'}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="border border-gray-300 p-3 font-medium">Budget Plans</td>
+                {packages?.filter(pkg => pkg.isActive).map(pkg => (
+                  <td key={pkg.id} className="border border-gray-300 p-3 text-center">
+                    {pkg.maxBudgets || '∞'}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="border border-gray-300 p-3 font-medium">Tipe Paket</td>
+                {packages?.filter(pkg => pkg.isActive).map(pkg => (
+                  <td key={pkg.id} className="border border-gray-300 p-3 text-center capitalize">
+                    {pkg.type}
                   </td>
                 ))}
               </tr>

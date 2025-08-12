@@ -241,56 +241,17 @@ async function seedSubscriptionPackages() {
       features: [
         "1 workspace pribadi unlimited",
         "1 shared workspace",
-        "Maksimal 7 anggota per shared workspace",
-        "Unlimited kategori & budget",
-        "Advanced collaboration tools",
-        "Real-time sync",
-        "Premium support"
-      ],
-      maxWorkspaces: 1,
-      maxMembers: 7,
-      maxCategories: null,
-      maxBudgets: null,
-      maxSharedWorkspaces: 1,
-      canCreateSharedWorkspace: true,
-      type: "hybrid",
-      description: "Paket professional untuk collaboration dan sharing",
-      isActive: true
-    },
-    {
-      id: 4,
-      name: "business",
-      price: "50000.00",
-      features: [
-        "Multiple workspace pribadi",
-        "Unlimited shared workspace",
-        "Unlimited anggota",
-        "Advanced analytics & reports",
-        "API access",
-        "Custom integrations",
-        "Priority support",
-        "Team management tools"
-      ],
-      maxWorkspaces: null, // unlimited
-      maxMembers: null, // unlimited
-      maxCategories: null,
-      maxBudgets: null,
-      maxSharedWorkspaces: null, // unlimited
-      canCreateSharedWorkspace: true,
-      type: "hybrid",
-      description: "Paket business untuk enterprise collaboration",
-      isActive: true
-    }
-        "Kolaborasi hingga 3 anggota per shared workspace",
+        "Kolaborasi hingga 7 anggota per shared workspace",
         "Unlimited kategori",
         "Unlimited budget plan",
         "Advanced collaboration tools",
         "Team reports & analytics",
+        "Real-time sync",
         "Export ke Excel & CSV",
         "Priority support"
       ],
       maxWorkspaces: 1,
-      maxMembers: 1,
+      maxMembers: 7,
       maxCategories: null, // unlimited
       maxBudgets: null, // unlimited
       maxSharedWorkspaces: 1,
@@ -306,7 +267,7 @@ async function seedSubscriptionPackages() {
       features: [
         "Unlimited workspace pribadi",
         "Unlimited shared workspace",
-        "Kolaborasi hingga 10 anggota per shared workspace",
+        "Kolaborasi hingga 15 anggota per shared workspace",
         "Unlimited kategori",
         "Unlimited budget plan",
         "Advanced team management",
@@ -314,10 +275,10 @@ async function seedSubscriptionPackages() {
         "Advanced analytics & insights",
         "API access",
         "White-label options",
-        "Priority support"
+        "Dedicated support"
       ],
       maxWorkspaces: null, // unlimited
-      maxMembers: 10,
+      maxMembers: 15,
       maxCategories: null, // unlimited
       maxBudgets: null, // unlimited
       maxSharedWorkspaces: null, // unlimited

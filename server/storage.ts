@@ -191,7 +191,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: workspaces.createdAt,
       })
       .from(workspaces)
-      .leftJoin(workspaceMembers, eq(workspaces.id, workspaceMembers.workspaceId))
+      .innerJoin(workspaceMembers, eq(workspaces.id, workspaceMembers.workspaceId))
       .where(eq(workspaceMembers.userId, userId));
 
     return results;

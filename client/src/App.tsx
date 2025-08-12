@@ -55,8 +55,8 @@ function AppRouter() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar 
-        open={sidebarOpen} 
+      <Sidebar
+        open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         currentWorkspace={currentWorkspace}
         onWorkspaceChange={setCurrentWorkspace}
@@ -78,8 +78,22 @@ function AppRouter() {
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
             <Route path="/users" component={UsersManagement} />
             <Route path="/roles" component={RolesManagement} />
-            <Route path="/subscription-packages" component={SubscriptionPackagesManagement} />
-            <Route path="/subscription" component={SubscriptionPage} />
+            <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <SubscriptionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription-packages"
+            element={
+              <ProtectedRoute requiredPermission="subscriptions.read">
+                <SubscriptionPackagesManagement />
+              </ProtectedRoute>
+            }
+          />
             <Route component={NotFound} />
           </Switch>
         </main>

@@ -177,8 +177,13 @@ export default function SubscriptionPackagesManagement() {
       name: pkg.name,
       price: pkg.price,
       features: pkg.features.length > 0 ? pkg.features : [''],
-      maxWorkspaces: pkg.maxWorkspaces,
-      maxMembers: pkg.maxMembers,
+      maxWorkspaces: pkg.maxWorkspaces || 1,
+      maxMembers: pkg.maxMembers || 1,
+      maxCategories: pkg.maxCategories,
+      maxBudgets: pkg.maxBudgets,
+      maxSharedWorkspaces: pkg.maxSharedWorkspaces || 0,
+      canCreateSharedWorkspace: pkg.canCreateSharedWorkspace,
+      type: pkg.type,
       description: pkg.description,
       isActive: pkg.isActive
     });
@@ -299,6 +304,32 @@ export default function SubscriptionPackagesManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label htmlFor="maxCategories">Max Kategori</Label>
+                  <Input
+                    id="maxCategories"
+                    type="number"
+                    min="1"
+                    value={formData.maxCategories || ''}
+                    onChange={(e) => setFormData({ ...formData, maxCategories: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="Kosong = unlimited"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="maxBudgets">Max Budget Plans</Label>
+                  <Input
+                    id="maxBudgets"
+                    type="number"
+                    min="1"
+                    value={formData.maxBudgets || ''}
+                    onChange={(e) => setFormData({ ...formData, maxBudgets: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="Kosong = unlimited"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label htmlFor="maxSharedWorkspaces">Max Shared Workspace</Label>
                   <Input
                     id="maxSharedWorkspaces"
@@ -323,6 +354,15 @@ export default function SubscriptionPackagesManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="canCreateSharedWorkspace"
+                  checked={formData.canCreateSharedWorkspace}
+                  onCheckedChange={(checked) => setFormData({ ...formData, canCreateSharedWorkspace: checked })}
+                />
+                <Label htmlFor="canCreateSharedWorkspace">Dapat Membuat Shared Workspace</Label>
               </div>
               
               <div>
@@ -421,12 +461,32 @@ export default function SubscriptionPackagesManagement() {
             <CardContent>
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span>Max Workspace:</span>
-                  <span className="font-medium">{pkg.maxWorkspaces}</span>
+                  <span>Max Workspace Pribadi:</span>
+                  <span className="font-medium">{pkg.maxWorkspaces || '∞'}</span>
+                </div>
+                {pkg.canCreateSharedWorkspace && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Max Shared Workspace:</span>
+                      <span className="font-medium">{pkg.maxSharedWorkspaces || '∞'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Max Anggota per Shared:</span>
+                      <span className="font-medium">{pkg.maxMembers || '∞'}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span>Max Kategori:</span>
+                  <span className="font-medium">{pkg.maxCategories || '∞'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Max Anggota:</span>
-                  <span className="font-medium">{pkg.maxMembers}</span>
+                  <span>Max Budget Plans:</span>
+                  <span className="font-medium">{pkg.maxBudgets || '∞'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Tipe:</span>
+                  <span className="font-medium capitalize">{pkg.type}</span>
                 </div>
               </div>
 
