@@ -151,9 +151,8 @@ export default function Budget({ workspaceId }: BudgetProps) {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Budget Planning</h1>
             {budgetLimits && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {budgetLimits.current}/{budgetLimits.limit || '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
               </p>
             )}

@@ -258,22 +258,20 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-t border-gray-200 mt-auto">
-          <UserSubscriptionBadge />
-          
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto space-y-4">
           {/* Upgrade Button for Non-Admin Users */}
           {!isAdmin() && !isRoot() && (
-            <div className="mb-3">
-              <Link href="/upgrade">
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                  <Zap size={16} className="mr-2" />
-                  Upgrade Plan
-                </Button>
-              </Link>
-            </div>
+            <Link href="/upgrade">
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium">
+                <Zap size={16} className="mr-2" />
+                Upgrade Plan
+              </Button>
+            </Link>
           )}
           
-          <div className="flex items-center space-x-3 mt-3">
+          <UserSubscriptionBadge />
+          
+          <div className="flex items-center space-x-3">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                 {user?.name?.charAt(0) || 'U'}
