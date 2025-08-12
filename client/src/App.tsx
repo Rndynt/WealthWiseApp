@@ -87,18 +87,26 @@ function AppRouter() {
             <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
-            <Route path="/users" component={UsersManagement} />
-            <Route path="/roles" component={RolesManagement} />
+            
+            {/* Role Root specific menu */}
+            {user.role === 'root' && (
+              <>
+                <Route path="/users" component={UsersManagement} />
+                <Route path="/roles" component={RolesManagement} />
+                <Route path="/subscription-packages" component={() => 
+                  <ProtectedRoute>
+                    <SubscriptionPackagesManagement />
+                  </ProtectedRoute>
+                } />
+              </>
+            )}
+
             <Route path="/subscription" component={() => 
               <ProtectedRoute>
                 <SubscriptionPage />
               </ProtectedRoute>
             } />
-            <Route path="/subscription-packages" component={() => 
-              <ProtectedRoute>
-                <SubscriptionPackagesManagement />
-              </ProtectedRoute>
-            } />
+            
             <Route path="/profile" component={ProfilePage} />
             <Route path="/settings" component={() => 
               <ProtectedRoute>
@@ -108,14 +116,15 @@ function AppRouter() {
             <Route component={NotFound} />
           </Switch>
         </main>
-        
+
         {/* Floating Action Button */}
         <TransactionFAB
           onAddTransaction={() => setShowTransactionModal(true)}
           onAddAccount={() => setShowAccountModal(true)}
           onAddDebt={() => setShowDebtModal(true)}
+          className="fixed bottom-4 right-4 z-40"
         />
-        
+
         {/* Modals */}
         <AddTransactionModal 
           open={showTransactionModal} 

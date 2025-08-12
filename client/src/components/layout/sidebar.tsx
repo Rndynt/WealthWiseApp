@@ -46,15 +46,24 @@ function UserSubscriptionBadge() {
     queryKey: ['/api/user/subscription-limits'],
   });
 
+  const { data: userSubscription } = useQuery({
+    queryKey: ['/api/user/subscription'],
+    enabled: !!subscriptionLimits,
+  });
+
   if (isLoading || !subscriptionLimits) {
     return null;
   }
 
-  const packageName = subscriptionLimits?.packageName || 'basic';
+  // Get package name from user subscription or default to 'basic'
+  const packageName = userSubscription?.package?.name || subscriptionLimits?.packageName || 'basic';
   
   const getBadgeVariant = () => {
     switch (packageName?.toLowerCase()) {
       case 'premium':
+      case 'pro':
+      case 'professional':
+      case 'business':
         return 'default';
       case 'basic':
         return 'secondary';
@@ -66,6 +75,9 @@ function UserSubscriptionBadge() {
   const getBadgeIcon = () => {
     switch (packageName?.toLowerCase()) {
       case 'premium':
+      case 'pro':
+      case 'professional':
+      case 'business':
         return <Crown size={12} className="mr-1" />;
       case 'basic':
         return <Star size={12} className="mr-1" />;
@@ -77,7 +89,7 @@ function UserSubscriptionBadge() {
   return (
     <Badge variant={getBadgeVariant()} className="w-full justify-center text-xs">
       {getBadgeIcon()}
-      {packageName?.charAt(0).toUpperCase() + packageName?.slice(1) || 'Basic'}
+      {packageName ? packageName.charAt(0).toUpperCase() + packageName.slice(1) : 'Basic'}
     </Badge>
   );
 }
@@ -194,9 +206,9 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           </nav>
 
           {/* Admin Section */}
-          {(isAdmin || isRoot) && (
+          {(isAdmin() || isRoot()) && !permissionsLoading && (
             <>
-              {adminNavigationItems.some(item => hasPermission && hasPermission(item.permission)) && (
+              {adminNavigationItems.some(item => hasPermission(item.permission)) && (
                 <div className="px-4 py-2">
                   <div className="border-t border-gray-200 pt-4">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
