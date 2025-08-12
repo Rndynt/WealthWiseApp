@@ -16,7 +16,7 @@ import { Workspace } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 
 // UserSubscriptionBadge component
-function UserSubscriptionBadge({ packageName }: { packageName?: string }) {
+function UserSubscriptionBadge1({ packageName }: { packageName?: string }) {
   if (!packageName) return null;
   
   const badgeVariant = packageName.toLowerCase() === 'premium' ? 'default' : 'secondary';
