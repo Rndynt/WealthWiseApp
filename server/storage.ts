@@ -156,6 +156,13 @@ export interface IStorage {
   // Category & Budget Limits Validation
   checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
   checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+
+  // Settings
+  getAppSettings(): Promise<any>;
+  updateAppSettings(settings: any): Promise<any>;
+
+  // Public APIs
+  getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -741,6 +748,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rolePermissions.roleId, user.roleId));
 
     return userRolePermissions.map(rp => rp.permission);
+  }
+
+  // Settings
+  async getAppSettings(): Promise<any> {
+    // For now, return basic settings - in a real app this would come from a settings table
+    return {
+      appName: 'FinanceFlow',
+      theme: 'light',
+      logoUrl: null,
+      primaryColor: '#3B82F6',
+    };
+  }
+
+  async updateAppSettings(settings: any): Promise<any> {
+    // For now, just return the updated settings - in a real app this would update a settings table
+    const currentSettings = await this.getAppSettings();
+    return { ...currentSettings, ...settings };
+  }
+
+  // Public APIs
+  async getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]> {
+    return await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.isActive, true));
   }
 }
 

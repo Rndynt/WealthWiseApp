@@ -995,6 +995,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public routes for landing page
+  app.get("/api/public/subscription-packages", async (req, res) => {
+    try {
+      const packages = await storage.getActiveSubscriptionPackages();
+      res.json(packages);
+    } catch (error) {
+      console.error("Failed to get public subscription packages:", error);
+      res.status(500).json({ message: "Failed to get subscription packages" });
+    }
+  });
+
+  // Settings routes
+  app.get("/api/settings", authenticateToken, requirePermission("settings.read"), async (req, res) => {
+    try {
+      const settings = await storage.getAppSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Failed to get settings:", error);
+      res.status(500).json({ message: "Failed to get application settings" });
+    }
+  });
+
+  app.put("/api/settings", authenticateToken, requirePermission("settings.update"), async (req, res) => {
+    try {
+      const updates = req.body;
+      const settings = await storage.updateAppSettings(updates);
+      res.json(settings);
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      res.status(400).json({ message: "Failed to update application settings" });
+    }
+  });
+
+  // Payment routes (dummy implementation)
+  app.post("/api/payment/process", authenticateToken, async (req, res) => {
+    try {
+      const { packageId, cardNumber, cardHolder } = req.body;
+      
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // In a real implementation, you would:
+      // 1. Validate payment details with payment gateway
+      // 2. Process the payment
+      // 3. Update user subscription
+      
+      // For demo, just update the user's subscription
+      const now = new Date();
+      const oneMonthLater = new Date();
+      oneMonthLater.setMonth(now.getMonth() + 1);
+      
+      await storage.createUserSubscription({
+        userId: req.user!.userId,
+        packageId: packageId,
+        startDate: now,
+        endDate: oneMonthLater,
+        status: "active"
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Payment processed successfully",
+        transactionId: `demo_${Date.now()}`
+      });
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      res.status(400).json({ message: "Payment processing failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

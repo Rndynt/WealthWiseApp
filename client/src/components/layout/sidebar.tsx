@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  Crown, Plus, Shield, UserCog, Package, User, Star
+  Crown, Plus, Shield, UserCog, Package, User, Star, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -260,6 +260,19 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         {/* User Info */}
         <div className="p-4 border-t border-gray-200 mt-auto">
           <UserSubscriptionBadge />
+          
+          {/* Upgrade Button for Non-Admin Users */}
+          {!isAdmin() && !isRoot() && (
+            <div className="mb-3">
+              <Link href="/upgrade">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                  <Zap size={16} className="mr-2" />
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-3 mt-3">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">

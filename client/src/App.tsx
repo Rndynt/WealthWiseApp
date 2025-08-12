@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { PermissionsProvider } from "./lib/permissions.tsx";
 import Login from "@/pages/login";
+import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Accounts from "@/pages/accounts";
 import Categories from "@/pages/categories";
@@ -18,6 +19,7 @@ import UsersManagement from "@/pages/users";
 import RolesManagement from "@/pages/roles";
 import SubscriptionPackagesManagement from './pages/subscription-packages';
 import SubscriptionPage from './pages/subscription';
+import UpgradePage from './pages/upgrade';
 import ProfilePage from './pages/profile';
 import SettingsPage from './pages/settings';
 import Sidebar from "@/components/layout/sidebar";
@@ -61,7 +63,13 @@ function AppRouter() {
   }
 
   if (!user) {
-    return <Login />;
+    return (
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/" component={LandingPage} />
+        <Route component={LandingPage} />
+      </Switch>
+    );
   }
 
   return (
@@ -74,7 +82,15 @@ function AppRouter() {
       />
 
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Header 
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+          onAddAction={() => {
+            const path = window.location.pathname;
+            if (path === '/transactions') setShowTransactionModal(true);
+            else if (path === '/accounts') setShowAccountModal(true);
+            else if (path === '/debts') setShowDebtModal(true);
+          }}
+        />
 
         <main className="p-6">
           <Switch>
@@ -108,6 +124,11 @@ function AppRouter() {
             <Route path="/subscription" component={() => 
               <ProtectedRoute>
                 <SubscriptionPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/upgrade" component={() => 
+              <ProtectedRoute>
+                <UpgradePage />
               </ProtectedRoute>
             } />
             
