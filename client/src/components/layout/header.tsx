@@ -6,14 +6,14 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-const pageConfig: Record<string, { title: string, subtitle?: string }> = {
-  '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
-  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances' },
+const pageConfig: Record<string, { title: string, subtitle?: string, showDate?: boolean }> = {
+  '/': { title: 'Dashboard', subtitle: 'Overview of your finances', showDate: true },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', showDate: true },
   '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts' },
-  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses' },
+  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDate: true },
   '/categories': { title: 'Categories', subtitle: 'Organize your transactions' },
-  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending' },
-  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data' },
+  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending', showDate: true },
+  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data', showDate: true },
   '/debts': { title: 'Debts', subtitle: 'Manage your debts and credits' },
   '/collaboration': { title: 'Collaboration', subtitle: 'Share workspace with others' },
   '/users': { title: 'User Management', subtitle: 'Manage system users' },
@@ -63,11 +63,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
         {/* Right: Date + Notifications */}
         <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-          <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-            <Calendar size={14} className="sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">{currentDate}</span>
-            <span className="sm:hidden">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-          </div>
+          {pageInfo.showDate && (
+            <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+              <Calendar size={14} className="sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{currentDate}</span>
+              <span className="sm:hidden">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            </div>
+          )}
 
           <Button variant="ghost" size="sm" className="relative p-2">
             <Bell size={18} className="text-gray-600 dark:text-gray-300" />

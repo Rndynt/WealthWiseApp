@@ -83,11 +83,10 @@ export default function Categories({ workspaceId }: CategoriesProps) {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Transaction Categories</h3>
           {categoryLimits && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {limitText} categories used • {packageType} Package
             </p>
           )}
@@ -96,6 +95,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
           onClick={() => setShowAddModal(true)} 
           className="mt-4 sm:mt-0"
           disabled={isLimitReached}
+          size="lg"
         >
           {isLimitReached ? (
             <>

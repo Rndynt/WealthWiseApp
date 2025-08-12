@@ -123,6 +123,36 @@
   @apply bg-secondary text-secondary-foreground hover:bg-gray-200 px-4 py-2 rounded-lg font-medium transition-colors;
 }
 
+/* Remove black shadows from select dropdowns and inputs */
+select:focus,
+input:focus,
+textarea:focus,
+.select-trigger:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px hsl(var(--ring)) !important;
+}
+
+/* Remove default browser shadows and outlines */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, select, textarea, button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Fix radix select component shadows */
+[data-radix-popper-content-wrapper] {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Ensure consistent focus states without shadows */
+.focus\:ring-2:focus {
+  box-shadow: 0 0 0 2px hsl(var(--ring)) !important;
+}
+
 .btn-outline {
   @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2 rounded-lg font-medium transition-colors;
 }

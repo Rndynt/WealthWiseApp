@@ -117,8 +117,8 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+        <div className="flex justify-center sm:justify-end mb-6">
+          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-full sm:w-48 animate-pulse"></div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
@@ -138,20 +138,16 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
 
   return (
     <PageContainer>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Transactions</h1>
-        
-        {/* Add Transaction button - centered on mobile, right-aligned on desktop */}
-        <div className="flex justify-center sm:justify-end mb-4">
-          <Button 
-            onClick={() => setShowTransactionModal(true)}
-            size="lg"
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Transaction
-          </Button>
-        </div>
+      {/* Add Transaction button - centered on mobile, right-aligned on desktop */}
+      <div className="flex justify-center sm:justify-end mb-6">
+        <Button 
+          onClick={() => setShowTransactionModal(true)}
+          size="lg"
+          className="w-full sm:w-auto"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Transaction
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -187,21 +183,22 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
-              <Card key={transaction.id} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-transparent hover:border-l-blue-500 group">
+              <Card key={transaction.id} className="hover:shadow-md transition-all duration-200 group">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    {/* Mobile/Desktop Layout */}
+                    <div className="flex items-center gap-3 flex-1">
                       {/* Category Icon */}
                       <div className="flex-shrink-0">
                         {transaction.categoryId ? (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
                             {(() => {
                               const category = categories?.find(cat => cat.id === transaction.categoryId);
                               return category ? (iconMap[category.icon] || category.icon) : '📝';
                             })()}
                           </div>
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                             <ArrowUpDown className="h-5 w-5 text-gray-500" />
                           </div>
                         )}
@@ -209,48 +206,56 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
 
                       {/* Transaction Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-gray-900 truncate">{transaction.description}</h3>
-                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs`}>
-                            {transaction.type}
-                          </Badge>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
+                              {transaction.description}
+                            </h3>
+                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs hidden sm:inline-flex`}>
+                              {transaction.type}
+                            </Badge>
+                          </div>
+                          
+                          {/* Amount - Mobile: below title, Desktop: right side */}
+                          <p className={`font-bold text-lg sm:text-xl ${amount.color} order-last sm:order-none`}>
+                            {amount.text}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
+                        {/* Transaction metadata */}
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs sm:hidden`}>
+                            {transaction.type}
+                          </Badge>
                           <span className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
-                          <span>•</span>
+                          <span className="hidden sm:inline">•</span>
                           <span>{getAccountName(transaction.accountId)}</span>
                           {transaction.categoryId && (
                             <>
-                              <span>•</span>
-                              <span>{categories?.find(cat => cat.id === transaction.categoryId)?.name}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="text-blue-600 dark:text-blue-400">
+                                {categories?.find(cat => cat.id === transaction.categoryId)?.name}
+                              </span>
                             </>
                           )}
                           {transaction.toAccountId && (
-                            <>
-                              <span className="flex items-center gap-1">
-                                <ArrowRight className="h-3 w-3" />
-                                {getAccountName(transaction.toAccountId)}
-                              </span>
-                            </>
+                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                              <ArrowRight className="h-3 w-3" />
+                              {getAccountName(transaction.toAccountId)}
+                            </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Amount and Actions */}
-                    <div className="flex items-center gap-3">
-                      <p className={`font-bold text-lg ${amount.color} text-right`}>
-                        {amount.text}
-                      </p>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -258,21 +263,21 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
             );
           })
         ) : (
-          <Card className="border-dashed border-2 border-gray-200">
-            <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-8 sm:p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ArrowUpDown className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {searchTerm || filterType !== 'all' ? 'No matching transactions' : 'No transactions yet'}
               </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto text-sm sm:text-base">
                 {searchTerm || filterType !== 'all' 
                   ? 'Try adjusting your search or filter criteria to find the transactions you\'re looking for.'
                   : 'Start tracking your financial activity by adding your first transaction. It only takes a few seconds!'
                 }
               </p>
-              <Button onClick={() => setShowTransactionModal(true)} size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => setShowTransactionModal(true)} size="lg" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
                 <Plus className="mr-2 h-5 w-5" />
                 Add Your First Transaction
               </Button>
