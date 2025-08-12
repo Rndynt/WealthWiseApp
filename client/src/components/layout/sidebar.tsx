@@ -4,11 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  ChevronDown, Plus, Shield, UserCog, Package, User
+  ChevronDown, Plus, Shield, UserCog, Package, User, Crown, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
 import { usePermissions, PERMISSIONS } from '@/lib/permissions';
 import { Workspace } from '@/types';
@@ -36,8 +37,50 @@ const adminNavigationItems = [
   { path: '/users', label: 'User Management', icon: UserCog, permission: PERMISSIONS.USERS_VIEW },
   { path: '/roles', label: 'Role Management', icon: Shield, permission: PERMISSIONS.ROLES_VIEW },
   { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
-  { path: '/settings', label: 'App Settings', icon: Settings, permission: PERMISSIONS.SETTINGS_MANAGE },
+  { path: '/settings', label: 'App Settings', icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
 ];
+
+// UserSubscriptionBadge Component
+function UserSubscriptionBadge() {
+  const { data: subscriptionLimits, isLoading } = useQuery({
+    queryKey: ['/api/user/subscription-limits'],
+  });
+
+  if (isLoading || !subscriptionLimits) {
+    return null;
+  }
+
+  const packageName = subscriptionLimits?.packageName || 'basic';
+  
+  const getBadgeVariant = () => {
+    switch (packageName?.toLowerCase()) {
+      case 'premium':
+        return 'default';
+      case 'basic':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getBadgeIcon = () => {
+    switch (packageName?.toLowerCase()) {
+      case 'premium':
+        return <Crown size={12} className="mr-1" />;
+      case 'basic':
+        return <Star size={12} className="mr-1" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Badge variant={getBadgeVariant()} className="w-full justify-center text-xs">
+      {getBadgeIcon()}
+      {packageName?.charAt(0).toUpperCase() + packageName?.slice(1) || 'Basic'}
+    </Badge>
+  );
+}
 
 export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceChange }: SidebarProps) {
   const [location] = useLocation();
@@ -72,6 +115,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         <div 
           className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
           onClick={onToggle}
+          data-testid="sidebar-overlay"
         />
       )}
 
@@ -152,7 +196,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           {/* Admin Section */}
           {(isAdmin || isRoot) && (
             <>
-              {adminNavigationItems.some(item => hasPermission(item.permission)) && (
+              {adminNavigationItems.some(item => hasPermission && hasPermission(item.permission)) && (
                 <div className="px-4 py-2">
                   <div className="border-t border-gray-200 pt-4">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -189,7 +233,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
 
         {/* User Info */}
         <div className="p-4 border-t border-gray-200 mt-auto">
-          <div className="flex items-center space-x-3">
+          <UserSubscriptionBadge />
+          <div className="flex items-center space-x-3 mt-3">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                 {user?.name?.charAt(0) || 'U'}

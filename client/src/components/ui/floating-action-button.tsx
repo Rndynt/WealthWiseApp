@@ -26,23 +26,30 @@ export function FloatingActionButton({ actions, className }: FloatingActionButto
         isOpen ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
       )}>
         {actions.map((action, index) => (
-          <Button
-            key={index}
-            size="sm"
-            variant="secondary"
-            className={cn(
-              "h-12 w-12 rounded-full shadow-lg transition-all duration-200 hover:scale-110",
-              action.color || "bg-white hover:bg-gray-50"
-            )}
-            onClick={() => {
-              action.onClick();
-              setIsOpen(false);
-            }}
-            title={action.label}
-            data-testid={`fab-action-${index}`}
-          >
-            {action.icon}
-          </Button>
+          <div key={index} className="flex items-center gap-3">
+            <div className={cn(
+              "bg-black/75 text-white px-3 py-1 rounded-md text-sm whitespace-nowrap transition-all duration-200",
+              isOpen ? "opacity-100" : "opacity-0"
+            )}>
+              {action.label}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className={cn(
+                "h-12 w-12 rounded-full shadow-lg transition-all duration-200 hover:scale-110 flex-shrink-0",
+                action.color || "bg-white hover:bg-gray-50"
+              )}
+              onClick={() => {
+                action.onClick();
+                setIsOpen(false);
+              }}
+              title={action.label}
+              data-testid={`fab-action-${index}`}
+            >
+              {action.icon}
+            </Button>
+          </div>
         ))}
       </div>
 
@@ -50,7 +57,7 @@ export function FloatingActionButton({ actions, className }: FloatingActionButto
       <Button
         size="lg"
         className={cn(
-          "h-14 w-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110",
+          "h-16 w-16 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-blue-600 hover:bg-blue-700 text-white",
           isOpen ? "rotate-45" : "rotate-0"
         )}
         onClick={() => setIsOpen(!isOpen)}
