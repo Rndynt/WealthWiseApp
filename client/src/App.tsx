@@ -15,19 +15,28 @@ import Reports from "@/pages/reports";
 import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
 import UsersManagement from "@/pages/users";
+import { TransactionFAB } from "@/components/ui/floating-action-button";
 import RolesManagement from "@/pages/roles";
 import SubscriptionPackagesManagement from './pages/subscription-packages';
 import SubscriptionPage from './pages/subscription';
+import ProfilePage from './pages/profile';
+import SettingsPage from './pages/settings';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/layout/protected-route";
+import AddTransactionModal from "@/components/modals/add-transaction-modal";
+import AddAccountModal from "@/components/modals/add-account-modal";
+import AddDebtModal from "@/components/modals/add-debt-modal";
 
 function AppRouter() {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentWorkspace, setCurrentWorkspace] = useState<any>(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showDebtModal, setShowDebtModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -90,9 +99,39 @@ function AppRouter() {
                 <SubscriptionPackagesManagement />
               </ProtectedRoute>
             } />
+            <Route path="/profile" component={ProfilePage} />
+            <Route path="/settings" component={() => 
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            } />
             <Route component={NotFound} />
           </Switch>
         </main>
+        
+        {/* Floating Action Button */}
+        <TransactionFAB
+          onAddTransaction={() => setShowTransactionModal(true)}
+          onAddAccount={() => setShowAccountModal(true)}
+          onAddDebt={() => setShowDebtModal(true)}
+        />
+        
+        {/* Modals */}
+        <AddTransactionModal 
+          open={showTransactionModal} 
+          onOpenChange={setShowTransactionModal}
+          workspaceId={currentWorkspace?.id}
+        />
+        <AddAccountModal 
+          open={showAccountModal} 
+          onOpenChange={setShowAccountModal}
+          workspaceId={currentWorkspace?.id}
+        />
+        <AddDebtModal 
+          open={showDebtModal} 
+          onOpenChange={setShowDebtModal}
+          workspaceId={currentWorkspace?.id}
+        />
       </div>
     </div>
   );
