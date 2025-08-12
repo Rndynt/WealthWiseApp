@@ -15,7 +15,8 @@ import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
 import UsersManagement from "@/pages/users";
 import RolesManagement from "@/pages/roles";
-import SubscriptionPackagesManagement from "@/pages/subscription-packages";
+import SubscriptionPackagesManagement from './pages/subscription-packages';
+import SubscriptionPage from './pages/subscription';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
@@ -60,10 +61,10 @@ function AppRouter() {
         currentWorkspace={currentWorkspace}
         onWorkspaceChange={setCurrentWorkspace}
       />
-      
+
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
         <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        
+
         <main className="p-6">
           <Switch>
             <Route path="/" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
@@ -78,6 +79,7 @@ function AppRouter() {
             <Route path="/users" component={UsersManagement} />
             <Route path="/roles" component={RolesManagement} />
             <Route path="/subscription-packages" component={SubscriptionPackagesManagement} />
+            <Route path="/subscription" component={SubscriptionPage} />
             <Route component={NotFound} />
           </Switch>
         </main>
