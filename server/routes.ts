@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { DatabaseStorage } from "./storage";
 import bcrypt from "bcrypt";
@@ -9,6 +9,18 @@ import {
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
   insertSubscriptionPackageSchema, insertUserSubscriptionSchema
 } from "@shared/schema";
+
+// Extend Express Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number;
+        email: string;
+      };
+    }
+  }
+}
 
 const storage = new DatabaseStorage();
 
@@ -956,6 +968,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const workspaceId = parseInt(req.params.workspaceId);
 
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
       const limits = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       res.json(limits);
     } catch (error) {
@@ -970,6 +985,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const month = req.query.month ? parseInt(req.query.month as string) : undefined;
 
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
       const limits = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       res.json(limits);
     } catch (error) {
