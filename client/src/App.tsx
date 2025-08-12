@@ -88,18 +88,22 @@ function AppRouter() {
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
             
-            {/* Role Root specific menu */}
-            {user.role === 'root' && (
-              <>
-                <Route path="/users" component={UsersManagement} />
-                <Route path="/roles" component={RolesManagement} />
-                <Route path="/subscription-packages" component={() => 
-                  <ProtectedRoute>
-                    <SubscriptionPackagesManagement />
-                  </ProtectedRoute>
-                } />
-              </>
-            )}
+            {/* Management Routes - Protected by permissions */}
+            <Route path="/users" component={() => 
+              <ProtectedRoute>
+                <UsersManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/roles" component={() => 
+              <ProtectedRoute>
+                <RolesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/subscription-packages" component={() => 
+              <ProtectedRoute>
+                <SubscriptionPackagesManagement />
+              </ProtectedRoute>
+            } />
 
             <Route path="/subscription" component={() => 
               <ProtectedRoute>
