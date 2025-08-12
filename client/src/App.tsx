@@ -1,9 +1,10 @@
 import { Switch, Route } from "wouter";
-import { QueryClientProvider } from "@tanquery/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
+import { PermissionsProvider } from "./lib/permissions.tsx";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Accounts from "@/pages/accounts";
@@ -79,22 +80,16 @@ function AppRouter() {
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
             <Route path="/users" component={UsersManagement} />
             <Route path="/roles" component={RolesManagement} />
-            <Route
-            path="/subscription"
-            element={
+            <Route path="/subscription" component={() => 
               <ProtectedRoute>
                 <SubscriptionPage />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscription-packages"
-            element={
-              <ProtectedRoute requiredPermission="subscriptions.read">
+            } />
+            <Route path="/subscription-packages" component={() => 
+              <ProtectedRoute>
                 <SubscriptionPackagesManagement />
               </ProtectedRoute>
-            }
-          />
+            } />
             <Route component={NotFound} />
           </Switch>
         </main>
@@ -108,8 +103,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <AppRouter />
-          <Toaster />
+          <PermissionsProvider>
+            <AppRouter />
+            <Toaster />
+          </PermissionsProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
