@@ -57,6 +57,10 @@ export const PERMISSIONS = {
   // Subscriptions
   SUBSCRIPTIONS_VIEW: 'subscriptions.view',
   SUBSCRIPTIONS_MANAGE: 'subscriptions.manage',
+  
+  // Settings
+  SETTINGS_VIEW: 'settings.view',
+  SETTINGS_MANAGE: 'settings.manage',
 } as const;
 
 type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

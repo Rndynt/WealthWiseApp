@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  ChevronDown, Plus, Shield, UserCog, Package
+  ChevronDown, Plus, Shield, UserCog, Package, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -36,6 +36,7 @@ const adminNavigationItems = [
   { path: '/users', label: 'User Management', icon: UserCog, permission: PERMISSIONS.USERS_VIEW },
   { path: '/roles', label: 'Role Management', icon: Shield, permission: PERMISSIONS.ROLES_VIEW },
   { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
+  { path: '/settings', label: 'App Settings', icon: Settings, permission: PERMISSIONS.SETTINGS_MANAGE },
 ];
 
 export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceChange }: SidebarProps) {
@@ -150,35 +151,39 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
 
           {/* Admin Section */}
           {(isAdmin || isRoot) && (
-            <div className="px-4 py-2">
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Admin
-                </h3>
-                <div className="space-y-1">
-                  {adminNavigationItems.map((item) => {
-                    // Skip item if user doesn't have permission  
-                    if (!hasPermission(item.permission)) return null;
-                    
-                    const Icon = item.icon;
-                    const isActive = location === item.path;
-                    
-                    return (
-                      <Link key={item.path} href={item.path} className={`
-                        flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                        ${isActive 
-                          ? 'bg-blue-50 text-primary' 
-                          : 'text-gray-700 hover:bg-gray-100'
-                        }
-                      `}>
-                        <Icon size={18} />
-                        <span className="text-sm">{item.label}</span>
-                      </Link>
-                    );
-                  })}
+            <>
+              {adminNavigationItems.some(item => hasPermission(item.permission)) && (
+                <div className="px-4 py-2">
+                  <div className="border-t border-gray-200 pt-4">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Admin
+                    </h3>
+                    <div className="space-y-1">
+                      {adminNavigationItems.map((item) => {
+                        // Skip item if user doesn't have permission  
+                        if (!hasPermission(item.permission)) return null;
+                        
+                        const Icon = item.icon;
+                        const isActive = location === item.path;
+                        
+                        return (
+                          <Link key={item.path} href={item.path} className={`
+                            flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+                            ${isActive 
+                              ? 'bg-blue-50 text-primary' 
+                              : 'text-gray-700 hover:bg-gray-100'
+                            }
+                          `}>
+                            <Icon size={18} />
+                            <span className="text-sm">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
 
@@ -194,14 +199,27 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
               <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
               <p className="text-xs text-gray-600 truncate">{user?.email}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="text-gray-400 hover:text-gray-600 p-1"
-            >
-              <LogOut size={16} />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Link href="/profile">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                  data-testid="button-profile"
+                >
+                  <User size={16} />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="text-gray-400 hover:text-gray-600 p-1"
+                data-testid="button-logout"
+              >
+                <LogOut size={16} />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

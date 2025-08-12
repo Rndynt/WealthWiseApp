@@ -202,11 +202,61 @@ export default function Dashboard({ workspaceId }: DashboardProps) {
             <CardTitle>Budget Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
-              <PieChart size={48} className="mx-auto mb-4 text-gray-400" />
-              <p>Budget tracking coming soon</p>
-              <p className="text-sm">Set up your budgets to track spending</p>
-            </div>
+            {budgets && budgets.length > 0 ? (
+              <div className="space-y-4">
+                {budgets.slice(0, 3).map((budget) => {
+                  const categoryName = getCategoryName(budget.categoryId);
+                  const spent = transactions
+                    ?.filter(t => 
+                      t.categoryId === budget.categoryId && 
+                      t.type === 'expense' &&
+                      new Date(t.date).getMonth() === new Date().getMonth()
+                    )
+                    .reduce((sum, t) => sum + parseFloat(t.amount), 0) || 0;
+                  
+                  const budgetAmount = parseFloat(budget.amount);
+                  const percentage = Math.min((spent / budgetAmount) * 100, 100);
+                  const isOverBudget = spent > budgetAmount;
+                  
+                  return (
+                    <div key={budget.id} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{categoryName}</span>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-medium ${isOverBudget ? 'text-red-600' : 'text-gray-900'}`}>
+                            {formatCurrency(spent.toString())} / {formatCurrency(budget.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500">{percentage.toFixed(0)}% used</p>
+                        </div>
+                      </div>
+                      <Progress 
+                        value={percentage} 
+                        className={`h-2 ${isOverBudget ? 'bg-red-100' : 'bg-gray-100'}`}
+                      />
+                    </div>
+                  );
+                })}
+                
+                {budgets.length > 3 && (
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm">
+                      View All Budgets
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <PieChart size={48} className="mx-auto mb-4 text-gray-400" />
+                <p>No budgets set up yet</p>
+                <p className="text-sm">Create your first budget to track spending</p>
+                <Button variant="outline" size="sm" className="mt-3">
+                  Create Budget
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
