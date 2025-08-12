@@ -4,6 +4,7 @@ import {
   users,
   workspaces,
   workspaceMembers,
+  workspaceSubscriptions,
   categories,
   accounts,
   transactions,
@@ -26,6 +27,7 @@ import {
   type RolePermission,
   type SubscriptionPackage,
   type UserSubscription,
+  type WorkspaceSubscription,
   type InsertUser,
   type InsertWorkspace,
   type InsertCategory,
@@ -38,6 +40,7 @@ import {
   type InsertRolePermission,
   type InsertSubscriptionPackage,
   type InsertUserSubscription,
+  type InsertWorkspaceSubscription,
 } from '@shared/schema';
 import { 
   type WorkspaceMember,
@@ -132,6 +135,13 @@ export interface IStorage {
   getUserSubscriptionWithPackage(userId: number): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined>;
   createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
   updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription>;
+
+  // Workspace Subscriptions
+  getWorkspaceSubscription(workspaceId: number): Promise<WorkspaceSubscription | undefined>;
+  getWorkspaceSubscriptionWithPackage(workspaceId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
+  createWorkspaceSubscription(subscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription>;
+  updateWorkspaceSubscription(id: number, subscription: Partial<InsertWorkspaceSubscription>): Promise<WorkspaceSubscription>;
+  getUserOwnedWorkspaceSubscriptions(userId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]>;
 
   // User Management
   getAllUsers(): Promise<User[]>;
@@ -670,6 +680,50 @@ export class DatabaseStorage implements IStorage {
     if (!limits) return false;
     
     return limits.currentWorkspaces < limits.maxWorkspaces;
+  }
+
+  // Workspace Subscriptions
+  async getWorkspaceSubscription(workspaceId: number): Promise<WorkspaceSubscription | undefined> {
+    const [subscription] = await db.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId, workspaceId));
+    return subscription || undefined;
+  }
+
+  async getWorkspaceSubscriptionWithPackage(workspaceId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined> {
+    const [result] = await db
+      .select({
+        subscription: workspaceSubscriptions,
+        package: subscriptionPackages,
+      })
+      .from(workspaceSubscriptions)
+      .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
+      .where(eq(workspaceSubscriptions.workspaceId, workspaceId));
+    
+    return result || undefined;
+  }
+
+  async createWorkspaceSubscription(insertSubscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription> {
+    const [subscription] = await db.insert(workspaceSubscriptions).values(insertSubscription).returning();
+    return subscription;
+  }
+
+  async updateWorkspaceSubscription(id: number, subscription: Partial<InsertWorkspaceSubscription>): Promise<WorkspaceSubscription> {
+    const [updatedSubscription] = await db.update(workspaceSubscriptions).set(subscription).where(eq(workspaceSubscriptions.id, id)).returning();
+    return updatedSubscription;
+  }
+
+  async getUserOwnedWorkspaceSubscriptions(userId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]> {
+    const results = await db
+      .select({
+        subscription: workspaceSubscriptions,
+        package: subscriptionPackages,
+        workspace: workspaces,
+      })
+      .from(workspaceSubscriptions)
+      .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
+      .innerJoin(workspaces, eq(workspaceSubscriptions.workspaceId, workspaces.id))
+      .where(eq(workspaceSubscriptions.ownerId, userId));
+    
+    return results;
   }
 
   async getUserPermissions(userId: number): Promise<string[]> {

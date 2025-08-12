@@ -32,13 +32,16 @@ export const rolePermissions = pgTable("role_permissions", {
 // Subscription packages table
 export const subscriptionPackages = pgTable("subscription_packages", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(), // 'basic', 'premium'
+  name: text("name").notNull().unique(), // 'basic', 'pro', 'professional', 'business'
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   features: text("features").array().notNull(),
   maxWorkspaces: integer("max_workspaces").notNull(),
   maxMembers: integer("max_members").notNull(),
   maxCategories: integer("max_categories"), // null = unlimited
-  maxBudgets: integer("max_budgets"), // null = unlimited  
+  maxBudgets: integer("max_budgets"), // null = unlimited
+  maxSharedWorkspaces: integer("max_shared_workspaces").notNull().default(0), // New field
+  canCreateSharedWorkspace: boolean("can_create_shared_workspace").notNull().default(false), // New field
+  type: text("type").notNull().default("personal"), // 'personal' | 'shared' | 'hybrid'
   description: text("description"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -52,6 +55,19 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("active"), // 'active', 'expired', 'cancelled'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Workspace subscriptions table (for shared workspaces)
+export const workspaceSubscriptions = pgTable("workspace_subscriptions", {
+  id: serial("id").primaryKey(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
+  ownerId: integer("owner_id").references(() => users.id).notNull(), // Who pays for this
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("active"), // 'active', 'expired', 'readonly', 'cancelled'
+  gracePeriodEnd: timestamp("grace_period_end"), // 3 days after expiry
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -182,6 +198,21 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
   }),
 }));
 
+export const workspaceSubscriptionsRelations = relations(workspaceSubscriptions, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [workspaceSubscriptions.workspaceId],
+    references: [workspaces.id],
+  }),
+  package: one(subscriptionPackages, {
+    fields: [workspaceSubscriptions.packageId],
+    references: [subscriptionPackages.id],
+  }),
+  owner: one(users, {
+    fields: [workspaceSubscriptions.ownerId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
     fields: [users.roleId],
@@ -297,6 +328,11 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
   createdAt: true,
 });
 
+export const insertWorkspaceSubscriptionSchema = createInsertSchema(workspaceSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -352,6 +388,9 @@ export type InsertSubscriptionPackage = z.infer<typeof insertSubscriptionPackage
 
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+
+export type WorkspaceSubscription = typeof workspaceSubscriptions.$inferSelect;
+export type InsertWorkspaceSubscription = z.infer<typeof insertWorkspaceSubscriptionSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

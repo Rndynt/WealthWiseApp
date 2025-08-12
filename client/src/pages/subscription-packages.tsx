@@ -262,7 +262,7 @@ export default function SubscriptionPackagesManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="maxWorkspaces">Max Workspace</Label>
+                  <Label htmlFor="maxWorkspaces">Max Workspace Pribadi</Label>
                   <Input
                     id="maxWorkspaces"
                     type="number"
@@ -274,7 +274,7 @@ export default function SubscriptionPackagesManagement() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="maxMembers">Max Anggota</Label>
+                  <Label htmlFor="maxMembers">Max Anggota per Shared Workspace</Label>
                   <Input
                     id="maxMembers"
                     type="number"
@@ -283,6 +283,34 @@ export default function SubscriptionPackagesManagement() {
                     onChange={(e) => setFormData({ ...formData, maxMembers: parseInt(e.target.value) || 1 })}
                     required
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="maxSharedWorkspaces">Max Shared Workspace</Label>
+                  <Input
+                    id="maxSharedWorkspaces"
+                    type="number"
+                    min="0"
+                    value={formData.maxSharedWorkspaces || 0}
+                    onChange={(e) => setFormData({ ...formData, maxSharedWorkspaces: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">0 = tidak bisa buat shared workspace, kosong = unlimited</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="type">Tipe Paket</Label>
+                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih tipe paket" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal</SelectItem>
+                      <SelectItem value="shared">Shared Only</SelectItem>
+                      <SelectItem value="hybrid">Hybrid (Personal + Shared)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
