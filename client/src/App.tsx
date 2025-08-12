@@ -24,7 +24,7 @@ import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
-import { ProtectedRoute } from "@/components/layout/protected-route";
+import ProtectedRoute from "@/components/layout/protected-route";
 import { TransactionFAB } from "@/components/ui/floating-action-button";
 import AddTransactionModal from "@/components/modals/add-transaction-modal";
 import AddAccountModal from "@/components/modals/add-account-modal";
