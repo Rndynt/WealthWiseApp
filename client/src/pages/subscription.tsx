@@ -53,14 +53,11 @@ export default function SubscriptionPage() {
       const oneMonthLater = new Date();
       oneMonthLater.setMonth(now.getMonth() + 1);
 
-      return apiRequest('/api/user/subscription', {
-        method: 'POST',
-        body: {
-          packageId,
-          startDate: now.toISOString(),
-          endDate: oneMonthLater.toISOString(),
-          status: 'active'
-        },
+      return apiRequest('POST', '/api/user/subscription', {
+        packageId,
+        startDate: now.toISOString(),
+        endDate: oneMonthLater.toISOString(),
+        status: 'active'
       });
     },
     onSuccess: () => {

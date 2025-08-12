@@ -27,6 +27,11 @@ interface SubscriptionPackage {
   features: string[];
   maxWorkspaces: number;
   maxMembers: number;
+  maxCategories: number | null;
+  maxBudgets: number | null;
+  maxSharedWorkspaces: number | null;
+  canCreateSharedWorkspace: boolean;
+  type: string;
   description: string;
   isActive: boolean;
   createdAt: string;
@@ -74,10 +79,7 @@ export default function SubscriptionPackagesManagement() {
 
   const createPackageMutation = useMutation({
     mutationFn: async (packageData: PackageFormData) => {
-      return apiRequest('/api/subscription-packages', {
-        method: 'POST',
-        body: packageData,
-      });
+      return apiRequest('POST', '/api/subscription-packages', packageData);
     },
     onSuccess: () => {
       toast({
@@ -99,10 +101,7 @@ export default function SubscriptionPackagesManagement() {
 
   const updatePackageMutation = useMutation({
     mutationFn: async ({ id, ...packageData }: { id: number } & PackageFormData) => {
-      return apiRequest(`/api/subscription-packages/${id}`, {
-        method: 'PUT',
-        body: packageData,
-      });
+      return apiRequest('PUT', `/api/subscription-packages/${id}`, packageData);
     },
     onSuccess: () => {
       toast({
@@ -124,9 +123,7 @@ export default function SubscriptionPackagesManagement() {
 
   const deletePackageMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/subscription-packages/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest('DELETE', `/api/subscription-packages/${id}`);
     },
     onSuccess: () => {
       toast({
@@ -151,6 +148,11 @@ export default function SubscriptionPackagesManagement() {
       features: [''],
       maxWorkspaces: 1,
       maxMembers: 1,
+      maxCategories: null,
+      maxBudgets: null,
+      maxSharedWorkspaces: 0,
+      canCreateSharedWorkspace: false,
+      type: 'personal',
       description: '',
       isActive: true
     });
