@@ -19,16 +19,16 @@ export function FloatingActionButton({ actions, className }: FloatingActionButto
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+    <div className={cn("fixed bottom-6 right-6 z-50 flex flex-col items-end", className)}>
       {/* Action buttons */}
       <div className={cn(
-        "flex flex-col gap-2 mb-2 transition-all duration-300",
+        "flex flex-col gap-3 mb-3 transition-all duration-300",
         isOpen ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
       )}>
         {actions.map((action, index) => (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="flex items-center gap-3">
             <div className={cn(
-              "bg-black/75 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap transition-all duration-200",
+              "bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all duration-200 shadow-lg",
               isOpen ? "opacity-100" : "opacity-0"
             )}>
               {action.label}
@@ -37,7 +37,7 @@ export function FloatingActionButton({ actions, className }: FloatingActionButto
               size="sm"
               variant="secondary"
               className={cn(
-                "h-10 w-10 rounded-full shadow-lg transition-all duration-200 hover:scale-110 flex-shrink-0",
+                "h-11 w-11 rounded-full shadow-lg transition-all duration-200 hover:scale-110 flex-shrink-0",
                 action.color || "bg-white hover:bg-gray-50"
               )}
               onClick={() => {
@@ -57,13 +57,13 @@ export function FloatingActionButton({ actions, className }: FloatingActionButto
       <Button
         size="sm"
         className={cn(
-          "h-12 w-12 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-blue-600 hover:bg-blue-700 text-white",
+          "h-14 w-14 rounded-full shadow-xl transition-all duration-300 hover:scale-110 bg-blue-600 hover:bg-blue-700 text-white border-2 border-white",
           isOpen ? "rotate-45" : "rotate-0"
         )}
         onClick={() => setIsOpen(!isOpen)}
         data-testid="fab-main-button"
       >
-        {isOpen ? <X size={20} /> : <Plus size={20} />}
+        {isOpen ? <X size={22} /> : <Plus size={22} />}
       </Button>
     </div>
   );
