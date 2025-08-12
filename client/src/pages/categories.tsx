@@ -6,6 +6,7 @@ import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock } from 'lucide-react';
 import { Category } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageContainer } from '@/components/ui/page-container';
 
 interface CategoriesProps {
   workspaceId: number | undefined;
@@ -71,14 +72,16 @@ export default function Categories({ workspaceId }: CategoriesProps) {
 
   if (!workspaceId) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Please select a workspace to view categories</p>
-      </div>
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view categories</p>
+        </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -189,6 +192,6 @@ export default function Categories({ workspaceId }: CategoriesProps) {
         onOpenChange={setShowAddModal}
         workspaceId={workspaceId!}
       />
-    </div>
+    </PageContainer>
   );
 }
