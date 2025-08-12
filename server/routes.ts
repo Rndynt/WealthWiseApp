@@ -833,6 +833,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Subscriptions
+  app.get("/api/user/subscription", authenticateToken, async (req: any, res) => {
+    try {
+      const result = await storage.getUserSubscriptionWithPackage(req.user.userId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user subscription" });
+    }
+  });
+
   app.get("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -889,6 +898,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(subscriptions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user workspace subscriptions" });
+    }
+  });
+
+  app.post("/api/user/subscription", authenticateToken, async (req: any, res) => {
+    try {
+      // Check if user already has an active subscription
+      const existingSubscription = await storage.getUserSubscription(req.user.userId);
+      
+      if (existingSubscription) {
+        // Update existing subscription
+        const subscriptionData = {
+          packageId: req.body.packageId,
+          startDate: new Date(req.body.startDate),
+          endDate: new Date(req.body.endDate),
+          status: req.body.status || "active"
+        };
+        
+        const subscription = await storage.updateUserSubscription(existingSubscription.id, subscriptionData);
+        res.json(subscription);
+      } else {
+        // Create new subscription
+        const subscriptionData = insertUserSubscriptionSchema.parse({
+          ...req.body,
+          userId: req.user.userId,
+          startDate: new Date(req.body.startDate),
+          endDate: new Date(req.body.endDate),
+        });
+        const subscription = await storage.createUserSubscription(subscriptionData);
+        res.json(subscription);
+      }
+    } catch (error) {
+      console.error("Subscription creation/update error:", error);
+      res.status(400).json({ message: "Failed to process user subscription" });
     }
   });
 
