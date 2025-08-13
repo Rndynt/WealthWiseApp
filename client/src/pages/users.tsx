@@ -68,10 +68,7 @@ export default function UsersManagement() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: UserFormData) => {
-      return apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: userData,
-      });
+      return apiRequest('POST', '/api/auth/register', userData);
     },
     onSuccess: () => {
       toast({
@@ -93,10 +90,7 @@ export default function UsersManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, ...userData }: { id: number } & Partial<UserFormData>) => {
-      return apiRequest(`/api/users/${id}`, {
-        method: 'PUT',
-        body: userData,
-      });
+      return apiRequest('PUT', `/api/users/${id}`, userData);
     },
     onSuccess: () => {
       toast({
@@ -118,9 +112,7 @@ export default function UsersManagement() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/users/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest('DELETE', `/api/users/${id}`);
     },
     onSuccess: () => {
       toast({
