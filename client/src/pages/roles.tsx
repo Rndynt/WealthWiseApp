@@ -67,10 +67,7 @@ export default function RolesManagement() {
 
   const createRoleMutation = useMutation({
     mutationFn: async (roleData: RoleFormData) => {
-      return apiRequest('/api/roles', {
-        method: 'POST',
-        body: roleData,
-      });
+      return apiRequest('POST', '/api/roles', roleData);
     },
     onSuccess: () => {
       toast({
@@ -92,10 +89,7 @@ export default function RolesManagement() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, ...roleData }: { id: number } & RoleFormData) => {
-      return apiRequest(`/api/roles/${id}`, {
-        method: 'PUT',
-        body: roleData,
-      });
+      return apiRequest('PUT', `/api/roles/${id}`, roleData);
     },
     onSuccess: () => {
       toast({
@@ -117,9 +111,7 @@ export default function RolesManagement() {
 
   const deleteRoleMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/roles/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest('DELETE', `/api/roles/${id}`);
     },
     onSuccess: () => {
       toast({
@@ -140,14 +132,9 @@ export default function RolesManagement() {
   const togglePermissionMutation = useMutation({
     mutationFn: async ({ roleId, permissionId, action }: { roleId: number; permissionId: number; action: 'add' | 'remove' }) => {
       if (action === 'add') {
-        return apiRequest(`/api/roles/${roleId}/permissions`, {
-          method: 'POST',
-          body: { permissionId },
-        });
+        return apiRequest('POST', `/api/roles/${roleId}/permissions`, { permissionId });
       } else {
-        return apiRequest(`/api/roles/${roleId}/permissions/${permissionId}`, {
-          method: 'DELETE',
-        });
+        return apiRequest('DELETE', `/api/roles/${roleId}/permissions/${permissionId}`);
       }
     },
     onSuccess: () => {

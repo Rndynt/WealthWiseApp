@@ -56,11 +56,11 @@ const adminNavigationItems = [
 
 // UserSubscriptionBadge Component
 function UserSubscriptionBadge() {
-  const { data: subscriptionLimits, isLoading } = useQuery({
+  const { data: subscriptionLimits, isLoading } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
-  const { data: userSubscription } = useQuery({
+  const { data: userSubscription } = useQuery<{ subscription: any; package: { name: string; canCreateSharedWorkspace: boolean } } | null>({
     queryKey: ['/api/user/subscription'],
     enabled: !!subscriptionLimits,
   });
@@ -70,7 +70,7 @@ function UserSubscriptionBadge() {
   }
 
   // Get package name from user subscription or default to 'basic'
-  const packageName = userSubscription?.package?.name || subscriptionLimits?.packageName || 'basic';
+  const packageName = userSubscription?.package?.name || 'basic';
 
   const getBadgeVariant = () => {
     switch (packageName?.toLowerCase()) {

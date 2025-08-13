@@ -36,7 +36,7 @@ export default function ProtectedRoute({
   }
 
   // Root user has access to everything
-  if (isRoot) {
+  if (isRoot()) {
     return <>{children}</>;
   }
 
