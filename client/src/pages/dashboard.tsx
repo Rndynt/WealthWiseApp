@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { PieChart, TrendingUp, TrendingDown, DollarSign, Wallet, CreditCard, Receipt } from 'lucide-react';
-import { Budget, Category, Transaction } from '@/types';
+import { Budget, Category, Transaction, DashboardData } from '@/types';
 
 interface DashboardProps {
   workspaceId: number | undefined;
@@ -20,7 +20,7 @@ const iconMap: { [key: string]: React.ReactNode } = {
 };
 
 export default function Dashboard({ workspaceId }: DashboardProps) {
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
     queryKey: [`/api/workspaces/${workspaceId}/dashboard`],
     enabled: !!workspaceId,
   });
@@ -158,7 +158,7 @@ export default function Dashboard({ workspaceId }: DashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {dashboardData?.recentTransactions?.slice(0, 5).map((transaction) => (
+              {dashboardData?.recentTransactions?.slice(0, 5).map((transaction: Transaction) => (
                 <div key={transaction.id} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${

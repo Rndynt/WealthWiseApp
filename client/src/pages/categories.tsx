@@ -53,7 +53,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
   });
 
   // Check category limits
-  const { data: categoryLimits } = useQuery({
+  const { data: categoryLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
     queryKey: [`/api/workspaces/${workspaceId}/category-limits`],
     enabled: !!workspaceId,
   });
@@ -66,8 +66,8 @@ export default function Categories({ workspaceId }: CategoriesProps) {
     return acc;
   }, {} as Record<string, Category[]>) || {};
 
-  const isLimitReached = categoryLimits && !categoryLimits.canCreate;
-  const limitText = categoryLimits ? `${categoryLimits.current}/${categoryLimits.limit || '∞'}` : '';
+  const isLimitReached = categoryLimits ? !categoryLimits.canCreate : false;
+  const limitText = categoryLimits ? `${categoryLimits.current}/${categoryLimits.limit ?? '∞'}` : '';
   const packageType = categoryLimits?.limit === 3 ? 'Basic' : categoryLimits?.limit === null ? 'Premium' : 'Standard';
 
   if (!workspaceId) {
@@ -116,7 +116,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            Anda telah mencapai batas maksimal kategori untuk paket {packageType} ({categoryLimits.current}/{categoryLimits.limit}). 
+            Anda telah mencapai batas maksimal kategori untuk paket {packageType} ({categoryLimits!.current}/{categoryLimits!.limit}). 
             Upgrade ke paket Premium untuk kategori unlimited.
           </AlertDescription>
         </Alert>

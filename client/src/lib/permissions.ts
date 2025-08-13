@@ -5,12 +5,12 @@ import { useAuth } from '@/lib/auth';
 export function usePermissions() {
   const { user } = useAuth();
   
-  const { data: permissions = [], isLoading: permissionsLoading } = useQuery({
+  const { data: permissions = [], isLoading: permissionsLoading } = useQuery<string[]>({
     queryKey: ['/api/user/permissions'],
     enabled: !!user,
   });
 
-  const { data: userRole, isLoading: roleLoading } = useQuery({
+  const { data: userRole, isLoading: roleLoading } = useQuery<{ name: string } | null>({
     queryKey: ['/api/user/role'],
     enabled: !!user,
   });
@@ -124,6 +124,10 @@ export const PERMISSIONS = {
   // Collaboration
   COLLABORATION_VIEW: 'collaboration.view',
   COLLABORATION_MANAGE: 'collaboration.manage',
+
+  // Settings (mapped to server permissions)
+  SETTINGS_VIEW: 'settings.read',
+  SETTINGS_MANAGE: 'settings.update',
   
   // Dashboard
   DASHBOARD_VIEW: 'dashboard.view',

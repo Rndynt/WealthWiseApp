@@ -70,7 +70,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
   });
 
   // Check budget limits
-  const { data: budgetLimits } = useQuery({
+  const { data: budgetLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
     queryKey: [`/api/workspaces/${workspaceId}/budget-limits`, selectedYear, selectedMonth],
     enabled: !!workspaceId,
   });
@@ -153,13 +153,13 @@ export default function Budget({ workspaceId }: BudgetProps) {
           <div>
             {budgetLimits && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {budgetLimits.current}/{budgetLimits.limit || '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+                {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
               </p>
             )}
           </div>
           <Button 
             onClick={() => setShowBudgetModal(true)}
-            disabled={budgetLimits && !budgetLimits.canCreate}
+            disabled={budgetLimits ? !budgetLimits.canCreate : false}
             size="lg"
             className="w-full sm:w-auto"
           >
@@ -294,7 +294,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
             </p>
             <Button 
               onClick={() => setShowBudgetModal(true)}
-              disabled={budgetLimits && !budgetLimits.canCreate}
+              disabled={budgetLimits ? !budgetLimits.canCreate : false}
             >
               {budgetLimits && !budgetLimits.canCreate ? (
                 <>

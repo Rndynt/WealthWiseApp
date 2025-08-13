@@ -9,6 +9,9 @@ import {
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
   insertSubscriptionPackageSchema, insertUserSubscriptionSchema
 } from "@shared/schema";
+import { db } from "./db";
+import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 // Extend Express Request interface to include user property
 declare global {
@@ -119,13 +122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: "Personal",
         type: "personal",
         ownerId: user.id,
-      });
-
-      // Add user as owner of their personal workspace
-      await storage.addWorkspaceMember({
-        workspaceId: workspace.id,
-        userId: user.id,
-        role: "owner"
       });
 
       // Basic package users start with 0 categories, they can create up to 3
@@ -311,6 +307,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Workspace creation error:", error);
       res.status(400).json({ message: "Failed to create workspace" });
+    }
+  });
+
+  // Collaboration routes: workspace members
+  app.get('/api/workspaces/:workspaceId/members', authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const members = await storage.getWorkspaceMembers(workspaceId);
+      const membersWithUser = await Promise.all(members.map(async (m) => {
+        const u = await storage.getUser(m.userId);
+        return {
+          ...m,
+          user: u ? { id: u.id, name: u.name, email: u.email } : { id: m.userId, name: 'Unknown', email: '' },
+        };
+      }));
+      res.json(membersWithUser);
+    } catch (error) {
+      console.error('Failed to get workspace members:', error);
+      res.status(500).json({ message: 'Failed to get members' });
+    }
+  });
+
+  app.post('/api/workspaces/:workspaceId/invite', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const { email, role } = req.body as { email: string; role: 'editor' | 'viewer' };
+      if (!email || !role) {
+        return res.status(400).json({ message: 'Email and role are required' });
+      }
+
+      let user = await storage.getUserByEmail(email);
+      if (!user) {
+        const name = email.split('@')[0];
+        const hashedPassword = await bcrypt.hash('demo123', 10);
+        user = await storage.createUser({
+          email,
+          password: hashedPassword,
+          name,
+          roleId: 3,
+        });
+      }
+
+      const member = await storage.addWorkspaceMember({ workspaceId, userId: user.id, role });
+      res.json({ ...member, user: { id: user.id, name: user.name, email: user.email } });
+    } catch (error) {
+      console.error('Failed to invite member:', error);
+      res.status(400).json({ message: 'Failed to invite member' });
+    }
+  });
+
+  app.put('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+    try {
+      const memberId = parseInt(req.params.memberId);
+      const { role } = req.body as { role: 'editor' | 'viewer' | 'owner' };
+      const [updated] = await db.update(workspaceMembersTable).set({ role }).where(eq(workspaceMembersTable.id, memberId)).returning();
+      res.json(updated);
+    } catch (error) {
+      console.error('Failed to update member role:', error);
+      res.status(400).json({ message: 'Failed to update member role' });
+    }
+  });
+
+  app.delete('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+    try {
+      const memberId = parseInt(req.params.memberId);
+      await db.delete(workspaceMembersTable).where(eq(workspaceMembersTable.id, memberId));
+      res.json({ message: 'Member removed successfully' });
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      res.status(400).json({ message: 'Failed to remove member' });
     }
   });
 
