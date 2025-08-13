@@ -6,18 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/auth';
 import { ChartLine, Loader2 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: 'demo@financeflow.com', password: 'demo123' });
   const [registerForm, setRegisterForm] = useState({ email: '', password: '', name: '' });
   const { login, register } = useAuth();
+  const [, setLocation] = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await login(loginForm.email, loginForm.password);
+      setLocation('/dashboard');
     } catch (error) {
       // Error handled in auth context
     } finally {
@@ -30,6 +33,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       await register(registerForm.email, registerForm.password, registerForm.name);
+      setLocation('/dashboard');
     } catch (error) {
       // Error handled in auth context
     } finally {
