@@ -69,6 +69,12 @@ export default function UpgradePage() {
     billingCycle: 'monthly'
   });
 
+  // Formatter harga IDR
+  const formatPrice = (price: string) => {
+    const num = parseFloat(price);
+    return num === 0 ? 'Gratis' : `Rp ${num.toLocaleString('id-ID')}`;
+  };
+
   // Fetch current user subscription
   const { data: currentSubscription } = useQuery<{ subscription: UserSubscription }>({
     queryKey: ['/api/user/subscription'],
@@ -161,7 +167,7 @@ export default function UpgradePage() {
                     )}
                     <span>{currentPackage.name}</span>
                   </Badge>
-                  <span className="text-2xl font-bold">${currentPackage.price}/month</span>
+                  <span className="text-2xl font-bold">{formatPrice(currentPackage.price)}/bulan</span>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
                   Next billing: {new Date(currentSubscription.subscription.endDate).toLocaleDateString()}
@@ -230,8 +236,8 @@ export default function UpgradePage() {
                     </div>
                     <CardTitle className="text-xl">{pkg.name}</CardTitle>
                     <div className="text-3xl font-bold">
-                      ${pkg.price}
-                      <span className="text-base font-normal text-gray-500">/month</span>
+                      {formatPrice(pkg.price)}
+                      <span className="text-base font-normal text-gray-500">/bulan</span>
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">{pkg.description}</p>
                   </CardHeader>
@@ -314,8 +320,8 @@ export default function UpgradePage() {
                       <p className="text-sm text-gray-500">Monthly subscription</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">${selectedPackage.price}</p>
-                      <p className="text-xs text-gray-500">/month</p>
+                      <p className="text-2xl font-bold">{formatPrice(selectedPackage.price)}</p>
+                      <p className="text-xs text-gray-500">/bulan</p>
                     </div>
                   </div>
                 </CardContent>
@@ -416,7 +422,7 @@ export default function UpgradePage() {
                 ) : (
                   <>
                     <CreditCard size={16} className="mr-2" />
-                    Pay ${selectedPackage?.price}
+                    Pay {selectedPackage ? formatPrice(selectedPackage.price) : ''}
                   </>
                 )}
               </Button>
