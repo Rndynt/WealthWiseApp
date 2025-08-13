@@ -23,7 +23,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
   const queryClient = useQueryClient();
 
   // Get user subscription limits
-  const { data: limits } = useQuery({
+  const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
@@ -124,7 +124,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
             <Button 
               type="submit" 
               className="flex-1"
-              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || (limits && limits.currentWorkspaces >= limits.maxWorkspaces)}
+              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || (limits ? limits.currentWorkspaces >= limits.maxWorkspaces : false)}
             >
               {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
             </Button>

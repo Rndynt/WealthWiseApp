@@ -59,7 +59,7 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
     enabled: !!workspaceId && canViewCollaboration,
   });
 
-  const { data: userSubscription } = useQuery({
+  const { data: userSubscription } = useQuery<{ subscription: any; package: { name: string; canCreateSharedWorkspace: boolean } } | null>({
     queryKey: ['/api/user/subscription'],
   });
 
@@ -282,7 +282,7 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{member.user.name}</p>
                         {member.role === 'owner' && (
-                          <Crown size={16} className="text-yellow-500" title="Owner" />
+                          <Crown size={16} className="text-yellow-500" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600 flex items-center gap-1">

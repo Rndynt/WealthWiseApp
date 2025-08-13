@@ -106,18 +106,20 @@ export default function Reports({ workspaceId }: ReportsProps) {
     const categoryExpenses: Record<number, { amount: number; count: number; name: string; icon: string }> = {};
 
     expenses.forEach(expense => {
+      if (!expense.categoryId) return;
       const category = categories?.find(c => c.id === expense.categoryId);
       if (category) {
-        if (!categoryExpenses[expense.categoryId]) {
-          categoryExpenses[expense.categoryId] = {
+        const key = expense.categoryId as number;
+        if (!categoryExpenses[key]) {
+          categoryExpenses[key] = {
             amount: 0,
             count: 0,
             name: category.name,
             icon: category.icon
           };
         }
-        categoryExpenses[expense.categoryId].amount += parseFloat(expense.amount);
-        categoryExpenses[expense.categoryId].count += 1;
+        categoryExpenses[key].amount += parseFloat(expense.amount);
+        categoryExpenses[key].count += 1;
       }
     });
 
