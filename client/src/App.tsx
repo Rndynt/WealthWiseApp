@@ -27,10 +27,19 @@ import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
+import { useLocation } from "wouter";
 
 import AddTransactionModal from "@/components/modals/add-transaction-modal";
 import AddAccountModal from "@/components/modals/add-account-modal";
 import AddDebtModal from "@/components/modals/add-debt-modal";
+
+function Redirect({ to }: { to: string }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation(to);
+  }, [to, setLocation]);
+  return null;
+}
 
 function AppRouter() {
   const { user, loading } = useAuth();
@@ -95,6 +104,8 @@ function AppRouter() {
             <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
+            {/* Redirect '/login' to '/dashboard' when authenticated */}
+            <Route path="/login" component={() => <Redirect to="/dashboard" />} />
             
             {/* Management Routes - Protected by permissions */}
             <Route path="/users" component={() => 
