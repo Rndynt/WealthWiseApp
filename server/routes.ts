@@ -920,6 +920,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoints for managing user subscriptions
+  app.get("/api/admin/user-subscriptions", authenticateToken, requirePermission('subscriptions.read'), async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const subscriptionsData = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const userSub = await storage.getUserSubscriptionWithPackage(user.id);
+            if (userSub) {
+              return {
+                ...userSub.subscription,
+                user: {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name,
+                  roleId: user.roleId,
+                  createdAt: user.createdAt
+                },
+                package: userSub.package
+              };
+            }
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+      
+      const validSubscriptions = subscriptionsData.filter(Boolean);
+      res.json(validSubscriptions);
+    } catch (error) {
+      console.error("Failed to get admin user subscriptions:", error);
+      res.status(500).json({ message: "Failed to get user subscriptions" });
+    }
+  });
+
+  app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('subscriptions.update'), async (req: any, res) => {
+    try {
+      const subscriptionId = parseInt(req.params.subscriptionId);
+      const updates = req.body;
+      
+      if (updates.startDate) {
+        updates.startDate = new Date(updates.startDate);
+      }
+      if (updates.endDate) {
+        updates.endDate = new Date(updates.endDate);
+      }
+
+      const subscription = await storage.updateUserSubscription(subscriptionId, updates);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Failed to update user subscription:", error);
+      res.status(400).json({ message: "Failed to update user subscription" });
+    }
+  });
+
   app.get("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);

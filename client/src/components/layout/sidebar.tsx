@@ -18,10 +18,10 @@ import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 // UserSubscriptionBadge component
 function UserSubscriptionBadge1({ packageName }: { packageName?: string }) {
   if (!packageName) return null;
-  
+
   const badgeVariant = packageName.toLowerCase() === 'premium' ? 'default' : 'secondary';
   const badgeText = packageName.toLowerCase() === 'premium' ? 'Premium' : 'Basic';
-  
+
   return (
     <Badge variant={badgeVariant} className="text-xs">
       {badgeText}
@@ -138,8 +138,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
     <>
       {/* Sidebar overlay for mobile */}
       {open && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={onToggle}
           data-testid="sidebar-overlay"
         />
@@ -167,8 +167,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         <div className="p-4 border-b border-gray-200">
           <label className="block text-xs font-medium text-gray-700 mb-2">Select workspace</label>
           <div className="flex items-center gap-2">
-            <Select 
-              value={currentWorkspace?.id.toString() || ''} 
+            <Select
+              value={currentWorkspace?.id.toString() || ''}
               onValueChange={handleWorkspaceChange}
               disabled={workspacesLoading || permissionsLoading}
             >
@@ -207,8 +207,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             return (
               <Link key={item.path} href={item.path} className={`
                 flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                ${isActive 
-                  ? 'bg-blue-50 text-primary' 
+                ${isActive
+                  ? 'bg-blue-50 text-primary'
                   : 'text-gray-700 hover:bg-gray-100'
                 }
               `}>
@@ -230,7 +230,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
                     </h3>
                     <div className="space-y-1">
                       {adminNavigationItems.map((item) => {
-                        // Skip item if user doesn't have permission  
+                        // Skip item if user doesn't have permission
                         if (!hasPermission(item.permission)) return null;
 
                         const Icon = item.icon;
@@ -239,8 +239,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
                         return (
                           <Link key={item.path} href={item.path} className={`
                             flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                            ${isActive 
-                              ? 'bg-blue-50 text-primary' 
+                            ${isActive
+                              ? 'bg-blue-50 text-primary'
                               : 'text-gray-700 hover:bg-gray-100'
                             }
                           `}>
@@ -268,9 +268,9 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
               </Button>
             </Link>
           )}
-          
+
           <UserSubscriptionBadge />
-          
+
           <div className="flex items-center space-x-3">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -306,8 +306,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         </div>
       </div>
 
-      <AddWorkspaceModal 
-        open={showWorkspaceModal} 
+      <AddWorkspaceModal
+        open={showWorkspaceModal}
         onOpenChange={setShowWorkspaceModal}
       />
     </>
