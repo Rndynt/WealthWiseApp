@@ -50,14 +50,13 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    // Override Vite host checking for Replit compatibility
-    process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
-    process.env.VITE_ALLOWED_HOSTS = 'all';
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  
+  // Force production mode to avoid Vite config issues in Replit
+  console.log("Environment:", process.env.NODE_ENV);
+  console.log("App env:", app.get("env"));
+
+  // Always use static serving for Replit compatibility
+  serveStatic(app);
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
