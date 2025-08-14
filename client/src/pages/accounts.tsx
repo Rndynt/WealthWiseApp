@@ -45,23 +45,26 @@ export default function Accounts({ workspaceId }: AccountsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
+      <div className="space-y-6">
       <div className="mb-6">
-        <div className="flex flex-col space-y-4 sm:flex-col sm:items-start sm:justify-between sm:space-y-0">
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-green-600" />
-              Accounts
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
-              Kelola akun dan rekening keuangan Anda
-            </p>
-          </div>
-          <div className="flex sm:flex-row justify-end">
-            <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
-              <Plus className="mr-2" size={16} />
-              Add Account
-            </Button>
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-green-600" />
+                Accounts
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Kelola akun dan rekening keuangan Anda
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
+                <Plus className="mr-2" size={16} />
+                Add Account
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -204,6 +207,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
         onOpenChange={setShowAddModal}
         workspaceId={workspaceId!}
       />
-    </div>
+      </div>
+    </PageContainer>
   );
 }

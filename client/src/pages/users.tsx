@@ -224,29 +224,32 @@ export default function UsersManagement() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <UserCog className="h-5 w-5 text-blue-600" />
-              Manajemen User
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
-              Kelola user dan role dalam sistem
-            </p>
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <UserCog className="h-5 w-5 text-blue-600" />
+                Manajemen User
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Kelola user dan role dalam sistem
+              </p>
+            </div>
+            
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <Button 
+                onClick={() => {
+                  resetForm();
+                  setShowUserModal(true);
+                }} 
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah User
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex-shrink-0">
-            <Button 
-              onClick={() => {
-                resetForm();
-                setShowUserModal(true);
-              }} 
-              className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah User
-            </Button>
-          </div>
+        </div>
 
       <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
           <DialogContent>

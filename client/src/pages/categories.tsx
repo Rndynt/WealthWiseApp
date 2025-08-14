@@ -123,32 +123,43 @@ export default function Categories({ workspaceId }: CategoriesProps) {
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            {categoryLimits && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {limitText} categories used • {packageType} Package
+        <div className="hidden sm:block">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                Categories
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Organize your transactions by category
               </p>
-            )}
+              {categoryLimits && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {limitText} categories used • {packageType} Package
+                </p>
+              )}
+            </div>
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <Button 
+                onClick={() => setShowAddModal(true)} 
+                disabled={isLimitReached}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                {isLimitReached ? (
+                  <>
+                    <Lock className="mr-2" size={16} />
+                    Limit Reached
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2" size={16} />
+                    Add Category
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={() => setShowAddModal(true)} 
-            className="mt-4 sm:mt-0"
-            disabled={isLimitReached}
-            size="lg"
-          >
-            {isLimitReached ? (
-              <>
-                <Lock className="mr-2" size={16} />
-                Limit Reached
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2" size={16} />
-                Add Category
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
