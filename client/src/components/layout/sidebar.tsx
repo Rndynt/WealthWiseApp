@@ -134,6 +134,21 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
     }
   };
 
+  // Define NavItem component locally or import it if it's defined elsewhere
+  const NavItem = ({ href, icon: Icon, label, isActive }: { href: string; icon: React.ElementType; label: string; isActive: boolean }) => (
+    <Link href={href} className={`
+      flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
+      ${isActive
+        ? 'bg-blue-50 text-primary'
+        : 'text-gray-700 hover:bg-gray-100'
+      }
+    `}>
+      <Icon size={18} />
+      <span className="text-sm">{label}</span>
+    </Link>
+  );
+
+
   return (
     <>
       {/* Sidebar overlay for mobile */}
