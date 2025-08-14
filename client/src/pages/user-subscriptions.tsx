@@ -327,8 +327,36 @@ export default function UserSubscriptionsManagement() {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-4">
+      <div className="mb-6 space-y-4">
+        {/* Mobile Layout */}
+        <div className="block sm:hidden">
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Subscription Users
+              </h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm px-4">
+              Kelola subscription pengguna dalam sistem
+            </p>
+            <div className="px-4">
+              <Button 
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }} 
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Assign Package
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-500" />
