@@ -247,13 +247,19 @@ export default function SubscriptionPackagesManagement() {
           </div>
           
           <div className="flex-shrink-0">
-            <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Paket
-                </Button>
-              </DialogTrigger>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setShowPackageModal(true);
+              }} 
+              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Paket
+            </Button>
+          </div>
+
+      <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>

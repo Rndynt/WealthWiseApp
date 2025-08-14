@@ -7,6 +7,7 @@ import { Category } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageContainer } from '@/components/ui/page-container';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface CategoriesProps {
   workspaceId: number | undefined;

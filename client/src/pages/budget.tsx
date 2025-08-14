@@ -10,6 +10,7 @@ import { Budget as BudgetType, Category, Transaction } from '@/types';
 import AddBudgetModal from '@/components/modals/add-budget-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageContainer } from '@/components/ui/page-container';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 const iconMap: Record<string, string> = {
   'briefcase': '💼',
