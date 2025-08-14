@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
-import { usePermissions, PERMISSIONS } from '@/lib/permissions';
+import { usePermissions, PERMISSIONS } from '@/lib/permissions.ts';
 import { Workspace } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 
@@ -224,7 +224,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           </nav>
 
           {/* Admin Section */}
-          {(isAdmin() || isRoot()) && !permissionsLoading && (
+          {(isAdmin || isRoot) && !permissionsLoading && (
             <>
               {adminNavigationItems.some(item => hasPermission(item.permission)) && (
                 <div className="px-4 py-2">
@@ -264,7 +264,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         {/* User Info */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto space-y-4">
           {/* Upgrade Button for Non-Admin Users */}
-          {!isAdmin() && !isRoot() && (
+          {!isAdmin && !isRoot && (
             <Link href="/upgrade">
               <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium">
                 <Zap size={16} className="mr-2" />
