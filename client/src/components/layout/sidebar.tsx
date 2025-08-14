@@ -116,7 +116,7 @@ function UserSubscriptionBadge() {
 export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceChange }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { hasPageAccess, hasFeatureAccess, isAdmin, isRoot, isLoading: permissionsLoading } = useEnhancedPermissions();
+  const { hasPermission, hasPageAccess, hasFeatureAccess, isAdmin, isRoot, isLoading: permissionsLoading } = useEnhancedPermissions();
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
 
   const { data: workspaces, isLoading: workspacesLoading } = useQuery<Workspace[]>({
@@ -206,8 +206,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
         <div className="flex-1 overflow-y-auto">
           <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
-            // Skip item if user doesn't have page permission
-            if (!hasPageAccess(`user.${item.path.replace('/', '')}`)) return null;
+            // Check permission using the correct format from pagePermission
+            if (!hasPageAccess && item.pagePermission && !hasPermission(item.pagePermission)) return null;
 
             const Icon = item.icon;
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
@@ -230,7 +230,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           {/* Admin Section */}
           {(isAdmin || isRoot) && !permissionsLoading && (
             <>
-              {adminNavigationItems.some(item => hasPageAccess(`admin.${item.path.replace('/', '').replace('-', '.')}`)) && (
+              {adminNavigationItems.some(item => item.pagePermission && hasPermission(item.pagePermission)) && (
                 <div className="px-4 py-2">
                   <div className="border-t border-gray-200 pt-4">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -238,8 +238,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
                     </h3>
                     <div className="space-y-1">
                       {adminNavigationItems.map((item) => {
-                        // Skip item if user doesn't have page permission  
-                        if (!hasPageAccess(`admin.${item.path.replace('/', '').replace('-', '.')}`)) return null;
+                        // Check permission using the correct format from pagePermission
+                        if (item.pagePermission && !hasPermission(item.pagePermission)) return null;
 
                         const Icon = item.icon;
                         const isActive = location === item.path;
