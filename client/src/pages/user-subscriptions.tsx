@@ -104,8 +104,8 @@ export default function UserSubscriptionsManagement() {
   const { data: subscriptions, isLoading } = useQuery<UserSubscription[]>({
     queryKey: ['/api/admin/user-subscriptions'],
     queryFn: async () => {
-      const users = await apiRequest('GET', '/api/users') as User[];
-      const packages = await apiRequest('GET', '/api/subscription-packages') as SubscriptionPackage[];
+      const users = await apiRequest('GET', '/api/users') as any as User[];
+      const packages = await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
       
       const subscriptionsData = await Promise.all(
         users.map(async (user: User) => {
@@ -327,21 +327,24 @@ export default function UserSubscriptionsManagement() {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Crown className="h-8 w-8 text-yellow-500" />
-            Kelola Subscription Users
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-            Kelola semua subscription pengguna, perpanjang, hentikan, atau assign package baru
-          </p>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              Kelola Subscription Users
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Kelola subscription pengguna dalam sistem
+            </p>
+          </div>
+          
+          <Button onClick={() => setShowModal(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0">
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Assign Package</span>
+            <span className="sm:hidden">Assign</span>
+          </Button>
         </div>
-        
-        <Button onClick={() => setShowModal(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Assign Package Baru
-        </Button>
       </div>
 
       {/* Stats Cards */}
