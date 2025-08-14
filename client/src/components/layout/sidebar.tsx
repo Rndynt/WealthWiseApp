@@ -51,7 +51,7 @@ const adminNavigationItems = [
   { path: '/users', label: 'User Management', icon: UserCog, permission: PERMISSIONS.USERS_VIEW },
   { path: '/roles', label: 'Role Management', icon: Shield, permission: PERMISSIONS.ROLES_VIEW },
   { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
-  { path: '/user-subscriptions', label: 'User Subscriptions', icon: Crown, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
+  { path: '/user-subscriptions', label: 'User Subscriptions', icon: Crown, permission: PERMISSIONS.SUBSCRIPTIONS_READ },
   { path: '/settings', label: 'App Settings', icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
 ];
 
