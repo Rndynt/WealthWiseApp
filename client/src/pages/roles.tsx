@@ -239,13 +239,18 @@ export default function RolesManagement() {
           </div>
           
           <div className="flex-shrink-0">
-            <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Role
-                </Button>
-              </DialogTrigger>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setShowRoleModal(true);
+              }} 
+              className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Role
+            </Button></div_str>
+
+      <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>

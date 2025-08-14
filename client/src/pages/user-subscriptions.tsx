@@ -340,14 +340,16 @@ export default function UserSubscriptionsManagement() {
           </div>
 
           <div className="flex-shrink-0">
-            <Dialog open={showModal} onOpenChange={setShowModal}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setShowModal(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Assign Package
-                </Button>
-              </DialogTrigger>
-            </Dialog>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }} 
+              className="bg-yellow-600 hover:bg-yellow-700 text-white w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Assign Package
+            </Button>
           </div>
         </div>
       </div>
@@ -567,7 +569,6 @@ export default function UserSubscriptionsManagement() {
         </CardContent>
       </Card>
 
-      {/* Modal Form */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>

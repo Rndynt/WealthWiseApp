@@ -6,6 +6,8 @@ import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -13,6 +15,7 @@ interface AccountsProps {
 
 export default function Accounts({ workspaceId }: AccountsProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false); // Assuming showModal is for the Dialog
 
   const { data: accounts, isLoading } = useQuery<Account[]>({
     queryKey: [`/api/workspaces/${workspaceId}/accounts`],
@@ -44,7 +47,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+        <div className="flex flex-col space-y-4 sm:flex-col sm:items-start sm:justify-between sm:space-y-0">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-green-600" />
@@ -54,7 +57,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
               Kelola akun dan rekening keuangan Anda
             </p>
           </div>
-          <div className="flex sm:flex-col justify-end">
+          <div className="flex sm:flex-row justify-end">
             <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
               <Plus className="mr-2" size={16} />
               Add Account

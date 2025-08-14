@@ -236,13 +236,19 @@ export default function UsersManagement() {
           </div>
           
           <div className="flex-shrink-0">
-            <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah User
-                </Button>
-              </DialogTrigger>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setShowUserModal(true);
+              }} 
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah User
+            </Button>
+          </div>
+
+      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
