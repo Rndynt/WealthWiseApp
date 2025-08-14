@@ -39,7 +39,9 @@ export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddB
     mutationFn: (data: any) =>
       apiRequest('POST', `/api/workspaces/${workspaceId}/budgets`, data),
     onSuccess: () => {
+      // Invalidate both budget data and budget limits
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/budgets`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/budget-limits`] });
       
       toast({
         title: "Budget created",

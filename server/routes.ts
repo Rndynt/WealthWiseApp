@@ -53,6 +53,13 @@ async function authenticateToken(req: any, res: any, next: any) {
 const requirePermission = (permission: string) => {
   return async (req: any, res: any, next: any) => {
     try {
+      const user = await storage.getUserWithRole(req.user.userId);
+      
+      // Root user bypass - has all permissions
+      if (user?.role?.name === 'root' || user?.email === 'root@financeflow.com') {
+        return next();
+      }
+      
       const permissions = await storage.getUserPermissions(req.user.userId);
       if (!permissions.includes(permission)) {
         return res.status(403).json({ message: "Akses ditolak. Permission tidak memadai." });
