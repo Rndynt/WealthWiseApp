@@ -51,6 +51,9 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    // Override Vite host checking for Replit compatibility
+    process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
+    process.env.VITE_ALLOWED_HOSTS = 'all';
     await setupVite(app, server);
   } else {
     serveStatic(app);
