@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { PageContainer } from '@/components/ui/page-container';
 
 interface SubscriptionPackage {
   id: number;
@@ -222,26 +223,31 @@ export default function SubscriptionPackagesManagement() {
 
   if (packagesLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer>
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Paket Langganan</h1>
-          <p className="text-gray-600 mt-2">Kelola paket langganan dan fitur yang tersedia</p>
+    <PageContainer>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Package className="h-8 w-8 text-green-600" />
+            Paket Langganan
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+            Kelola paket langganan, harga, dan fitur yang tersedia
+          </p>
         </div>
         
         <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={resetForm} className="bg-green-600 hover:bg-green-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Tambah Paket
             </Button>
@@ -543,6 +549,6 @@ export default function SubscriptionPackagesManagement() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

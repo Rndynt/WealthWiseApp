@@ -104,13 +104,13 @@ export default function UserSubscriptionsManagement() {
   const { data: subscriptions, isLoading } = useQuery<UserSubscription[]>({
     queryKey: ['/api/admin/user-subscriptions'],
     queryFn: async () => {
-      const users = await apiRequest('GET', '/api/users');
-      const packages = await apiRequest('GET', '/api/subscription-packages');
+      const users = await apiRequest('GET', '/api/users') as User[];
+      const packages = await apiRequest('GET', '/api/subscription-packages') as SubscriptionPackage[];
       
       const subscriptionsData = await Promise.all(
         users.map(async (user: User) => {
           try {
-            const userSub = await apiRequest('GET', `/api/users/${user.id}/subscription`);
+            const userSub = await apiRequest('GET', `/api/users/${user.id}/subscription`) as any;
             if (userSub) {
               return {
                 ...userSub.subscription,
@@ -327,18 +327,18 @@ export default function UserSubscriptionsManagement() {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center">
-            <Crown className="h-8 w-8 mr-3 text-yellow-500" />
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Crown className="h-8 w-8 text-yellow-500" />
             Kelola Subscription Users
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
             Kelola semua subscription pengguna, perpanjang, hentikan, atau assign package baru
           </p>
         </div>
         
-        <Button onClick={() => setShowModal(true)}>
+        <Button onClick={() => setShowModal(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Assign Package Baru
         </Button>
