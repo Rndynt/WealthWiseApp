@@ -1,0 +1,22 @@
+Posisikan diri anda sebagai bug bounty, engineer react typescript sangat ahli.
+
+Tolong list semua fitur didalam aplikasi ini secara lengkap beserta fiturnya apa aja didalam halaman tersebut, role nya apa yang boleh akses itu, permissionnya apa yang bisa akses itu. Semua pages dan fitur fitur didalamnya secara lengkap. 
+
+Setelah semua nya terlist, tolong analisa code yang tidak sesuai, seperti pengecekan role permissionnya, termasuk halaman/pages/fitur yang harusnya full root akses juga di analisa.
+
+Masalah sekarang itu role permissionnya tidak sesuai. Contoh ada user yang tidak boleh akses/membuat workspace, tapi permissionnya ada walaupun halamannya tidak ada.
+
+Saya mau di perbarui semua role permission, kalau bisa di spesifik role nya root,admin (admin aplikasi yang di assisgn oleh root), user basic, user premium. 
+
+Dan permission untuk halaman yang full root access di bedakan dari permission lainnya, seperti ada prefix admin.*
+
+Untuk halaman end user memakai prefix yang lain.
+
+Dan untuk permission view, create, read, delete dll juga di perbarui dan di detailkan dalam fitur contoh seperti .pages, .access .read, .create dan lainnya. 
+Seperti tampilan sidebar menurut permission .pages, dan .access. Jika user hanya punya .pages dan tidak memiliki .access artinya menu nya muncul tapi tidak bisa di akses. Itu contoh casenya gitu
+
+Dan saya mau user dengan role root, full akses apapun didalam aplikasi bebas hambatan dan pengecekan ketat.
+
+Contoh case : ada user yang di invite ke dalam workspace oleh user premium, tapi mendapatkan permission workspace.create atau permission lainnya yang tidak sesuai standar user basic. 
+
+Tolong di analisa mendalam dan kita akan lakukan semua perubahan yang menyangkut role based permission, dan tambahkan ACL juga klo perlu di kombinasikan dan update seeder nya untuk base data role, permission, user base nya. Ini paling penting terkait pengecekan role permission didalam aplikasi, anda harus teliti dan jeli terkait perubahan dalam aplikasi fitur fitur didalamnya.
