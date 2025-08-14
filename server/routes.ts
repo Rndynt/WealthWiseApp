@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Basic package users start with 0 categories, they can create up to 3
 
-      // Create default accounts
+      // Create default accounts with zero balance (calculated from transactions)
       const defaultAccounts = [
         { 
           name: "Bank BCA", 

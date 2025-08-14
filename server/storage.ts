@@ -42,7 +42,7 @@ import {
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
 } from '@shared/schema';
-import { 
+import {
   type WorkspaceMember,
   type InsertWorkspaceMember,
 } from "@shared/schema";
@@ -252,7 +252,30 @@ export class DatabaseStorage implements IStorage {
 
   // Accounts
   async getWorkspaceAccounts(workspaceId: number): Promise<Account[]> {
-    return await db.select().from(accounts).where(eq(accounts.workspaceId, workspaceId));
+    const workspaceAccounts = await db.select().from(accounts).where(eq(accounts.workspaceId, workspaceId));
+
+    // Calculate balance from transactions for each account
+    const accountsWithCalculatedBalance = await Promise.all(
+      workspaceAccounts.map(async (account) => {
+        const accountTransactions = await db
+          .select()
+          .from(transactions)
+          .where(eq(transactions.accountId, account.id));
+
+        // Calculate balance: income adds, expense subtracts
+        const calculatedBalance = accountTransactions.reduce((sum, transaction) => {
+          const amount = parseFloat(transaction.amount);
+          return transaction.type === 'income' ? sum + amount : sum - amount;
+        }, 0);
+
+        return {
+          ...account,
+          balance: calculatedBalance.toString()
+        };
+      })
+    );
+
+    return accountsWithCalculatedBalance;
   }
 
   async getAccount(id: number): Promise<Account | undefined> {
