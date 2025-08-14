@@ -473,24 +473,24 @@ async function seedEnhancedAccounts() {
   console.log("🏦 Seeding enhanced accounts with proper workspace assignments...");
   
   const accountData = [
-    // Root user accounts (workspace 1)
-    { name: "Main Checking", type: "transaction", currency: "IDR", balance: "5000000.00", workspaceId: 1 },
-    { name: "Savings Account", type: "asset", currency: "IDR", balance: "15000000.00", workspaceId: 1 },
+    // Root user accounts (workspace 1) - More realistic amounts
+    { name: "Main Checking", type: "transaction", currency: "IDR", balance: "2500000.00", workspaceId: 1 },
+    { name: "Savings Account", type: "asset", currency: "IDR", balance: "5000000.00", workspaceId: 1 },
     
-    // Admin user accounts (workspace 2)  
-    { name: "Business Account", type: "transaction", currency: "IDR", balance: "3000000.00", workspaceId: 2 },
-    { name: "Investment Portfolio", type: "asset", currency: "IDR", balance: "10000000.00", workspaceId: 2 },
+    // Admin user accounts (workspace 2) - More realistic amounts
+    { name: "Business Account", type: "transaction", currency: "IDR", balance: "1800000.00", workspaceId: 2 },
+    { name: "Investment Portfolio", type: "asset", currency: "IDR", balance: "3500000.00", workspaceId: 2 },
     
-    // Basic user accounts (workspace 3)
-    { name: "Checking Account", type: "transaction", currency: "IDR", balance: "1500000.00", workspaceId: 3 },
+    // Basic user accounts (workspace 3) - Basic user amounts
+    { name: "Checking Account", type: "transaction", currency: "IDR", balance: "750000.00", workspaceId: 3 },
     
-    // Premium user accounts (workspace 4)
-    { name: "Primary Checking", type: "transaction", currency: "IDR", balance: "4000000.00", workspaceId: 4 },
-    { name: "High-Yield Savings", type: "asset", currency: "IDR", balance: "12000000.00", workspaceId: 4 },
-    { name: "Investment Account", type: "asset", currency: "IDR", balance: "8000000.00", workspaceId: 4 },
+    // Premium user accounts (workspace 4) - Premium amounts  
+    { name: "Primary Checking", type: "transaction", currency: "IDR", balance: "2000000.00", workspaceId: 4 },
+    { name: "High-Yield Savings", type: "asset", currency: "IDR", balance: "4000000.00", workspaceId: 4 },
+    { name: "Investment Account", type: "asset", currency: "IDR", balance: "2500000.00", workspaceId: 4 },
     
-    // Demo user accounts (workspace 5)
-    { name: "Student Account", type: "transaction", currency: "IDR", balance: "800000.00", workspaceId: 5 },
+    // Demo user accounts (workspace 5) - Demo amounts
+    { name: "Student Account", type: "transaction", currency: "IDR", balance: "500000.00", workspaceId: 5 },
   ];
   
   await db.insert(accounts).values(accountData).onConflictDoNothing();

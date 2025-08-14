@@ -2,8 +2,25 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const errorData = await res.json();
+      // Extract clean error message for user-friendly display
+      let errorMessage = 'Request failed';
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (res.status === 401) {
+        errorMessage = 'Invalid credentials';
+      } else if (res.status === 403) {
+        errorMessage = 'Access denied';  
+      } else if (res.status >= 500) {
+        errorMessage = 'Server error occurred';
+      }
+      throw new Error(errorMessage);
+    } catch (e) {
+      // If JSON parsing fails, use status text
+      const errorMessage = res.status === 401 ? 'Invalid credentials' : res.statusText || 'Request failed';
+      throw new Error(errorMessage);
+    }
   }
 }
 
