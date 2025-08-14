@@ -199,32 +199,41 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
         {/* Desktop Header */}
         <div className="hidden sm:block">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                Budget Planning
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Kelola budget dan rencana keuangan Anda
+              </p>
               {budgetLimits && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
                 </p>
               )}
             </div>
-            <Button 
-              onClick={() => setShowBudgetModal(true)}
-              disabled={budgetLimits ? !budgetLimits.canCreate : false}
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              {budgetLimits && !budgetLimits.canCreate ? (
-                <>
-                  <Lock className="mr-2 h-4 w-4" />
-                  Limit Reached
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Set Budget
-                </>
-              )}
-            </Button>
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <Button 
+                onClick={() => setShowBudgetModal(true)}
+                disabled={budgetLimits ? !budgetLimits.canCreate : false}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                {budgetLimits && !budgetLimits.canCreate ? (
+                  <>
+                    <Lock className="mr-2 h-4 w-4" />
+                    Limit Reached
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Set Budget
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
