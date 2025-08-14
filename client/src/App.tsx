@@ -4,7 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
-import { PermissionsProvider } from "./lib/permissions.tsx";
+import { EnhancedPermissionsProvider } from "./lib/enhanced-permissions";
 import Login from "@/pages/login";
 import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -178,10 +178,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <PermissionsProvider>
+          <EnhancedPermissionsProvider>
             <AppRouter />
             <Toaster />
-          </PermissionsProvider>
+          </EnhancedPermissionsProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
