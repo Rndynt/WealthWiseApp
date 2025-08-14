@@ -226,48 +226,26 @@ export default function RolesManagement() {
 
   return (
     <PageContainer>
-      <div className="space-y-6 mb-6">
-        {/* Mobile Header */}
-        <div className="block sm:hidden">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="mb-6">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Shield className="h-5 w-5 text-purple-600" />
               Manajemen Role
             </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
-            Kelola role dan permission dalam sistem
-          </p>
-          <div className="flex justify-center">
-            <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} size="lg" className="bg-purple-600 hover:bg-purple-700 text-white w-full max-w-xs">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Role
-                </Button>
-              </DialogTrigger>
-          </div>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden sm:flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-600" />
-              Manajemen Role
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
               Kelola role dan permission dalam sistem
             </p>
           </div>
           
-          <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white shrink-0">
-                <Plus className="h-4 w-4 mr-1" />
-                Tambah Role
-              </Button>
-            </DialogTrigger>
+          <div className="flex-shrink-0">
+            <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Role
+                </Button>
+              </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>

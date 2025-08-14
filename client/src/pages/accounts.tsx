@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { University, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
@@ -43,37 +43,23 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-6 mb-6">
-        {/* Mobile Header */}
-        <div className="block sm:hidden">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <University className="h-5 w-5 text-blue-600" />
-              Your Accounts
+      <div className="mb-6">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-green-600" />
+              Accounts
             </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+              Kelola akun dan rekening keuangan Anda
+            </p>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
-            Manage your financial accounts
-          </p>
-          <div className="flex justify-center">
-            <Button 
-              onClick={() => setShowAddModal(true)} 
-              size="lg"
-              className="w-full max-w-xs"
-            >
+          <div className="flex sm:flex-col justify-end">
+            <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
               <Plus className="mr-2" size={16} />
               Add Account
             </Button>
           </div>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Your Accounts</h3>
-          <Button onClick={() => setShowAddModal(true)} className="mt-4 sm:mt-0">
-            <Plus className="mr-2" size={16} />
-            Add Account
-          </Button>
         </div>
       </div>
 
@@ -141,7 +127,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
         )}
 
         {/* Add Account Card */}
-        <Card 
+        <Card
           className="border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer transition-colors"
           onClick={() => setShowAddModal(true)}
         >
@@ -182,8 +168,8 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                       <td>{transaction.description}</td>
                       <td>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          transaction.type === 'income' 
-                            ? 'bg-green-100 text-green-800' 
+                          transaction.type === 'income'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
                           {transaction.type}
@@ -199,7 +185,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                 })}
               </tbody>
             </table>
-            
+
             {(!transactions || transactions.length === 0) && (
               <div className="text-center py-8 text-gray-500">
                 <p>No transactions yet</p>

@@ -127,8 +127,17 @@ export default function Budget({ workspaceId }: BudgetProps) {
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Budget Planning</h1>
+        <div className="mb-6">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                Budget Planning
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Kelola budget dan rencana keuangan Anda
+              </p>
+            </div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
