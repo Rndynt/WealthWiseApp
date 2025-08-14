@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { PageContainer } from '@/components/ui/page-container';
 
 interface Role {
   id: number;
@@ -214,26 +215,31 @@ export default function RolesManagement() {
 
   if (rolesLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer>
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Manajemen Role</h1>
-          <p className="text-gray-600 mt-2">Kelola role dan permission dalam sistem</p>
+    <PageContainer>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Shield className="h-8 w-8 text-purple-600" />
+            Manajemen Role
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+            Kelola role, permission, dan kontrol akses dalam sistem
+          </p>
         </div>
         
         <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={resetForm} className="bg-purple-600 hover:bg-purple-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Tambah Role
             </Button>
@@ -401,6 +407,6 @@ export default function RolesManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }
