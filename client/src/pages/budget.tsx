@@ -199,13 +199,13 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
         {/* Desktop Header */}
         <div className="hidden sm:block">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-600" />
                 Budget Planning
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                 Kelola budget dan rencana keuangan Anda
               </p>
               {budgetLimits && (
@@ -214,26 +214,25 @@ export default function Budget({ workspaceId }: BudgetProps) {
                 </p>
               )}
             </div>
-            <div className="flex-shrink-0 w-full sm:w-auto">
-              <Button 
-                onClick={() => setShowBudgetModal(true)}
-                disabled={budgetLimits ? !budgetLimits.canCreate : false}
-                size="lg"
-                className="w-full sm:w-auto"
-              >
-                {budgetLimits && !budgetLimits.canCreate ? (
-                  <>
-                    <Lock className="mr-2 h-4 w-4" />
-                    Limit Reached
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Set Budget
-                  </>
-                )}
-              </Button>
-            </div>
+            
+            <Button 
+              onClick={() => setShowBudgetModal(true)}
+              disabled={budgetLimits ? !budgetLimits.canCreate : false}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              {budgetLimits && !budgetLimits.canCreate ? (
+                <>
+                  <Lock className="mr-1 h-4 w-4" />
+                  Limited
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Set Budget
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>

@@ -328,32 +328,28 @@ export default function UserSubscriptionsManagement() {
     <PageContainer>
       {/* Header */}
       <div className="mb-6">
-        <div className="flex flex-col space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-500" />
-                Kelola Subscription Users
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
-                Kelola subscription pengguna dalam sistem
-              </p>
-            </div>
-
-            <div className="flex-shrink-0 w-full sm:w-auto">
-              <Button 
-                onClick={() => {
-                  resetForm();
-                  setShowModal(true);
-                }} 
-                className="bg-yellow-600 hover:bg-yellow-700 text-white w-full sm:w-auto"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Assign Package
-              </Button>
-            </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              Kelola Subscription Users
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Kelola subscription pengguna dalam sistem
+            </p>
           </div>
-        </div>
+
+          <Button 
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }} 
+            size="sm"
+            className="bg-yellow-600 hover:bg-yellow-700 text-white flex-shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Assign
+          </Button>
         </div>
       </div>
 
