@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock } from 'lucide-react';
+import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock, Tag } from 'lucide-react';
 import { Category } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
