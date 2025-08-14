@@ -148,11 +148,11 @@ export interface IStorage {
   getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
-  
+
   // Subscription validation
   getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
-  
+
   // Category & Budget Limits Validation
   checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
   checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
@@ -515,7 +515,7 @@ export class DatabaseStorage implements IStorage {
       .from(rolePermissions)
       .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
       .where(eq(rolePermissions.roleId, roleId));
-    
+
     return results as Permission[];
   }
 
@@ -572,7 +572,7 @@ export class DatabaseStorage implements IStorage {
       .from(userSubscriptions)
       .innerJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id))
       .where(eq(userSubscriptions.userId, userId));
-    
+
     return result || undefined;
   }
 
@@ -600,7 +600,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .innerJoin(roles, eq(users.roleId, roles.id))
       .where(eq(users.id, id));
-    
+
     return result || undefined;
   }
 
@@ -617,11 +617,11 @@ export class DatabaseStorage implements IStorage {
   async getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null> {
     // Get current user subscription with package details
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
-    
+
     // Count current workspaces for this user
     const userWorkspaces = await this.getUserWorkspaces(userId);
     const currentWorkspaces = userWorkspaces.length;
-    
+
     if (userSubResult) {
       // User has active subscription
       return {
@@ -643,7 +643,7 @@ export class DatabaseStorage implements IStorage {
   async checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
-    
+
     // Get current category count
     const currentCategories = await this.getWorkspaceCategories(workspaceId);
     const current = currentCategories.length;
@@ -664,7 +664,7 @@ export class DatabaseStorage implements IStorage {
   async checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
-    
+
     // Get current budget count for the year/month
     const currentBudgets = await this.getWorkspaceBudgets(workspaceId, year, month);
     const current = currentBudgets.length;
@@ -685,7 +685,7 @@ export class DatabaseStorage implements IStorage {
   async canCreateWorkspace(userId: number): Promise<boolean> {
     const limits = await this.getUserSubscriptionLimits(userId);
     if (!limits) return false;
-    
+
     return limits.currentWorkspaces < limits.maxWorkspaces;
   }
 
@@ -704,7 +704,7 @@ export class DatabaseStorage implements IStorage {
       .from(workspaceSubscriptions)
       .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
       .where(eq(workspaceSubscriptions.workspaceId, workspaceId));
-    
+
     return result || undefined;
   }
 
@@ -729,7 +729,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
       .innerJoin(workspaces, eq(workspaceSubscriptions.workspaceId, workspaces.id))
       .where(eq(workspaceSubscriptions.ownerId, userId));
-    
+
     return results;
   }
 

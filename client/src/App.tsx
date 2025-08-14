@@ -18,6 +18,7 @@ import Collaboration from "@/pages/collaboration";
 import UsersManagement from "@/pages/users";
 import RolesManagement from "@/pages/roles";
 import SubscriptionPackagesManagement from './pages/subscription-packages';
+import UserSubscriptionsManagement from './pages/user-subscriptions';
 import SubscriptionPage from './pages/subscription';
 import UpgradePage from './pages/upgrade';
 import ProfilePage from './pages/profile';
@@ -106,7 +107,7 @@ function AppRouter() {
             <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
             {/* Redirect '/login' to '/dashboard' when authenticated */}
             <Route path="/login" component={() => <Redirect to="/dashboard" />} />
-            
+
             {/* Management Routes - Protected by permissions */}
             <Route path="/users" component={() => 
               <ProtectedRoute>
@@ -123,6 +124,12 @@ function AppRouter() {
                 <SubscriptionPackagesManagement />
               </ProtectedRoute>
             } />
+            {/* New route for user subscriptions management */}
+            <Route path="/user-subscriptions" component={() =>
+              <ProtectedRoute>
+                <UserSubscriptionsManagement />
+              </ProtectedRoute>
+            } />
 
             <Route path="/subscription" component={() => 
               <ProtectedRoute>
@@ -134,7 +141,7 @@ function AppRouter() {
                 <UpgradePage />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/profile" component={ProfilePage} />
             <Route path="/settings" component={() => 
               <ProtectedRoute>
