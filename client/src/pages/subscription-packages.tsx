@@ -234,8 +234,31 @@ export default function SubscriptionPackagesManagement() {
 
   return (
     <PageContainer>
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 mb-6">
+        {/* Mobile Header */}
+        <div className="block sm:hidden">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Package className="h-5 w-5 text-green-600" />
+              Paket Langganan
+            </h1>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+            Kelola paket langganan dan fitur yang tersedia
+          </p>
+          <div className="flex justify-center">
+            <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} size="lg" className="bg-green-600 hover:bg-green-700 text-white w-full max-w-xs">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Paket
+                </Button>
+              </DialogTrigger>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden sm:flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Package className="h-5 w-5 text-green-600" />
@@ -250,8 +273,7 @@ export default function SubscriptionPackagesManagement() {
             <DialogTrigger asChild>
               <Button onClick={resetForm} size="sm" className="bg-green-600 hover:bg-green-700 text-white shrink-0">
                 <Plus className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Tambah Paket</span>
-                <span className="sm:hidden">Tambah</span>
+                Tambah Paket
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

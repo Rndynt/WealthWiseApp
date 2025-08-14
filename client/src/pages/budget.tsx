@@ -148,33 +148,74 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   return (
     <PageContainer>
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-          <div>
-            {budgetLimits && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
-              </p>
-            )}
+      <div className="space-y-6 mb-6">
+        {/* Mobile Header */}
+        <div className="block sm:hidden">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-blue-600" />
+              Budget Planning
+            </h1>
           </div>
-          <Button 
-            onClick={() => setShowBudgetModal(true)}
-            disabled={budgetLimits ? !budgetLimits.canCreate : false}
-            size="lg"
-            className="w-full sm:w-auto"
-          >
-            {budgetLimits && !budgetLimits.canCreate ? (
-              <>
-                <Lock className="mr-2 h-4 w-4" />
-                Limit Reached
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Set Budget
-              </>
-            )}
-          </Button>
+          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+            Plan and track your spending limits
+          </p>
+          {budgetLimits && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
+              {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+            </p>
+          )}
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => setShowBudgetModal(true)}
+              disabled={budgetLimits ? !budgetLimits.canCreate : false}
+              size="lg"
+              className="w-full max-w-xs"
+            >
+              {budgetLimits && !budgetLimits.canCreate ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Set Budget
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden sm:block">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              {budgetLimits && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+                </p>
+              )}
+            </div>
+            <Button 
+              onClick={() => setShowBudgetModal(true)}
+              disabled={budgetLimits ? !budgetLimits.canCreate : false}
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              {budgetLimits && !budgetLimits.canCreate ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Set Budget
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 

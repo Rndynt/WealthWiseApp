@@ -43,13 +43,38 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Your Accounts</h3>
-        <Button onClick={() => setShowAddModal(true)} className="mt-4 sm:mt-0">
-          <Plus className="mr-2" size={16} />
-          Add Account
-        </Button>
+      <div className="space-y-6 mb-6">
+        {/* Mobile Header */}
+        <div className="block sm:hidden">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <University className="h-5 w-5 text-blue-600" />
+              Your Accounts
+            </h1>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+            Manage your financial accounts
+          </p>
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => setShowAddModal(true)} 
+              size="lg"
+              className="w-full max-w-xs"
+            >
+              <Plus className="mr-2" size={16} />
+              Add Account
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Your Accounts</h3>
+          <Button onClick={() => setShowAddModal(true)} className="mt-4 sm:mt-0">
+            <Plus className="mr-2" size={16} />
+            Add Account
+          </Button>
+        </div>
       </div>
 
       {/* Accounts Grid */}
