@@ -50,11 +50,12 @@ FinanceFlow is a full-stack personal finance management application built with a
 - **Budgets**: Budget planning and tracking
 - **Debts**: Debt and credit management
 
-### RBAC and Subscription System
-- **Roles**: Four-tier role system (root, admin, user basic, user premium)
-- **Permissions**: Granular permission system for resource access control
-- **Subscription Packages**: Configurable subscription tiers with workspace/member limits
-- **User Subscriptions**: Active subscription tracking with automatic limit enforcement
+### Enhanced RBAC and Subscription System
+- **Roles**: Four-tier role system (root, admin, user_basic, user_premium) with proper security boundaries
+- **Enhanced Permissions**: Separated admin.* and user.* permissions with .pages/.access granularity for menu visibility vs feature access
+- **Subscription Packages**: Enhanced packages (basic, premium, professional, business) with specific feature limitations
+- **User Subscriptions**: Subscription-aware permission enforcement preventing privilege escalation through workspace invitations
+- **Security Features**: Root bypass permissions, subscription-limited collaboration features, proper role hierarchy
 
 ### UI Component System
 - Comprehensive shadcn/ui component library
@@ -160,8 +161,25 @@ FinanceFlow is a full-stack personal finance management application built with a
 - June 28, 2025. Initial setup
 - August 11, 2025. Implemented comprehensive RBAC system with subscription-based workspace limits
 - August 14, 2025. Fixed Replit hosting compatibility by switching from Vite dev server to static file serving to resolve "blocked request" host validation errors
+- August 14, 2025. Conducted comprehensive security audit and implemented enhanced RBAC with admin/user permission separation, .pages/.access granularity, and subscription-aware enforcement
 
 ## Recent Solutions
+
+### Enhanced RBAC Security Implementation (August 14, 2025)
+**Problem**: Security vulnerabilities found including permission mismatch, privilege escalation through workspace invitations, missing admin/user separation, and hardcoded root user checks.
+**Solution**: Implemented comprehensive enhanced RBAC system:
+1. **New Permission Structure**: Separated admin.* (system administration) from user.* (feature access) permissions
+2. **Granular Access Control**: Added .pages (menu visibility) and .access (feature access) permission granularity
+3. **Subscription-Aware Enforcement**: Basic users limited to 3 categories/2 budgets, collaboration requires Professional+
+4. **Enhanced Seeder**: New database seeder with proper role-permission assignments and security boundaries
+5. **Root User Bypass**: Implemented proper bypass system removing hardcoded email checks
+
+**Test Accounts Created**:
+- Root: root@financeflow.com (admin123) - Full system access
+- Admin: admin@financeflow.com (admin123) - System administration  
+- Basic: basic@financeflow.com (demo123) - Limited features
+- Premium: premium@financeflow.com (demo123) - Personal unlimited
+- Demo: demo@financeflow.com (demo123) - Basic demo account
 
 ### Replit Host Validation Fix (August 14, 2025)
 **Problem**: Application showed "blocked request" errors due to Vite dev server not accepting Replit's dynamic host domains.
