@@ -51,6 +51,7 @@ const adminNavigationItems = [
   { path: '/users', label: 'User Management', icon: UserCog, permission: PERMISSIONS.USERS_VIEW },
   { path: '/roles', label: 'Role Management', icon: Shield, permission: PERMISSIONS.ROLES_VIEW },
   { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
+  { path: '/user-subscriptions', label: 'User Subscriptions', icon: Crown, permission: PERMISSIONS.SUBSCRIPTIONS_VIEW },
   { path: '/settings', label: 'App Settings', icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
 ];
 
@@ -134,19 +135,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
     }
   };
 
-  // Define NavItem component locally or import it if it's defined elsewhere
-  const NavItem = ({ href, icon: Icon, label, isActive }: { href: string; icon: React.ElementType; label: string; isActive: boolean }) => (
-    <Link href={href} className={`
-      flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-      ${isActive
-        ? 'bg-blue-50 text-primary'
-        : 'text-gray-700 hover:bg-gray-100'
-      }
-    `}>
-      <Icon size={18} />
-      <span className="text-sm">{label}</span>
-    </Link>
-  );
+  
 
 
   return (
