@@ -82,33 +82,73 @@ export default function Categories({ workspaceId }: CategoriesProps) {
 
   return (
     <PageContainer>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
+      <div className="space-y-6 mb-6">
+        {/* Mobile Header */}
+        <div className="block sm:hidden">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              Categories
+            </h1>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+            Organize your transactions by category
+          </p>
           {categoryLimits && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
               {limitText} categories used • {packageType} Package
             </p>
           )}
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => setShowAddModal(true)} 
+              disabled={isLimitReached}
+              size="lg"
+              className="w-full max-w-xs"
+            >
+              {isLimitReached ? (
+                <>
+                  <Lock className="mr-2" size={16} />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2" size={16} />
+                  Add Category
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        <Button 
-          onClick={() => setShowAddModal(true)} 
-          className="mt-4 sm:mt-0"
-          disabled={isLimitReached}
-          size="lg"
-        >
-          {isLimitReached ? (
-            <>
-              <Lock className="mr-2" size={16} />
-              Limit Reached
-            </>
-          ) : (
-            <>
-              <Plus className="mr-2" size={16} />
-              Add Category
-            </>
-          )}
-        </Button>
+
+        {/* Desktop Header */}
+        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {categoryLimits && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {limitText} categories used • {packageType} Package
+              </p>
+            )}
+          </div>
+          <Button 
+            onClick={() => setShowAddModal(true)} 
+            className="mt-4 sm:mt-0"
+            disabled={isLimitReached}
+            size="lg"
+          >
+            {isLimitReached ? (
+              <>
+                <Lock className="mr-2" size={16} />
+                Limit Reached
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2" size={16} />
+                Add Category
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Limit Warning */}
