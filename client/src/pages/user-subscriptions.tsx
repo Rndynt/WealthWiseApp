@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -26,7 +25,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter 
+  DialogFooter,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -106,7 +106,7 @@ export default function UserSubscriptionsManagement() {
     queryFn: async () => {
       const users = await apiRequest('GET', '/api/users') as any as User[];
       const packages = await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
-      
+
       const subscriptionsData = await Promise.all(
         users.map(async (user: User) => {
           try {
@@ -124,7 +124,7 @@ export default function UserSubscriptionsManagement() {
           }
         })
       );
-      
+
       return subscriptionsData.filter(Boolean);
     },
   });
@@ -240,7 +240,7 @@ export default function UserSubscriptionsManagement() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingSubscription) {
       updateSubscriptionMutation.mutate({
         ...formData,
@@ -254,7 +254,7 @@ export default function UserSubscriptionsManagement() {
   const extendSubscription = (subscription: UserSubscription, period: 'week' | 'month' | 'year') => {
     const currentEnd = new Date(subscription.endDate);
     let newEnd: Date;
-    
+
     switch (period) {
       case 'week':
         newEnd = addDays(currentEnd, 7);
@@ -279,19 +279,19 @@ export default function UserSubscriptionsManagement() {
 
   const getStatusBadge = (subscription: UserSubscription) => {
     const isExpired = isBefore(new Date(subscription.endDate), new Date());
-    
+
     if (subscription.status === 'cancelled') {
       return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Diberhentikan</Badge>;
     }
-    
+
     if (isExpired) {
       return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Expired</Badge>;
     }
-    
+
     if (subscription.status === 'active') {
       return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Aktif</Badge>;
     }
-    
+
     return <Badge variant="secondary">{subscription.status}</Badge>;
   };
 
@@ -306,10 +306,10 @@ export default function UserSubscriptionsManagement() {
       sub.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.package.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
     const matchesPackage = packageFilter === 'all' || sub.package.id.toString() === packageFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPackage;
   }) || [];
 
@@ -327,8 +327,32 @@ export default function UserSubscriptionsManagement() {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 mb-6">
+        {/* Mobile Header */}
+        <div className="block sm:hidden">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              Kelola Subscription Users
+            </h1>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+            Kelola subscription pengguna dalam sistem
+          </p>
+          <div className="flex justify-center px-4">
+            <Dialog open={showModal} onOpenChange={setShowModal}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setShowModal(true)} size="lg" className="bg-yellow-600 hover:bg-yellow-700 text-white w-full max-w-xs">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Assign Package
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden sm:flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-500" />
@@ -338,12 +362,16 @@ export default function UserSubscriptionsManagement() {
               Kelola subscription pengguna dalam sistem
             </p>
           </div>
-          
-          <Button onClick={() => setShowModal(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0">
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Assign Package</span>
-            <span className="sm:hidden">Assign</span>
-          </Button>
+
+          <Dialog open={showModal} onOpenChange={setShowModal}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setShowModal(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0">
+                <Plus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Assign Package</span>
+                <span className="sm:hidden">Assign</span>
+              </Button>
+            </DialogTrigger>
+          </Dialog>
         </div>
       </div>
 
@@ -360,7 +388,7 @@ export default function UserSubscriptionsManagement() {
             <CheckCircle className="h-8 w-8 text-green-500" />
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -372,7 +400,7 @@ export default function UserSubscriptionsManagement() {
             <AlertTriangle className="h-8 w-8 text-red-500" />
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -384,7 +412,7 @@ export default function UserSubscriptionsManagement() {
             <XCircle className="h-8 w-8 text-gray-500" />
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -413,7 +441,7 @@ export default function UserSubscriptionsManagement() {
                 />
               </div>
             </div>
-            
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter Status" />
@@ -425,7 +453,7 @@ export default function UserSubscriptionsManagement() {
                 <SelectItem value="cancelled">Diberhentikan</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Select value={packageFilter} onValueChange={setPackageFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter Package" />
@@ -466,7 +494,7 @@ export default function UserSubscriptionsManagement() {
                 const daysRemaining = Math.ceil(
                   (new Date(subscription.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                 );
-                
+
                 return (
                   <TableRow key={subscription.id}>
                     <TableCell>
@@ -502,7 +530,7 @@ export default function UserSubscriptionsManagement() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        
+
                         {subscription.status === 'active' && (
                           <>
                             <Button
@@ -514,7 +542,7 @@ export default function UserSubscriptionsManagement() {
                               <Calendar className="h-4 w-4" />
                               +1M
                             </Button>
-                            
+
                             <Button
                               size="sm"
                               variant="outline"
@@ -526,7 +554,7 @@ export default function UserSubscriptionsManagement() {
                             </Button>
                           </>
                         )}
-                        
+
                         {subscription.status === 'cancelled' && (
                           <Button
                             size="sm"
@@ -552,7 +580,7 @@ export default function UserSubscriptionsManagement() {
               })}
             </TableBody>
           </Table>
-          
+
           {filteredSubscriptions.length === 0 && (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -621,7 +649,7 @@ export default function UserSubscriptionsManagement() {
                   required
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="endDate">Tanggal Berakhir</Label>
                 <Input
@@ -665,463 +693,6 @@ export default function UserSubscriptionsManagement() {
           </form>
         </DialogContent>
       </Dialog>
-    </PageContainer>
-  );
-}
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Crown, Edit, Trash2, UserCog, Calendar, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter 
-} from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { PageContainer } from '@/components/ui/page-container';
-
-interface UserSubscription {
-  id: number;
-  userId: number;
-  packageId: number;
-  startDate: string;
-  endDate: string;
-  status: string;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  package: {
-    id: number;
-    name: string;
-    price: string;
-  };
-}
-
-interface SubscriptionPackage {
-  id: number;
-  name: string;
-  price: string;
-  description: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-export default function UserSubscriptionsManagement() {
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [editingSubscription, setEditingSubscription] = useState<UserSubscription | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>('active');
-
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<UserSubscription[]>({
-    queryKey: ['/api/admin/user-subscriptions'],
-  });
-
-  const { data: packages } = useQuery<SubscriptionPackage[]>({
-    queryKey: ['/api/subscription-packages'],
-  });
-
-  const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-  });
-
-  const createSubscriptionMutation = useMutation({
-    mutationFn: async (subscriptionData: { userId: number; packageId: number; status: string }) => {
-      return apiRequest('POST', '/api/admin/user-subscriptions', subscriptionData);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Berhasil",
-        description: "Langganan user berhasil dibuat.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/user-subscriptions'] });
-      setShowSubscriptionModal(false);
-      resetForm();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Gagal membuat langganan user.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateSubscriptionMutation = useMutation({
-    mutationFn: async ({ id, ...subscriptionData }: { id: number; userId: number; packageId: number; status: string }) => {
-      return apiRequest('PUT', `/api/admin/user-subscriptions/${id}`, subscriptionData);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Berhasil",
-        description: "Langganan user berhasil diupdate.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/user-subscriptions'] });
-      setShowSubscriptionModal(false);
-      resetForm();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Gagal update langganan user.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteSubscriptionMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/admin/user-subscriptions/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Berhasil",
-        description: "Langganan user berhasil dihapus.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/user-subscriptions'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Gagal menghapus langganan user.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resetForm = () => {
-    setSelectedUserId(null);
-    setSelectedPackageId(null);
-    setSelectedStatus('active');
-    setEditingSubscription(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedUserId || !selectedPackageId) {
-      toast({
-        title: "Error",
-        description: "Pilih user dan paket terlebih dahulu.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const subscriptionData = {
-      userId: selectedUserId,
-      packageId: selectedPackageId,
-      status: selectedStatus
-    };
-
-    if (editingSubscription) {
-      updateSubscriptionMutation.mutate({ id: editingSubscription.id, ...subscriptionData });
-    } else {
-      createSubscriptionMutation.mutate(subscriptionData);
-    }
-  };
-
-  const handleEdit = (subscription: UserSubscription) => {
-    setEditingSubscription(subscription);
-    setSelectedUserId(subscription.userId);
-    setSelectedPackageId(subscription.packageId);
-    setSelectedStatus(subscription.status);
-    setShowSubscriptionModal(true);
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus langganan user ini?')) {
-      deleteSubscriptionMutation.mutate(id);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Active</Badge>;
-      case 'expired':
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" />Expired</Badge>;
-      case 'cancelled':
-        return <Badge className="bg-gray-100 text-gray-800"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="h-3 w-3 mr-1" />Unknown</Badge>;
-    }
-  };
-
-  const formatPrice = (price: string) => {
-    const numPrice = parseFloat(price);
-    return numPrice === 0 ? 'Gratis' : `Rp ${numPrice.toLocaleString('id-ID')}`;
-  };
-
-  if (subscriptionsLoading) {
-    return (
-      <PageContainer>
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  return (
-    <PageContainer>
-      <div className="space-y-6 mb-6">
-        {/* Mobile Header */}
-        <div className="block sm:hidden">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-600" />
-              User Subscriptions
-            </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
-            Manage user subscription plans
-          </p>
-          <div className="flex justify-center">
-            <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} size="lg" className="bg-yellow-600 hover:bg-yellow-700 text-white w-full max-w-xs">
-                  <Crown className="h-4 w-4 mr-2" />
-                  Assign Subscription
-                </Button>
-              </DialogTrigger>
-            </div>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden sm:flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-600" />
-              User Subscriptions
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Manage user subscription plans
-            </p>
-          </div>
-          
-          <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0">
-                <Crown className="h-4 w-4 mr-1" />
-                Assign Subscription
-              </Button>
-            </DialogTrigger>
-        </div>
-      </div>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {editingSubscription ? 'Edit User Subscription' : 'Assign New Subscription'}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="user">User</Label>
-            <Select 
-              value={selectedUserId?.toString() || ''} 
-              onValueChange={(value) => setSelectedUserId(parseInt(value))}
-              disabled={!!editingSubscription}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih user" />
-              </SelectTrigger>
-              <SelectContent>
-                {users?.map((user) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.name} ({user.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label htmlFor="package">Package</Label>
-            <Select value={selectedPackageId?.toString() || ''} onValueChange={(value) => setSelectedPackageId(parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih paket" />
-              </SelectTrigger>
-              <SelectContent>
-                {packages?.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                    {pkg.name} - {formatPrice(pkg.price)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="status">Status</Label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowSubscriptionModal(false)}>
-              Batal
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending}
-            >
-              {editingSubscription ? 'Update' : 'Assign'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-      </Dialog>
-
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Active Subscriptions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Desktop Table */}
-          <div className="hidden md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium">User</th>
-                    <th className="text-left p-3 text-sm font-medium">Package</th>
-                    <th className="text-left p-3 text-sm font-medium">Price</th>
-                    <th className="text-left p-3 text-sm font-medium">Status</th>
-                    <th className="text-left p-3 text-sm font-medium">Period</th>
-                    <th className="text-left p-3 text-sm font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subscriptions?.map((subscription) => (
-                    <tr key={subscription.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="p-3">
-                        <div>
-                          <div className="font-medium text-sm">{subscription.user.name}</div>
-                          <div className="text-gray-600 dark:text-gray-400 text-xs">{subscription.user.email}</div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm capitalize font-medium">{subscription.package.name}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm">{formatPrice(subscription.package.price)}</div>
-                      </td>
-                      <td className="p-3">
-                        {getStatusBadge(subscription.status)}
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <div>{new Date(subscription.startDate).toLocaleDateString('id-ID')}</div>
-                          <div className="text-gray-500">to {new Date(subscription.endDate).toLocaleDateString('id-ID')}</div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(subscription)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(subscription.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="md:hidden divide-y">
-            {subscriptions?.map((subscription) => (
-              <div key={subscription.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="font-medium text-sm">{subscription.user.name}</div>
-                    <div className="text-gray-600 dark:text-gray-400 text-xs">{subscription.user.email}</div>
-                    <div className="text-sm capitalize mt-1">{subscription.package.name} - {formatPrice(subscription.package.price)}</div>
-                  </div>
-                  <div className="flex space-x-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(subscription)}
-                      className="h-7 w-7 p-0"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDelete(subscription.id)}
-                      className="h-7 w-7 p-0 text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  {getStatusBadge(subscription.status)}
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(subscription.startDate).toLocaleDateString('id-ID')} - {new Date(subscription.endDate).toLocaleDateString('id-ID')}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {subscriptions?.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No user subscriptions found
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </PageContainer>
   );
 }
