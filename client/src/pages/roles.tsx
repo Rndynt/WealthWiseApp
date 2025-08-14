@@ -226,24 +226,26 @@ export default function RolesManagement() {
 
   return (
     <PageContainer>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Shield className="h-8 w-8 text-purple-600" />
-            Manajemen Role
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-            Kelola role, permission, dan kontrol akses dalam sistem
-          </p>
-        </div>
-        
-        <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-purple-600 hover:bg-purple-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Role
-            </Button>
-          </DialogTrigger>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Shield className="h-5 w-5 text-purple-600" />
+              Manajemen Role
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Kelola role dan permission dalam sistem
+            </p>
+          </div>
+          
+          <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white shrink-0">
+                <Plus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Tambah Role</span>
+                <span className="sm:hidden">Tambah</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -288,76 +290,130 @@ export default function RolesManagement() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar Role</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Daftar Role</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-4">Nama</th>
-                  <th className="text-left p-4">Deskripsi</th>
-                  <th className="text-left p-4">Tanggal Dibuat</th>
-                  <th className="text-left p-4">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roles?.map((role) => (
-                  <tr key={role.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <Shield className="h-4 w-4" />
-                        <span className="font-medium">{role.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-gray-600">{role.description}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-gray-600">
-                        {new Date(role.createdAt).toLocaleDateString('id-ID')}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleManagePermissions(role)}
-                        >
-                          <Settings className="h-4 w-4" />
-                          <span className="ml-1">Permissions</span>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(role)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(role.id)}
-                          className="text-red-600 hover:text-red-800"
-                          disabled={role.name === 'root' || role.name === 'admin'} // Prevent deleting system roles
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
+        <CardContent className="p-0">
+          {/* Desktop Table */}
+          <div className="hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="text-left p-3 text-sm font-medium">Nama</th>
+                    <th className="text-left p-3 text-sm font-medium">Deskripsi</th>
+                    <th className="text-left p-3 text-sm font-medium">Tanggal</th>
+                    <th className="text-left p-3 text-sm font-medium">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {roles?.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                Belum ada role yang terdaftar
-              </div>
-            )}
+                </thead>
+                <tbody>
+                  {roles?.map((role) => (
+                    <tr key={role.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <Shield className="h-4 w-4" />
+                          <span className="font-medium text-sm">{role.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-gray-600 dark:text-gray-400 text-sm">{role.description}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-gray-600 dark:text-gray-400 text-sm">
+                          {new Date(role.createdAt).toLocaleDateString('id-ID')}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex space-x-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleManagePermissions(role)}
+                            className="h-8 px-2 text-xs"
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Permissions
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(role)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(role.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                            disabled={role.name === 'root' || role.name === 'admin'}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y">
+            {roles?.map((role) => (
+              <div key={role.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="font-medium text-sm">{role.name}</span>
+                  </div>
+                  <div className="flex space-x-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleManagePermissions(role)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(role)}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(role.id)}
+                      className="h-7 w-7 p-0 text-red-600 hover:text-red-800"
+                      disabled={role.name === 'root' || role.name === 'admin'}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-600 dark:text-gray-400 text-xs flex-1 mr-2">
+                    {role.description}
+                  </div>
+                  <div className="text-gray-500 dark:text-gray-400 text-xs">
+                    {new Date(role.createdAt).toLocaleDateString('id-ID')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {roles?.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Belum ada role yang terdaftar
+            </div>
+          )}
         </CardContent>
       </Card>
 

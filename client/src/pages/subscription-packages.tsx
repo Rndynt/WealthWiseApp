@@ -234,24 +234,26 @@ export default function SubscriptionPackagesManagement() {
 
   return (
     <PageContainer>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Package className="h-8 w-8 text-green-600" />
-            Paket Langganan
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-            Kelola paket langganan, harga, dan fitur yang tersedia
-          </p>
-        </div>
-        
-        <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-green-600 hover:bg-green-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Paket
-            </Button>
-          </DialogTrigger>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Package className="h-5 w-5 text-green-600" />
+              Paket Langganan
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Kelola paket langganan dan fitur yang tersedia
+            </p>
+          </div>
+          
+          <Dialog open={showPackageModal} onOpenChange={setShowPackageModal}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} size="sm" className="bg-green-600 hover:bg-green-700 text-white shrink-0">
+                <Plus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Tambah Paket</span>
+                <span className="sm:hidden">Tambah</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
