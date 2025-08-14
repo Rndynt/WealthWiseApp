@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageContainer } from '@/components/ui/page-container';
 import { 
   Dialog, 
   DialogContent, 
@@ -314,17 +315,17 @@ export default function UserSubscriptionsManagement() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer>
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -332,7 +333,7 @@ export default function UserSubscriptionsManagement() {
             <Crown className="h-8 w-8 mr-3 text-yellow-500" />
             Kelola Subscription Users
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Kelola semua subscription pengguna, perpanjang, hentikan, atau assign package baru
           </p>
         </div>
@@ -661,6 +662,6 @@ export default function UserSubscriptionsManagement() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }
