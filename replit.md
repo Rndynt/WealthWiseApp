@@ -159,6 +159,24 @@ FinanceFlow is a full-stack personal finance management application built with a
 ## Changelog
 - June 28, 2025. Initial setup
 - August 11, 2025. Implemented comprehensive RBAC system with subscription-based workspace limits
+- August 14, 2025. Fixed Replit hosting compatibility by switching from Vite dev server to static file serving to resolve "blocked request" host validation errors
+
+## Recent Solutions
+
+### Replit Host Validation Fix (August 14, 2025)
+**Problem**: Application showed "blocked request" errors due to Vite dev server not accepting Replit's dynamic host domains.
+**Solution**: Switched from Vite development server to static file serving for Replit compatibility:
+1. Modified `server/index.ts` to always use `serveStatic()` instead of `setupVite()`
+2. Build frontend to `dist/public` and copy to `server/public` for static serving
+3. This approach matches successful TradingJournal project pattern
+4. Application now works on both Replit development and Netlify production
+
+**Commands to rebuild**:
+```bash
+npm run build
+mkdir -p server/public
+cp -r dist/public/* server/public/
+```
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
