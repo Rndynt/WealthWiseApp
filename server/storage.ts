@@ -145,7 +145,7 @@ export interface IStorage {
 
   // User Management
   getAllUsers(): Promise<User[]>;
-  getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined>;
+  getUserWithRole(id: number): Promise<User & { role: Role } | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
 
@@ -591,17 +591,32 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async getUserWithRole(id: number): Promise<{user: User, role: Role} | undefined> {
+  async getUserWithRole(id: number): Promise<User & { role: Role } | undefined> {
     const [result] = await db
       .select({
-        user: users,
-        role: roles,
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        password: users.password,
+        roleId: users.roleId,
+        createdAt: users.createdAt,
+        roleData: roles
       })
       .from(users)
       .innerJoin(roles, eq(users.roleId, roles.id))
       .where(eq(users.id, id));
 
-    return result || undefined;
+    if (!result) return undefined;
+
+    return {
+      id: result.id,
+      email: result.email,
+      name: result.name,
+      password: result.password,
+      roleId: result.roleId,
+      createdAt: result.createdAt,
+      role: result.roleData
+    };
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {

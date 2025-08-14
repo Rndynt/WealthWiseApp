@@ -40,9 +40,11 @@ async function authenticateToken(req: any, res: any, next: any) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log('Decoded JWT:', decoded); // Debug log
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('JWT verification error:', error); // Debug log
     return res.status(403).json({ message: 'Invalid token' });
   }
 }
@@ -196,12 +198,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get("/api/user", authenticateToken, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUserWithRole(req.user.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ id: user.id, email: user.email, name: user.name });
+
+      // Get user permissions
+      const permissions = await storage.getUserPermissions(req.user.userId);
+      
+      res.json({ 
+        id: user.id, 
+        email: user.email, 
+        name: user.name,
+        roleId: user.roleId,
+        role: {
+          id: user.role?.id,
+          name: user.role?.name,
+          permissions: permissions
+        }
+      });
     } catch (error) {
+      console.error("Failed to get user with role:", error);
       res.status(500).json({ message: "Failed to get user" });
     }
   });
@@ -232,6 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(userWithRole.role);
     } catch (error) {
+      console.error("Failed to get user role:", error);
       res.status(500).json({ message: "Failed to get user role" });
     }
   });
