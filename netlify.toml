@@ -2,13 +2,32 @@
   command    = "npm ci && npm run build:frontend && npm run build:functions"
   publish    = "dist/public"
   functions  = "netlify/functions"
-  
+
+# Headers for proper MIME types
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Content-Type = "text/css; charset=utf-8"
+
+[[headers]]
+  for = "*.json"
+  [headers.values]
+    Content-Type = "application/json; charset=utf-8"
+
+# API routes to serverless functions
 [[redirects]]
   from    = "/api/*"
   to      = "/.netlify/functions/api/:splat"
   status  = 200
 
+# SPA fallback - only for non-file requests
 [[redirects]]
   from    = "/*"
   to      = "/index.html"
   status  = 200
+  force   = false

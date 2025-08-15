@@ -40061,6 +40061,7 @@ var schema_exports = {};
 __export(schema_exports, {
   accounts: () => accounts,
   accountsRelations: () => accountsRelations,
+  appSettings: () => appSettings,
   budgets: () => budgets,
   budgetsRelations: () => budgetsRelations,
   categories: () => categories,
@@ -40068,6 +40069,7 @@ __export(schema_exports, {
   debts: () => debts,
   debtsRelations: () => debtsRelations,
   insertAccountSchema: () => insertAccountSchema,
+  insertAppSettingsSchema: () => insertAppSettingsSchema,
   insertBudgetSchema: () => insertBudgetSchema,
   insertCategorySchema: () => insertCategorySchema,
   insertDebtSchema: () => insertDebtSchema,
@@ -44458,6 +44460,25 @@ var workspaceSubscriptions = pgTable("workspace_subscriptions", {
   // 3 days after expiry
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
+var appSettings = pgTable("app_settings", {
+  id: serial("id").primaryKey(),
+  appName: text("app_name").notNull().default("FinanceFlow"),
+  appDescription: text("app_description").notNull().default("Personal Finance Management Application"),
+  appLogo: text("app_logo"),
+  defaultTheme: text("default_theme").notNull().default("light"),
+  defaultCurrency: text("default_currency").notNull().default("USD"),
+  defaultLanguage: text("default_language").notNull().default("en"),
+  allowRegistration: boolean("allow_registration").notNull().default(true),
+  requireEmailVerification: boolean("require_email_verification").notNull().default(false),
+  enableNotifications: boolean("enable_notifications").notNull().default(true),
+  sessionTimeout: integer("session_timeout").notNull().default(86400),
+  // 24 hours in seconds
+  maxWorkspaces: integer("max_workspaces").notNull().default(5),
+  maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+  customCss: text("custom_css"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
 var users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -44704,6 +44725,11 @@ var insertWorkspaceSchema = createInsertSchema(workspaces).omit({
 var insertWorkspaceMemberSchema = createInsertSchema(workspaceMembers).omit({
   id: true,
   joinedAt: true
+});
+var insertAppSettingsSchema = createInsertSchema(appSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 var insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -45022,7 +45048,10 @@ var DatabaseStorage = class {
     const [result] = await db.select({
       subscription: userSubscriptions,
       package: subscriptionPackages
-    }).from(userSubscriptions).innerJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id)).where(eq(userSubscriptions.userId, userId));
+    }).from(userSubscriptions).innerJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id)).where(and(
+      eq(userSubscriptions.userId, userId),
+      eq(userSubscriptions.status, "active")
+    )).orderBy(desc(userSubscriptions.createdAt)).limit(1);
     return result || void 0;
   }
   async createUserSubscription(insertSubscription) {
@@ -45173,16 +45202,20 @@ var DatabaseStorage = class {
   }
   // Settings
   async getAppSettings() {
-    return {
-      appName: "FinanceFlow",
-      theme: "light",
-      logoUrl: null,
-      primaryColor: "#3B82F6"
-    };
+    const [settings] = await db.select().from(appSettings).limit(1);
+    if (!settings) {
+      const [newSettings] = await db.insert(appSettings).values({}).returning();
+      return newSettings;
+    }
+    return settings;
   }
   async updateAppSettings(settings) {
     const currentSettings = await this.getAppSettings();
-    return { ...currentSettings, ...settings };
+    const [updatedSettings] = await db.update(appSettings).set({
+      ...settings,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(appSettings.id, currentSettings.id)).returning();
+    return updatedSettings;
   }
   // Public APIs
   async getActiveSubscriptionPackages() {
