@@ -105,7 +105,11 @@ function AppRouter() {
             <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
             <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
-            <Route path="/collaboration" component={() => <Collaboration workspaceId={currentWorkspace?.id} />} />
+            <Route path="/collaboration" component={() => 
+              <ProtectedRoute requiredPermission="user.collaboration.pages">
+                <Collaboration workspaceId={currentWorkspace?.id} />
+              </ProtectedRoute>
+            } />
             {/* Redirect '/login' to '/dashboard' when authenticated */}
             <Route path="/login" component={() => <Redirect to="/dashboard" />} />
 
