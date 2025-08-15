@@ -1,38 +1,63 @@
+// vite.config.mjs
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { fileURLToPath } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/WealthWise/' : '/',
-  plugins: [
+// Dapatkan __dirname di modul ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig(async () => {
+  // 1) Setup plugin dasar
+  const plugins = [
     react(),
     runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
+  ];
+
+  // 2) Tambahkan Cartographer hanya di dev Replit
+  if (
+    process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
-  ],
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+  ) {
+    const { cartographer } = await import("@replit/vite-plugin-cartographer");
+    plugins.push(cartographer());
+  }
+
+  // 3) Kembalikan konfigurasi lengkap
+  return {
+    plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "client", "src"),
+        "@shared": path.resolve(__dirname, "shared"),
+        "@assets": path.resolve(__dirname, "attached_assets"),
+      },
     },
-  },
-  root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+    root: path.resolve(__dirname, "client"),
+    build: {
+      // Output static files ke dist/public
+      outDir: path.resolve(__dirname, "dist/public"),
+      emptyOutDir: true,
+
+      // Paksa menggunakan esbuild untuk JS & CSS minification
+      minify: "esbuild",
+      cssMinify: "esbuild",
+
+      // Target modern environment agar import.meta & top-level await jalan
+      target: "esnext",
+      rollupOptions: {
+        output: {
+          format: "esm",
+        },
+      },
+      chunkSizeWarningLimit: 1000
     },
-  },
+    server: {
+      fs: {
+        strict: true,
+        deny: ["**/.*"],
+      },
+    },
+  };
 });
