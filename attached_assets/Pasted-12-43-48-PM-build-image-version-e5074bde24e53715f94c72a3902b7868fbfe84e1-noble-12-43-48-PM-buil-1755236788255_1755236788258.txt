@@ -1,0 +1,131 @@
+12:43:48 PM: build-image version: e5074bde24e53715f94c72a3902b7868fbfe84e1 (noble)
+12:43:48 PM: buildbot version: e5074bde24e53715f94c72a3902b7868fbfe84e1
+12:43:48 PM: Fetching cached dependencies
+12:43:48 PM: Starting to download cache of 338.3MB (Last modified: 2025-08-15 04:40:47 +0000 UTC)
+12:43:50 PM: Finished downloading cache in 2.413s
+12:43:50 PM: Starting to extract cache
+12:44:09 PM: Finished extracting cache in 18.533s
+12:44:09 PM: Finished fetching cache in 21.005s
+12:44:09 PM: Starting to prepare the repo for build
+12:44:09 PM: Preparing Git Reference refs/heads/main
+12:44:11 PM: Custom build path detected. Proceeding with the specified path: ''
+12:44:11 PM: Custom publish path detected. Proceeding with the specified path: 'dist/public'
+12:44:11 PM: Custom functions path detected. Proceeding with the specified path: 'netlify/functions'
+12:44:11 PM: Custom build command detected. Proceeding with the specified command: 'npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions'
+12:44:11 PM: Starting to install dependencies
+12:44:11 PM: Started restoring cached python cache
+12:44:12 PM: Finished restoring cached python cache
+12:44:12 PM: Started restoring cached ruby cache
+12:44:13 PM: Finished restoring cached ruby cache
+12:44:13 PM: Started restoring cached go cache
+12:44:15 PM: Finished restoring cached go cache
+12:44:16 PM: v22.18.0 is already installed.
+12:44:17 PM: Now using node v22.18.0 (npm v10.9.3)
+12:44:17 PM: Enabling Node.js Corepack
+12:44:17 PM: Started restoring cached build plugins
+12:44:17 PM: Finished restoring cached build plugins
+12:44:17 PM: WARNING: The environment variable 'NODE_ENV' is set to 'production'. Any 'devDependencies' in package.json will not be installed
+12:44:17 PM: Started restoring cached corepack dependencies
+12:44:17 PM: Finished restoring cached corepack dependencies
+12:44:17 PM: No npm workspaces detected
+12:44:17 PM: Started restoring cached node modules
+12:44:17 PM: Finished restoring cached node modules
+12:44:17 PM: Installing npm packages using npm version 10.9.3
+12:44:20 PM: added 18 packages, removed 13 packages, and changed 173 packages in 4s
+12:44:21 PM: npm packages installed
+12:44:21 PM: Successfully installed dependencies
+12:44:21 PM: Starting build script
+12:44:21 PM: Detected 1 framework(s)
+12:44:22 PM: "vite" at version "5.4.19"
+12:44:22 PM: Section completed: initializing
+12:44:23 PM: ​
+12:44:23 PM: Netlify Build                                                 
+12:44:23 PM: ────────────────────────────────────────────────────────────────
+12:44:23 PM: ​
+12:44:23 PM: ❯ Version
+12:44:23 PM:   @netlify/build 35.0.7
+12:44:23 PM: ​
+12:44:23 PM: ❯ Flags
+12:44:23 PM:   accountId: 6866e1b0d9019f32fa5343d0
+12:44:23 PM:   baseRelDir: true
+12:44:23 PM:   buildId: 689ec912e2d4a9000895ffde
+12:44:23 PM:   deployId: 689ec912e2d4a9000895ffe0
+12:44:23 PM: ​
+12:44:23 PM: ❯ Current directory
+12:44:23 PM:   /opt/build/repo
+12:44:23 PM: ​
+12:44:23 PM: ❯ Config file
+12:44:23 PM:   /opt/build/repo/netlify.toml
+12:44:23 PM: ​
+12:44:23 PM: ❯ Context
+12:44:23 PM:   production
+12:44:23 PM: ​
+12:44:23 PM: ❯ Installing extensions
+12:44:23 PM:    - neon
+12:44:24 PM: ​
+12:44:24 PM: ❯ Loading extensions
+12:44:24 PM:    - neon
+12:44:25 PM: ​
+12:44:25 PM: build.command from netlify.toml                               
+12:44:25 PM: ────────────────────────────────────────────────────────────────
+12:44:25 PM: ​
+12:44:25 PM: $ npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions
+12:44:31 PM: added 417 packages, and audited 418 packages in 6s
+12:44:31 PM: 55 packages are looking for funding
+12:44:31 PM:   run `npm fund` for details
+12:44:31 PM: found 0 vulnerabilities
+12:44:32 PM: npm warn exec The following package was not found and will be installed: vite@7.1.2
+12:44:34 PM: failed to load config from /opt/build/repo/vite.config.ts
+12:44:34 PM: error during build:
+12:44:34 PM: Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /opt/build/repo/node_modules/.vite-temp/vite.config.ts.timestamp-1755236674845-b9f129b31c38b.mjs
+12:44:34 PM:     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:255:9)
+12:44:34 PM:     at packageResolve (node:internal/modules/esm/resolve:767:81)
+12:44:34 PM:     at moduleResolve (node:internal/modules/esm/resolve:853:18)
+12:44:34 PM:     at defaultResolve (node:internal/modules/esm/resolve:983:11)
+12:44:34 PM:     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:783:12)
+12:44:34 PM:     at #cachedDefaultResolve (node:internal/modules/esm/loader:707:25)
+12:44:34 PM:     at ModuleLoader.resolve (node:internal/modules/esm/loader:690:38)
+12:44:34 PM:     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:307:38)
+12:44:34 PM:     at ModuleJob._link (node:internal/modules/esm/module_job:183:49)
+12:44:35 PM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+12:44:35 PM: ​
+12:44:35 PM: "build.command" failed                                        
+12:44:35 PM: ────────────────────────────────────────────────────────────────
+12:44:35 PM: ​
+12:44:35 PM:   Error message
+12:44:35 PM:   Command failed with exit code 1: npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions (https://ntl.fyi/exit-code-1)
+12:44:35 PM: ​
+12:44:35 PM:   Error location
+12:44:35 PM:   In build.command from netlify.toml:
+12:44:35 PM:   npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions
+12:44:35 PM: ​
+12:44:35 PM:   Resolved config
+12:44:35 PM:   build:
+12:44:35 PM:     base: /opt/build/repo
+12:44:35 PM:     command: npm ci && npx vite build && npx esbuild netlify/functions/api.ts
+12:44:35 PM:       --bundle --platform=node --target=node18 --external:@neondatabase/serverless
+12:44:35 PM:       --external:express-session --external:connect-pg-simple --external:bcrypt
+12:44:35 PM:       --external:jsonwebtoken --external:ws --format=esm
+12:44:35 PM:       --outdir=netlify/functions
+12:44:35 PM:     commandOrigin: config
+12:44:35 PM:     environment:
+12:44:35 PM:       - DATABASE_URL
+12:44:35 PM:       - JWT_SECRET
+12:44:35 PM:       - NETLIFY_DATABASE_URL
+12:44:35 PM:       - NETLIFY_DATABASE_URL_UNPOOLED
+12:44:35 PM:       - NODE_ENV
+12:44:35 PM:       - SESSION_SECRET
+12:44:35 PM:     publish: /opt/build/repo/dist/public
+12:44:35 PM:     publishOrigin: config
+12:44:35 PM:   functionsDirectory: /opt/build/repo/netlify/functions
+12:44:35 PM:   redirects:
+12:44:35 PM:     - from: /api/*
+      status: 200
+      to: /.netlify/functions/api/:splat
+    - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+12:44:35 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+12:44:35 PM: Failing build: Failed to build site
+12:44:36 PM: Finished processing build request in 47.496s

@@ -5,7 +5,11 @@ echo "🚀 Building FinanceFlow for Netlify..."
 
 # Build frontend
 echo "📦 Building frontend..."
-npx vite build
+NODE_ENV=production npx vite build
+
+# Fix asset paths for Netlify
+echo "🔧 Fixing asset paths for Netlify..."
+sed -i 's|/WealthWise/assets/|/assets/|g' dist/public/index.html
 
 # Build Netlify functions
 echo "⚡ Building Netlify functions..."
