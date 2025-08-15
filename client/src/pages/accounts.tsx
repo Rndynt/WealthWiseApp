@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
+import AddAccountModal from '@/components/modals/add-account-modal';
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -20,14 +21,19 @@ export default function Accounts({ workspaceId }: AccountsProps) {
   });
 
   // Check account limits
-  const { data: accountLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
+  const { data: accountLimits } = useQuery<{ 
+    canCreate: boolean; 
+    limit: number | null; 
+    current: number;
+    packageName?: string;
+  }>({
     queryKey: [`/api/workspaces/${workspaceId}/account-limits`],
     enabled: !!workspaceId,
   });
 
   const isLimitReached = accountLimits ? !accountLimits.canCreate : false;
   const limitText = accountLimits ? `${accountLimits.current}/${accountLimits.limit ?? '∞'}` : '';
-  const packageName = accountLimits?.packageName ===  null ? 'unknown' : accountLimits?.packageName ;
+  const packageName = accountLimits?.packageName || 'basic';
 
   const { data: transactions } = useQuery<Transaction[]>({
     queryKey: [`/api/workspaces/${workspaceId}/transactions`],
@@ -77,7 +83,11 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                   )}
               </div>
               <div className="flex-shrink-0 w-full sm:w-auto">
-                <Button onClick={() => alert('Add Account Modal - Coming Soon!')} className="w-full sm:w-auto">
+                <Button 
+                  onClick={() => setShowAddModal(true)} 
+                  className="w-full sm:w-auto"
+                  disabled={isLimitReached}
+                >
                   <Plus className="mr-2" size={16} />
                   Add Account
                 </Button>
@@ -151,14 +161,27 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
           {/* Add Account Card */}
           <Card
-            className="border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer transition-colors"
-            onClick={() => alert('Add Account Modal - Coming Soon!')}
+            className={`border-2 border-dashed transition-colors ${
+              isLimitReached 
+                ? 'border-gray-200 cursor-not-allowed' 
+                : 'border-gray-300 hover:border-gray-400 cursor-pointer'
+            }`}
+            onClick={() => !isLimitReached && setShowAddModal(true)}
           >
             <CardContent className="pt-6">
-              <div className="flex flex-col items-center justify-center text-gray-500 py-8">
+              <div className={`flex flex-col items-center justify-center py-8 ${
+                isLimitReached ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 <Plus size={32} className="mb-3" />
-                <p className="font-medium">Add New Account</p>
-                <p className="text-sm">Start tracking a new account</p>
+                <p className="font-medium">
+                  {isLimitReached ? 'Account Limit Reached' : 'Add New Account'}
+                </p>
+                <p className="text-sm">
+                  {isLimitReached 
+                    ? `Maximum ${accountLimits?.limit} accounts for ${packageName} package`
+                    : 'Start tracking a new account'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -220,6 +243,15 @@ export default function Accounts({ workspaceId }: AccountsProps) {
         </Card>
       </div>
       </div>
+
+      {/* Add Account Modal */}
+      {workspaceId && (
+        <AddAccountModal 
+          open={showAddModal} 
+          onOpenChange={setShowAddModal}
+          workspaceId={workspaceId}
+        />
+      )}
     </div>
   );
 }
