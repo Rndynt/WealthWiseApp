@@ -7,7 +7,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PageContainer } from '@/components/ui/page-container';
 
 
 interface AccountsProps {
@@ -46,8 +45,9 @@ export default function Accounts({ workspaceId }: AccountsProps) {
   }
 
   return (
-    <PageContainer>
-      <div className="space-y-6">
+    <div className="w-full max-w-full overflow-hidden">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-6">
       <div className="mb-6">
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -208,7 +208,8 @@ export default function Accounts({ workspaceId }: AccountsProps) {
         onOpenChange={setShowAddModal}
         workspaceId={workspaceId!}
       />
+        </div>
       </div>
-    </PageContainer>
+    </div>
   );
 }
