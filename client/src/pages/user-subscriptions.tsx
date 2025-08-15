@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Crown, 
@@ -285,18 +285,24 @@ export default function UserSubscriptionsManagement() {
     return numPrice === 0 ? 'Gratis' : `Rp ${numPrice.toLocaleString('id-ID')}`;
   };
 
-  // Filter data
-  const filteredSubscriptions = subscriptions?.filter((sub) => {
-    const matchesSearch = 
-      sub.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.package.name.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter data with proper null safety
+  const filteredSubscriptions = React.useMemo(() => {
+    if (!subscriptions || !Array.isArray(subscriptions)) return [];
+    
+    return subscriptions.filter((sub) => {
+      if (!sub || !sub.user || !sub.package) return false;
+      
+      const matchesSearch = 
+        sub.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.package.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-    const matchesPackage = packageFilter === 'all' || sub.package.id.toString() === packageFilter;
+      const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
+      const matchesPackage = packageFilter === 'all' || sub.package.id.toString() === packageFilter;
 
-    return matchesSearch && matchesStatus && matchesPackage;
-  }) || [];
+      return matchesSearch && matchesStatus && matchesPackage;
+    });
+  }, [subscriptions, searchTerm, statusFilter, packageFilter]);
 
   if (isLoading) {
     return (
@@ -372,7 +378,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-green-600">
-                {filteredSubscriptions.filter(s => s.status === 'active').length}
+                {(filteredSubscriptions || []).filter(s => s?.status === 'active').length}
               </p>
               <p className="text-gray-600">Aktif</p>
             </div>
@@ -384,7 +390,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-red-600">
-                {filteredSubscriptions.filter(s => isBefore(new Date(s.endDate), new Date())).length}
+                {(filteredSubscriptions || []).filter(s => s?.endDate && isBefore(new Date(s.endDate), new Date())).length}
               </p>
               <p className="text-gray-600">Expired</p>
             </div>
@@ -396,7 +402,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-gray-600">
-                {filteredSubscriptions.filter(s => s.status === 'cancelled').length}
+                {(filteredSubscriptions || []).filter(s => s?.status === 'cancelled').length}
               </p>
               <p className="text-gray-600">Diberhentikan</p>
             </div>
@@ -408,7 +414,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-blue-600">
-                {filteredSubscriptions.length}
+                {(filteredSubscriptions || []).length}
               </p>
               <p className="text-gray-600">Total</p>
             </div>
@@ -481,7 +487,7 @@ export default function UserSubscriptionsManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubscriptions.map((subscription) => {
+              {(filteredSubscriptions || []).map((subscription) => {
                 const daysRemaining = Math.ceil(
                   (new Date(subscription.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                 );
@@ -572,7 +578,7 @@ export default function UserSubscriptionsManagement() {
             </TableBody>
           </Table>
 
-          {filteredSubscriptions.length === 0 && (
+          {(!filteredSubscriptions || filteredSubscriptions.length === 0) && (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Tidak ada subscription yang ditemukan</p>
