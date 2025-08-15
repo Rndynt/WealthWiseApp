@@ -159,7 +159,7 @@ export function PWAPullToRefresh() {
               )}
             </div>
             <span className="text-xs text-blue-700 mt-2 font-medium animate-in slide-in-from-top-2 duration-200">
-              {pullDistance > refreshThreshold ? '🎉 Lepas untuk refresh' : '⬇️ Tarik ke bawah'}
+              {pullDistance > refreshThreshold ? 'Lepas untuk refresh' : 'Tarik ke bawah'}
             </span>
           </div>
         </div>

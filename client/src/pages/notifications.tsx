@@ -137,26 +137,17 @@ export default function Notifications() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
-          <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-          <TabsTrigger value="unread" className="relative text-xs sm:text-sm">
-            <span className="truncate">Unread</span>
-            {unreadCount > 0 && (
-              <Badge className="ml-1 h-4 w-4 p-0 text-[10px] absolute -top-1 -right-1 sm:relative sm:ml-2 sm:h-5 sm:w-5 sm:text-xs">{unreadCount}</Badge>
-            )}
+        <TabsList className="grid grid-cols-6 h-9 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-full max-w-2xl">
+          <TabsTrigger value="all" className="text-[11px] px-2 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            All <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0 h-3 min-w-[12px]">{notifications.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="transaction" className="text-xs sm:text-sm">
-            <span className="truncate">Transaction</span>
+          <TabsTrigger value="unread" className="text-[11px] px-2 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            Unread {unreadCount > 0 && <Badge variant="destructive" className="ml-1 text-[9px] px-1 py-0 h-3 min-w-[12px]">{unreadCount}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="budget" className="text-xs sm:text-sm">
-            <span className="truncate">Budget</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="text-xs sm:text-sm">
-            <span className="truncate">Account</span>
-          </TabsTrigger>
-          <TabsTrigger value="system" className="text-xs sm:text-sm">
-            <span className="truncate">System</span>
-          </TabsTrigger>
+          <TabsTrigger value="transaction" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Trans</TabsTrigger>
+          <TabsTrigger value="budget" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Budget</TabsTrigger>
+          <TabsTrigger value="account" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Acc</TabsTrigger>
+          <TabsTrigger value="system" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Sys</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4 mt-6">
@@ -168,21 +159,21 @@ export default function Notifications() {
                   !notification.isRead ? 'shadow-md' : ''
                 }`}
               >
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
+                <CardContent className="p-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex-shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className={`font-medium text-sm leading-tight ${
+                          <h3 className={`font-medium text-xs leading-tight ${
                             !notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
                           }`}>
                             {notification.title}
                           </h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                             {notification.message}
                           </p>
                         </div>

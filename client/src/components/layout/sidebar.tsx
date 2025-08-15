@@ -302,9 +302,12 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             </div>
           </div>
 
-          {/* Subscription Badge */}
-          <div className="mb-3">
-            <UserSubscriptionBadge />
+          {/* Subscription Info - Compact */}
+          <div className="mb-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Plan:</span>
+              <Badge variant="default" className="text-[10px] px-2 py-0.5 h-5">Premium</Badge>
+            </div>
           </div>
 
           {/* Upgrade Button - Compact */}
@@ -312,10 +315,10 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
             <Link href="/upgrade">
               <Button 
                 size="sm" 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-medium py-1.5 h-8"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-medium py-1 h-7"
               >
-                <Zap size={12} className="mr-1.5" />
-                Upgrade Plan
+                <Zap size={10} className="mr-1" />
+                Upgrade
               </Button>
             </Link>
           )}
