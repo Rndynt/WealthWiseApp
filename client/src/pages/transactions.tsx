@@ -113,6 +113,15 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || transaction.type === filterType;
     
+    // Filter by date range with proper timezone handling
+    if (dateRange) {
+      const transactionDate = new Date(transaction.date);
+      const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+      const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59, 999);
+      const matchesDate = transactionDate >= fromDate && transactionDate <= toDate;
+      return matchesSearch && matchesType && matchesDate;
+    }
+    
     // Apply date filter if dateRange is provided
     if (dateRange && dateRange.from && dateRange.to) {
       const transactionDate = new Date(transaction.date);
@@ -123,7 +132,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
     }
     
     return matchesSearch && matchesType;
-  }) || [];
+  })?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || [];
 
   if (isLoading) {
     return (
@@ -195,20 +204,20 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
             const amount = getAmountDisplay(transaction);
             return (
               <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
+                <CardContent className="p-2.5">
+                  <div className="flex items-center gap-2.5">
                     {/* Category Icon - Smaller */}
                     <div className="flex-shrink-0">
                       {transaction.categoryId ? (
-                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm">
+                        <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs">
                           {(() => {
                             const category = categories?.find(cat => cat.id === transaction.categoryId);
                             return category ? (iconMap[category.icon] || category.icon) : '📝';
                           })()}
                         </div>
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                          <ArrowUpDown className="h-4 w-4 text-gray-500" />
+                        <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ArrowUpDown className="h-3.5 w-3.5 text-gray-500" />
                         </div>
                       )}
                     </div>
@@ -252,6 +261,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900">
                         <Trash2 className="h-3 w-3" />
                       </Button>
+                    </div>
                     </div>
                   </div>
                 </CardContent>
