@@ -1,5 +1,5 @@
 import { Menu, Bell, Calendar, Plus, 
-        CreditCard, PieChart, TrendingUp, Target, ChartNoAxesCombined, ArrowLeftRight, ChartColumn, Tags, WalletCards, Handshake
+        CreditCard, PieChart, TrendingUp, Target, ChartNoAxesCombined, ArrowLeftRight, ChartColumn, Tags, WalletCards, Handshake, Shield, UserCog, Crown
        } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation, Link } from 'wouter';
@@ -22,9 +22,10 @@ const pageConfig: Record<string, { title: string, subtitle?: string, showDateFil
   '/reports': { title: 'Reports', subtitle: 'Analyze your financial data', icon : ChartColumn },
   '/debts': { title: 'Debts', subtitle: 'Manage your debts and credits', icon : CreditCard },
   '/collaboration': { title: 'Collaboration', subtitle: 'Share workspace with others', icon : Handshake },
-  '/users': { title: 'User Management', subtitle: 'Manage system users' },
-  '/roles': { title: 'Role Management', subtitle: 'Manage user roles and permissions' },
-  '/subscription-packages': { title: 'Subscription Packages', subtitle: 'Manage subscription plans' },
+  '/users': { title: 'User Management', subtitle: 'Manage system users', icon : UserCog },
+  '/roles': { title: 'Role Management', subtitle: 'Manage user roles and permissions', icon : Shield },
+  '/subscription-packages': { title: 'Subscription Packages', subtitle: 'Manage subscription plans', icon: Crown },
+  '/user-subscriptions': { title: 'User Plan Management', subtitle: 'Manage subscription users', icon: Crown },
   '/subscription': { title: 'Subscription', subtitle: 'Manage your subscription plan' },
   '/profile': { title: 'Profile', subtitle: 'Manage your personal information' },
   '/settings': { title: 'Settings', subtitle: 'Configure application settings' },
