@@ -52,6 +52,10 @@ The netlify.toml file has been updated to skip migrations during build. Push the
 - **Problem**: DevDependencies not installed when NODE_ENV=production
 - **Solution**: Fixed by using npx commands and moving vite to dependencies
 
+### "Cannot find package 'vite'" Error
+- **Problem**: Vite config importing dependencies that aren't available in production build
+- **Solution**: Fixed by using NODE_ENV=production and post-processing asset paths with sed command
+
 ### Build Command Not Found
 - **Problem**: Package.json scripts not found  
 - **Solution**: Use npx commands directly in netlify.toml

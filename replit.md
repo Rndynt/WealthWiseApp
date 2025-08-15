@@ -235,8 +235,10 @@ npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 \
 
 **Fixed Issues**:
 - Resolved "vite: not found" error by moving vite to dependencies and using npx commands
-- Updated netlify.toml to use direct npx commands instead of npm scripts
+- Fixed "Cannot find package 'vite'" error by using NODE_ENV=production for build
+- Updated netlify.toml to use direct npx commands and sed post-processing for asset paths
 - Fixed devDependencies installation issue in Netlify production environment
+- Automated asset path correction from "/WealthWise/assets/" to "/assets/" for Netlify compatibility
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
