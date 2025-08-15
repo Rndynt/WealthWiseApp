@@ -897,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const result = await storage.getUserWithRole(id);
       if (result) {
-        const { password, ...safeUser } = result.user;
+        const { password, ...safeUser } = result;
         res.json({ user: safeUser, role: result.role });
       } else {
         res.status(404).json({ message: "User not found" });
