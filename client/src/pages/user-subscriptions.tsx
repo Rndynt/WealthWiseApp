@@ -100,32 +100,11 @@ export default function UserSubscriptionsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all users with their subscriptions
+  // Fetch all users with their subscriptions - use direct API endpoint
   const { data: subscriptions, isLoading } = useQuery<UserSubscription[]>({
     queryKey: ['/api/admin/user-subscriptions'],
     queryFn: async () => {
-      const users = await apiRequest('GET', '/api/users') as any as User[];
-      const packages = await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
-
-      const subscriptionsData = await Promise.all(
-        users.map(async (user: User) => {
-          try {
-            const userSub = await apiRequest('GET', `/api/users/${user.id}/subscription`) as any;
-            if (userSub) {
-              return {
-                ...userSub.subscription,
-                user,
-                package: userSub.package
-              };
-            }
-          } catch (error) {
-            // User might not have subscription
-            return null;
-          }
-        })
-      );
-
-      return subscriptionsData.filter(Boolean);
+      return await apiRequest('GET', '/api/admin/user-subscriptions') as any as UserSubscription[];
     },
   });
 

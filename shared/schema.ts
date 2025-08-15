@@ -72,6 +72,26 @@ export const workspaceSubscriptions = pgTable("workspace_subscriptions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// App Settings table
+export const appSettings = pgTable("app_settings", {
+  id: serial("id").primaryKey(),
+  appName: text("app_name").notNull().default("FinanceFlow"),
+  appDescription: text("app_description").notNull().default("Personal Finance Management Application"),
+  appLogo: text("app_logo"),
+  defaultTheme: text("default_theme").notNull().default("light"),
+  defaultCurrency: text("default_currency").notNull().default("USD"),
+  defaultLanguage: text("default_language").notNull().default("en"),
+  allowRegistration: boolean("allow_registration").notNull().default(true),
+  requireEmailVerification: boolean("require_email_verification").notNull().default(false),
+  enableNotifications: boolean("enable_notifications").notNull().default(true),
+  sessionTimeout: integer("session_timeout").notNull().default(86400), // 24 hours in seconds
+  maxWorkspaces: integer("max_workspaces").notNull().default(5),
+  maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+  customCss: text("custom_css"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -349,6 +369,12 @@ export const insertWorkspaceMemberSchema = createInsertSchema(workspaceMembers).
   joinedAt: true,
 });
 
+export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
   createdAt: true,
@@ -401,6 +427,9 @@ export type InsertWorkspace = z.infer<typeof insertWorkspaceSchema>;
 
 export type WorkspaceMember = typeof workspaceMembers.$inferSelect;
 export type InsertWorkspaceMember = z.infer<typeof insertWorkspaceMemberSchema>;
+
+export type AppSettings = typeof appSettings.$inferSelect;
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;

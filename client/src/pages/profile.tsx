@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,63 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { User, Lock, Mail, Save } from 'lucide-react';
+import { User, Lock, Mail, Save, Crown, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+// Dynamic Subscription Badge Component
+function DynamicSubscriptionBadge() {
+  const { data: userSubscription } = useQuery<{ subscription: any; package: { name: string } } | null>({
+    queryKey: ['/api/user/subscription'],
+  });
+
+  const packageName = userSubscription?.package?.name || 'basic';
+  
+  const getBadgeVariant = (pkg: string) => {
+    switch(pkg.toLowerCase()) {
+      case 'business': return 'destructive';
+      case 'professional': return 'default';
+      case 'premium': return 'default';
+      case 'basic': return 'secondary';
+      default: return 'secondary';
+    }
+  };
+
+  const capitalizedName = packageName.charAt(0).toUpperCase() + packageName.slice(1);
+
+  return (
+    <Badge variant={getBadgeVariant(packageName)} className="text-[10px] px-2 py-0.5">
+      {capitalizedName}
+    </Badge>
+  );
+}
+
+// Dynamic Role Badge Component (only for management users)
+function DynamicRoleBadge({ user }: { user: any }) {
+  // Hide role for enduser roles (user_basic=3, user_premium=4)
+  const isEndUser = user?.roleId === 3 || user?.roleId === 4;
+  
+  if (isEndUser) {
+    return null; // Don't show role for endusers
+  }
+
+  const getRoleInfo = (roleId: number) => {
+    switch(roleId) {
+      case 1: return { name: 'Root', variant: 'destructive', icon: Crown };
+      case 2: return { name: 'Admin', variant: 'default', icon: Shield };
+      default: return { name: 'User', variant: 'secondary', icon: User };
+    }
+  };
+
+  const roleInfo = getRoleInfo(user?.roleId || 0);
+  const Icon = roleInfo.icon;
+
+  return (
+    <Badge variant={roleInfo.variant as any} className="text-[10px] px-2 py-0.5 flex items-center gap-1">
+      <Icon className="h-3 w-3" />
+      {roleInfo.name}
+    </Badge>
+  );
+}
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -136,13 +191,11 @@ export default function ProfilePage() {
                 <span className="text-gray-600">Member Since:</span>
                 <span>January 2024</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600">Role:</span>
-                <Badge variant="secondary" className="text-[10px] px-2 py-0.5">User</Badge>
-              </div>
+              {/* Role only shown for management users */}
+              <DynamicRoleBadge user={user} />
               <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Subscription:</span>
-                <Badge variant="default" className="text-[10px] px-2 py-0.5">Premium</Badge>
+                <DynamicSubscriptionBadge />
               </div>
             </div>
           </CardContent>
