@@ -8,27 +8,42 @@ import {
   userSubscriptions,
   workspaces,
   workspaceMembers,
+  workspaceSubscriptions,
   categories,
-  accounts
+  accounts,
+  transactions,
+  budgets,
+  debts
 } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { sql } from "drizzle-orm";
 
 async function resetDatabase() {
   console.log("🔄 Resetting database for enhanced RBAC...");
 
-  // Delete in correct order (foreign key constraints)
-  await db.delete(accounts);
-  await db.delete(categories);
-  await db.delete(workspaceMembers);
-  await db.delete(workspaces);
-  await db.delete(userSubscriptions);
-  await db.delete(users);
-  await db.delete(subscriptionPackages);
-  await db.delete(rolePermissions);
-  await db.delete(permissions);
-  await db.delete(roles);
-
-  console.log("✅ Database reset completed!");
+  try {
+    // Use TRUNCATE CASCADE to handle foreign keys automatically
+    const tableNames = [
+      'transactions', 'budgets', 'debts', 'accounts', 'categories',
+      'workspace_members', 'workspace_subscriptions', 'workspaces', 
+      'user_subscriptions', 'users', 'subscription_packages',
+      'role_permissions', 'permissions', 'roles'
+    ];
+    
+    for (const tableName of tableNames) {
+      try {
+        await db.execute(sql.raw(`TRUNCATE TABLE "${tableName}" CASCADE`));
+      } catch (error) {
+        // Continue if table doesn't exist or is already empty
+        console.log(`⚠️ Could not truncate ${tableName}:`, error);
+      }
+    }
+    
+    console.log("✅ Database reset completed!");
+  } catch (error) {
+    console.error("❌ Database reset failed:", error);
+    throw error;
+  }
 }
 
 async function seedEnhancedRoles() {

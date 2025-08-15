@@ -5,6 +5,7 @@ FinanceFlow is a full-stack personal finance management application designed to 
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Development approach: Mobile-first UI/UX with ultra-compact designs for optimal mobile experience.
 
 ## System Architecture
 
@@ -34,9 +35,17 @@ Preferred communication style: Simple, everyday language.
 - **Workspace Management**: Multi-workspace support (personal, family, business), role-based access control (owner, editor, viewer), hierarchical data organization. Workspace creation is subscription-tier limited.
 - **Financial Data Models**: Comprehensive models for Users, Workspaces, Accounts, Categories, Transactions, Budgets, and Debts.
 - **Enhanced RBAC and Subscription System**: Four-tier role system (root, admin, user_basic, user_premium) with granular permissions (`admin.*`, `user.*` with `.pages` for menu visibility and `.access` for feature access). Subscription packages (basic, premium, professional, business) enforce feature limitations and prevent privilege escalation through workspace invitations.
-- **UI Component System**: Utilizes shadcn/ui for responsive, accessible components, with dark/light theme support.
+- **Mobile-First UI/UX**: Ultra-compact design system optimized for mobile devices with micro text sizes (text-[9px], text-[10px]), reduced padding (p-2), tiny avatars (w-6 h-6), and minimal spacing for maximum content density.
+- **UI Component System**: Utilizes shadcn/ui for responsive, accessible components, with dark/light theme support and mobile-optimized sizing.
+- **Enhanced Pull-to-Refresh**: Smooth animations with visual feedback including background gradients and improved user experience.
 - **Monorepo Structure**: Shared TypeScript definitions between frontend and backend for type safety.
 - **PWA Support**: Implemented as a Progressive Web App (PWA) with manifest, service worker for offline caching, push notifications, and app shortcuts.
+
+### Recent Changes (August 2025)
+- **Database Seeding Fixed**: Resolved foreign key constraint issues using TRUNCATE CASCADE approach for proper database reset
+- **Mobile UI Optimization**: Implemented dramatic size reductions for mobile view including ultra-compact transaction cards, notification tabs, and profile sidebar
+- **Date Filter Enhancement**: Fixed timezone handling and synchronization for accurate transaction filtering
+- **Performance Improvements**: Enhanced pull-to-refresh animations and improved mobile responsiveness
 
 ## External Dependencies
 
