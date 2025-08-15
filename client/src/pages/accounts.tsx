@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,10 +6,7 @@ import { Button } from '@/components/ui/button';
 import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
-import AddAccountModal from '@/components/modals/add-account-modal';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/ui/page-container';
-import { Suspense } from 'react'; // Import Suspense
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -16,7 +14,6 @@ interface AccountsProps {
 
 export default function Accounts({ workspaceId }: AccountsProps) {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showModal, setShowModal] = useState(false);
 
   const { data: accounts, isLoading } = useQuery<Account[]>({
     queryKey: [`/api/workspaces/${workspaceId}/accounts`],
@@ -39,9 +36,11 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
   if (!workspaceId) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Please select a workspace to view accounts</p>
-      </div>
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500">Please select a workspace to view accounts</p>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -61,7 +60,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                 </p>
               </div>
               <div className="flex-shrink-0 w-full sm:w-auto">
-                <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
+                <Button onClick={() => alert('Add Account Modal - Coming Soon!')} className="w-full sm:w-auto">
                   <Plus className="mr-2" size={16} />
                   Add Account
                 </Button>
@@ -136,7 +135,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
           {/* Add Account Card */}
           <Card
             className="border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer transition-colors"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => alert('Add Account Modal - Coming Soon!')}
           >
             <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center text-gray-500 py-8">
@@ -155,25 +154,25 @@ export default function Accounts({ workspaceId }: AccountsProps) {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="data-table">
+              <table className="w-full">
                 <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Account</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th className="text-right">Amount</th>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Account</th>
+                    <th className="text-left p-2">Description</th>
+                    <th className="text-left p-2">Category</th>
+                    <th className="text-right p-2">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions?.slice(0, 10).map((transaction) => {
                     const account = accounts?.find(a => a.id === transaction.accountId);
                     return (
-                      <tr key={transaction.id}>
-                        <td>{new Date(transaction.date).toLocaleDateString()}</td>
-                        <td>{account?.name || 'Unknown'}</td>
-                        <td>{transaction.description}</td>
-                        <td>
+                      <tr key={transaction.id} className="border-b">
+                        <td className="p-2">{new Date(transaction.date).toLocaleDateString()}</td>
+                        <td className="p-2">{account?.name || 'Unknown'}</td>
+                        <td className="p-2">{transaction.description}</td>
+                        <td className="p-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             transaction.type === 'income'
                               ? 'bg-green-100 text-green-800'
@@ -182,7 +181,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                             {transaction.type}
                           </span>
                         </td>
-                        <td className={`text-right font-medium ${
+                        <td className={`text-right font-medium p-2 ${
                           transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
@@ -203,23 +202,6 @@ export default function Accounts({ workspaceId }: AccountsProps) {
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Account</DialogTitle>
-            <DialogDescription>
-              Fill in the details below to add a new account.
-            </DialogDescription>
-          </DialogHeader>
-          <Suspense fallback={<div>Loading...</div>}>
-            <AddAccountModal
-              workspaceId={workspaceId!}
-              onClose={() => setShowAddModal(false)}
-            />
-          </Suspense>
-        </DialogContent>
-      </Dialog>
     </PageContainer>
   );
 }
