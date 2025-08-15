@@ -9,7 +9,7 @@ interface HeaderProps {
   currentDateRange?: { from: Date; to: Date } | null;
 }
 
-const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean, icon?: string }> = {
+const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean, icon?: React.ElementType }> = {
   '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
   '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: PieChart  },
   '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: TrendingUp },
@@ -59,7 +59,8 @@ export default function Header({ onToggleSidebar, onDateRangeChange, currentDate
             <Menu size={20} />
           </Button>
           <div className="flex-1 min-w-0">
-            { pageInfo.icon }
+            {pageInfo.icon && <pageInfo.icon className="w-5 h-5 mr-2 text-gray-500" />}
+
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
               {pageInfo.title}
             </h1>
