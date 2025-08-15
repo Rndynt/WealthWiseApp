@@ -48,9 +48,13 @@ The netlify.toml file has been updated to skip migrations during build. Push the
 - **Problem**: Environment variable not set
 - **Solution**: Add DATABASE_URL to Netlify environment variables
 
+### "vite: not found" Error
+- **Problem**: DevDependencies not installed when NODE_ENV=production
+- **Solution**: Fixed by using npx commands and moving vite to dependencies
+
 ### Build Command Not Found
-- **Problem**: Package.json scripts not found
-- **Solution**: Use the exact build command from netlify.toml
+- **Problem**: Package.json scripts not found  
+- **Solution**: Use npx commands directly in netlify.toml
 
 ### Function Bundle Too Large
 - **Problem**: Netlify function bundle is over 50MB

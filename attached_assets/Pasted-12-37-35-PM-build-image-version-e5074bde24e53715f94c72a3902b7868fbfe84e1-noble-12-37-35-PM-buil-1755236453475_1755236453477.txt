@@ -1,0 +1,117 @@
+12:37:35 PM: build-image version: e5074bde24e53715f94c72a3902b7868fbfe84e1 (noble)
+12:37:35 PM: buildbot version: e5074bde24e53715f94c72a3902b7868fbfe84e1
+12:37:36 PM: Fetching cached dependencies
+12:37:36 PM: Starting to download cache of 338.3MB (Last modified: 2025-08-15 04:40:47 +0000 UTC)
+12:37:37 PM: Finished downloading cache in 883ms
+12:37:37 PM: Starting to extract cache
+12:37:40 PM: Finished extracting cache in 3.451s
+12:37:40 PM: Finished fetching cache in 4.399s
+12:37:40 PM: Starting to prepare the repo for build
+12:37:40 PM: Preparing Git Reference refs/heads/main
+12:37:41 PM: Custom build path detected. Proceeding with the specified path: ''
+12:37:41 PM: Custom publish path detected. Proceeding with the specified path: 'dist/public'
+12:37:41 PM: Custom functions path detected. Proceeding with the specified path: 'netlify/functions'
+12:37:41 PM: Custom build command detected. Proceeding with the specified command: 'npm ci && npm run build:frontend && npm run build:functions'
+12:37:42 PM: Starting to install dependencies
+12:37:42 PM: Started restoring cached python cache
+12:37:42 PM: Finished restoring cached python cache
+12:37:42 PM: Started restoring cached ruby cache
+12:37:42 PM: Finished restoring cached ruby cache
+12:37:43 PM: Started restoring cached go cache
+12:37:43 PM: Finished restoring cached go cache
+12:37:44 PM: v22.18.0 is already installed.
+12:37:44 PM: Now using node v22.18.0 (npm v10.9.3)
+12:37:44 PM: Enabling Node.js Corepack
+12:37:44 PM: Started restoring cached build plugins
+12:37:44 PM: Finished restoring cached build plugins
+12:37:44 PM: WARNING: The environment variable 'NODE_ENV' is set to 'production'. Any 'devDependencies' in package.json will not be installed
+12:37:44 PM: Started restoring cached corepack dependencies
+12:37:44 PM: Finished restoring cached corepack dependencies
+12:37:44 PM: No npm workspaces detected
+12:37:44 PM: Started restoring cached node modules
+12:37:44 PM: Finished restoring cached node modules
+12:37:44 PM: Installing npm packages using npm version 10.9.3
+12:37:47 PM: added 18 packages, removed 13 packages, and changed 173 packages in 3s
+12:37:47 PM: npm packages installed
+12:37:47 PM: Successfully installed dependencies
+12:37:47 PM: Starting build script
+12:37:48 PM: Detected 1 framework(s)
+12:37:48 PM: "vite" at version "5.4.19"
+12:37:48 PM: Section completed: initializing
+12:37:49 PM: ​
+12:37:49 PM: Netlify Build                                                 
+12:37:49 PM: ────────────────────────────────────────────────────────────────
+12:37:49 PM: ​
+12:37:49 PM: ❯ Version
+12:37:49 PM:   @netlify/build 35.0.7
+12:37:49 PM: ​
+12:37:49 PM: ❯ Flags
+12:37:49 PM:   accountId: 6866e1b0d9019f32fa5343d0
+12:37:49 PM:   baseRelDir: true
+12:37:49 PM:   buildId: 689ec79e0cacd300083ae091
+12:37:49 PM:   deployId: 689ec79e0cacd300083ae093
+12:37:49 PM: ​
+12:37:49 PM: ❯ Current directory
+12:37:49 PM:   /opt/build/repo
+12:37:49 PM: ​
+12:37:49 PM: ❯ Config file
+12:37:49 PM:   /opt/build/repo/netlify.toml
+12:37:49 PM: ​
+12:37:49 PM: ❯ Context
+12:37:49 PM:   production
+12:37:49 PM: ​
+12:37:49 PM: ❯ Installing extensions
+12:37:49 PM:    - neon
+12:37:50 PM: ​
+12:37:50 PM: ❯ Loading extensions
+12:37:50 PM:    - neon
+12:37:51 PM: ​
+12:37:51 PM: build.command from netlify.toml                               
+12:37:51 PM: ────────────────────────────────────────────────────────────────
+12:37:51 PM: ​
+12:37:51 PM: $ npm ci && npm run build:frontend && npm run build:functions
+12:37:58 PM: added 417 packages, and audited 418 packages in 7s
+12:37:58 PM: 55 packages are looking for funding
+12:37:58 PM:   run `npm fund` for details
+12:37:58 PM: found 0 vulnerabilities
+12:37:59 PM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+12:37:59 PM: > rest-express@1.0.0 build:frontend
+12:37:59 PM: > vite build
+12:37:59 PM: sh: 1: vite: not found
+12:37:59 PM: ​
+12:37:59 PM: "build.command" failed                                        
+12:37:59 PM: ────────────────────────────────────────────────────────────────
+12:37:59 PM: ​
+12:37:59 PM:   Error message
+12:37:59 PM:   Command failed with exit code 127: npm ci && npm run build:frontend && npm run build:functions (https://ntl.fyi/exit-code-127)
+12:37:59 PM: ​
+12:37:59 PM:   Error location
+12:37:59 PM:   In build.command from netlify.toml:
+12:37:59 PM:   npm ci && npm run build:frontend && npm run build:functions
+12:37:59 PM: ​
+12:37:59 PM:   Resolved config
+12:37:59 PM:   build:
+12:37:59 PM:     base: /opt/build/repo
+12:37:59 PM:     command: npm ci && npm run build:frontend && npm run build:functions
+12:37:59 PM:     commandOrigin: config
+12:37:59 PM:     environment:
+12:37:59 PM:       - DATABASE_URL
+12:37:59 PM:       - JWT_SECRET
+12:37:59 PM:       - NETLIFY_DATABASE_URL
+12:37:59 PM:       - NETLIFY_DATABASE_URL_UNPOOLED
+12:37:59 PM:       - NODE_ENV
+12:37:59 PM:       - SESSION_SECRET
+12:37:59 PM:     publish: /opt/build/repo/dist/public
+12:37:59 PM:     publishOrigin: config
+12:37:59 PM:   functionsDirectory: /opt/build/repo/netlify/functions
+12:37:59 PM:   redirects:
+12:37:59 PM:     - from: /api/*
+      status: 200
+      to: /.netlify/functions/api/:splat
+    - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+12:37:59 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+12:37:59 PM: Failing build: Failed to build site
+12:38:01 PM: Finished processing build request in 24.112s
