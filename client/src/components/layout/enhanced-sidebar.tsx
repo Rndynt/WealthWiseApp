@@ -22,12 +22,21 @@ import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 function UserSubscriptionBadge1({ packageName }: { packageName?: string }) {
   if (!packageName) return null;
 
-  const badgeVariant = packageName.toLowerCase() === 'premium' ? 'default' : 'secondary';
-  const badgeText = packageName.toLowerCase() === 'premium' ? 'Premium' : 'Basic';
+  const getBadgeVariant = (pkg: string) => {
+    switch(pkg.toLowerCase()) {
+      case 'business': return 'destructive';
+      case 'professional': return 'default';
+      case 'premium': return 'default';
+      case 'basic': return 'secondary';
+      default: return 'secondary';
+    }
+  };
+
+  const capitalizedName = packageName.charAt(0).toUpperCase() + packageName.slice(1);
 
   return (
-    <Badge variant={badgeVariant} className="text-xs">
-      {badgeText}
+    <Badge variant={getBadgeVariant(packageName)} className="text-xs">
+      {capitalizedName}
     </Badge>
   );
 }

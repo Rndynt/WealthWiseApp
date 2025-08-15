@@ -15,6 +15,7 @@ import {
   rolePermissions,
   subscriptionPackages,
   userSubscriptions,
+  appSettings,
   type User,
   type Workspace,
   type Category,
@@ -41,6 +42,8 @@ import {
   type InsertSubscriptionPackage,
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
+  type AppSettings,
+  type InsertAppSettings,
 } from '@shared/schema';
 import {
   type WorkspaceMember,
@@ -159,8 +162,8 @@ export interface IStorage {
   checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
 
   // Settings
-  getAppSettings(): Promise<any>;
-  updateAppSettings(settings: any): Promise<any>;
+  getAppSettings(): Promise<AppSettings>;
+  updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
 
   // Public APIs
   getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]>;
@@ -820,20 +823,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Settings
-  async getAppSettings(): Promise<any> {
-    // For now, return basic settings - in a real app this would come from a settings table
-    return {
-      appName: 'FinanceFlow',
-      theme: 'light',
-      logoUrl: null,
-      primaryColor: '#3B82F6',
-    };
+  async getAppSettings(): Promise<AppSettings> {
+    const [settings] = await db.select().from(appSettings).limit(1);
+    
+    // If no settings exist, create default settings
+    if (!settings) {
+      const [newSettings] = await db.insert(appSettings).values({}).returning();
+      return newSettings;
+    }
+    
+    return settings;
   }
 
-  async updateAppSettings(settings: any): Promise<any> {
-    // For now, just return the updated settings - in a real app this would update a settings table
+  async updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
     const currentSettings = await this.getAppSettings();
-    return { ...currentSettings, ...settings };
+    
+    const [updatedSettings] = await db
+      .update(appSettings)
+      .set({
+        ...settings,
+        updatedAt: new Date()
+      })
+      .where(eq(appSettings.id, currentSettings.id))
+      .returning();
+    
+    return updatedSettings;
   }
 
   // Public APIs
