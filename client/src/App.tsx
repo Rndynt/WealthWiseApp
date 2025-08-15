@@ -31,7 +31,7 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { useLocation } from "wouter";
 import { PWAInstallButton } from "@/components/pwa-install-button";
-import { PWAPullToRefresh } from "@/components/pwa-refresh-button";
+import { EnhancedPullToRefresh } from "@/components/enhanced-pull-to-refresh";
 
 import AddTransactionModal from "@/components/modals/add-transaction-modal";
 import AddAccountModal from "@/components/modals/add-account-modal";
@@ -102,21 +102,22 @@ function AppRouter() {
           currentDateRange={dateRange}
         />
 
-        <main className="p-4 sm:p-6">
-          <Switch>
-            <Route path="/" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
-            <Route path="/dashboard" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
-            <Route path="/accounts" component={() => <Accounts workspaceId={currentWorkspace?.id} />} />
-            <Route path="/categories" component={() => <Categories workspaceId={currentWorkspace?.id} />} />
-            <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} dateRange={dateRange} />} />
-            <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
-            <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
-            <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
-            <Route path="/collaboration" component={() => 
-              <ProtectedRoute requiredPermission="user.collaboration.pages">
-                <Collaboration workspaceId={currentWorkspace?.id} />
-              </ProtectedRoute>
-            } />
+        <EnhancedPullToRefresh onRefresh={() => window.location.reload()}>
+          <main className="p-4 sm:p-6">
+            <Switch>
+              <Route path="/" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
+              <Route path="/dashboard" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
+              <Route path="/accounts" component={() => <Accounts workspaceId={currentWorkspace?.id} />} />
+              <Route path="/categories" component={() => <Categories workspaceId={currentWorkspace?.id} />} />
+              <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} dateRange={dateRange} />} />
+              <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
+              <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
+              <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
+              <Route path="/collaboration" component={() => 
+                <ProtectedRoute requiredPermission="user.collaboration.pages">
+                  <Collaboration workspaceId={currentWorkspace?.id} />
+                </ProtectedRoute>
+              } />
             {/* Redirect '/login' to '/dashboard' when authenticated */}
             <Route path="/login" component={() => <Redirect to="/dashboard" />} />
 
@@ -162,8 +163,9 @@ function AppRouter() {
               </ProtectedRoute>
             } />
             <Route component={NotFound} />
-          </Switch>
-        </main>
+            </Switch>
+          </main>
+        </EnhancedPullToRefresh>
 
         {/* Modals */}
         <AddTransactionModal 
@@ -195,7 +197,7 @@ function App() {
             <AppRouter />
             <Toaster />
             <PWAInstallButton />
-            <PWAPullToRefresh />
+
           </EnhancedPermissionsProvider>
         </AuthProvider>
       </TooltipProvider>
