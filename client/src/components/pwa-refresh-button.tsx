@@ -52,6 +52,10 @@ export function PWAPullToRefresh() {
           e.preventDefault();
           setIsPulling(true);
           setPullDistance(Math.min(distance, 150));
+          
+          // Apply transform to body for pull effect
+          document.body.style.transform = `translateY(${Math.min(distance * 0.5, 75)}px)`;
+          document.body.style.transition = 'none';
         }
       }
     };
@@ -60,6 +64,14 @@ export function PWAPullToRefresh() {
       if (isPulling && pullDistance > 80) {
         handleRefresh();
       }
+      
+      // Reset body transform
+      document.body.style.transform = '';
+      document.body.style.transition = 'transform 0.3s ease-out';
+      setTimeout(() => {
+        document.body.style.transition = '';
+      }, 300);
+      
       setIsPulling(false);
       setPullDistance(0);
       startY.current = 0;
@@ -119,8 +131,9 @@ export function PWAPullToRefresh() {
       {/* Pull-to-refresh indicator */}
       {isPulling && (
         <div 
-          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-200"
+          className="fixed left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-200"
           style={{ 
+            top: 'env(safe-area-inset-top, 0px)',
             height: `${Math.min(pullDistance, maxPullDistance)}px`,
             transform: `translateY(-${maxPullDistance - pullDistance}px)`
           }}

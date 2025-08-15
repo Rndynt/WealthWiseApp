@@ -13,6 +13,7 @@ import { PageContainer, TableContainer } from '@/components/ui/page-container';
 
 interface TransactionsProps {
   workspaceId: number | undefined;
+  dateRange?: { from: Date; to: Date } | null;
 }
 
 const iconMap: Record<string, string> = {
@@ -39,7 +40,7 @@ const iconMap: Record<string, string> = {
   'piggy-bank': '🐷',
 };
 
-export default function Transactions({ workspaceId }: TransactionsProps) {
+export default function Transactions({ workspaceId, dateRange }: TransactionsProps) {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -55,7 +56,7 @@ export default function Transactions({ workspaceId }: TransactionsProps) {
   }
 
   const { data: transactions, isLoading } = useQuery<Transaction[]>({
-    queryKey: [`/api/workspaces/${workspaceId}/transactions`],
+    queryKey: [`/api/workspaces/${workspaceId}/transactions`, dateRange],
     enabled: !!workspaceId,
   });
 
