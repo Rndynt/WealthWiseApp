@@ -15,6 +15,8 @@ export function PageContainer({ children, className = '' }: PageContainerProps) 
   );
 }
 
+export default PageContainer;
+
 interface CardContainerProps {
   children: ReactNode;
   className?: string;

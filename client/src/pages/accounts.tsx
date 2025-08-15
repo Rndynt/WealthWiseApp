@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/ui/page-container';
+import { Suspense } from 'react'; // Import Suspense
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -204,11 +204,22 @@ export default function Accounts({ workspaceId }: AccountsProps) {
         </Card>
       </div>
 
-      <AddAccountModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        workspaceId={workspaceId!}
-      />
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Account</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to add a new account.
+            </DialogDescription>
+          </DialogHeader>
+          <Suspense fallback={<div>Loading...</div>}>
+            <AddAccountModal
+              workspaceId={workspaceId!}
+              onClose={() => setShowAddModal(false)}
+            />
+          </Suspense>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }
