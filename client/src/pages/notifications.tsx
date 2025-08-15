@@ -137,18 +137,20 @@ export default function Notifications() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 h-9 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-full max-w-2xl">
-          <TabsTrigger value="all" className="text-[11px] px-2 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            All <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0 h-3 min-w-[12px]">{notifications.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="unread" className="text-[11px] px-2 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            Unread {unreadCount > 0 && <Badge variant="destructive" className="ml-1 text-[9px] px-1 py-0 h-3 min-w-[12px]">{unreadCount}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="transaction" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Trans</TabsTrigger>
-          <TabsTrigger value="budget" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Budget</TabsTrigger>
-          <TabsTrigger value="account" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Acc</TabsTrigger>
-          <TabsTrigger value="system" className="text-[11px] px-1 py-1 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">Sys</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="grid grid-cols-6 h-8 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg min-w-full">
+            <TabsTrigger value="all" className="text-[9px] px-1 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">
+              All <Badge variant="secondary" className="ml-0.5 text-[7px] px-0.5 py-0 h-2.5 min-w-[10px] leading-none">{notifications.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="unread" className="text-[9px] px-1 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">
+              Unread {unreadCount > 0 && <Badge variant="destructive" className="ml-0.5 text-[7px] px-0.5 py-0 h-2.5 min-w-[10px] leading-none">{unreadCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="transaction" className="text-[9px] px-0.5 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Trans</TabsTrigger>
+            <TabsTrigger value="budget" className="text-[9px] px-0.5 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Budget</TabsTrigger>
+            <TabsTrigger value="account" className="text-[9px] px-0.5 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Acc</TabsTrigger>
+            <TabsTrigger value="system" className="text-[9px] px-0.5 py-1 h-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Sys</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={activeTab} className="space-y-4 mt-6">
           {filteredNotifications.length > 0 ? (
@@ -159,21 +161,23 @@ export default function Notifications() {
                   !notification.isRead ? 'shadow-md' : ''
                 }`}
               >
-                <CardContent className="p-2.5">
-                  <div className="flex items-start gap-2.5">
+                <CardContent className="p-2">
+                  <div className="flex items-start gap-2">
                     <div className="flex-shrink-0 mt-0.5">
-                      {getNotificationIcon(notification.type)}
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        {getNotificationIcon(notification.type)}
+                      </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className={`font-medium text-xs leading-tight ${
+                          <h3 className={`font-medium text-[11px] leading-tight ${
                             !notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
                           }`}>
                             {notification.title}
                           </h3>
-                          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">
                             {notification.message}
                           </p>
                         </div>
