@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth';
-import { usePermissions } from '@/lib/permissions';
+import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,7 +14,7 @@ export default function ProtectedRoute({
   requiredRole 
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  const { hasPermission, hasRole, isRoot, isLoading } = usePermissions();
+  const { hasPermission, isAdmin, isRoot, isLoading } = useEnhancedPermissions();
 
   if (loading || isLoading) {
     return (
@@ -36,7 +36,7 @@ export default function ProtectedRoute({
   }
 
   // Root user has access to everything
-  if (isRoot()) {
+  if (isRoot) {
     return <>{children}</>;
   }
 
@@ -52,8 +52,8 @@ export default function ProtectedRoute({
     );
   }
 
-  // Check required role
-  if (requiredRole && !hasRole(requiredRole)) {
+  // Check required role (for admin routes, check if user is admin)
+  if (requiredRole && requiredRole === 'admin' && !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

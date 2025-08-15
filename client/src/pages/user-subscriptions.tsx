@@ -108,7 +108,7 @@ export default function UserSubscriptionsManagement() {
     },
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
       return await apiRequest('GET', '/api/users') as any as User[];
@@ -116,7 +116,7 @@ export default function UserSubscriptionsManagement() {
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const { data: packages, isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
+  const { data: packages = [], isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
     queryFn: async () => {
       return await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
@@ -317,16 +317,7 @@ export default function UserSubscriptionsManagement() {
     );
   }
 
-  // Safety check - ensure data is available
-  if (!subscriptions || !users || !packages) {
-    return (
-      <PageContainer>
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading data...</p>
-        </div>
-      </PageContainer>
-    );
-  }
+  
 
   return (
     <PageContainer>
@@ -470,7 +461,7 @@ export default function UserSubscriptionsManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Package</SelectItem>
-                {packages.length > 0 ? (
+                {Array.isArray(packages) && packages.length > 0 ? (
                   packages.map((pkg) => (
                     <SelectItem key={pkg.id} value={pkg.id.toString()}>
                       {pkg.name} ({formatPrice(pkg.price)})
@@ -625,7 +616,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.length > 0 ? (
+                  {Array.isArray(users) && users.length > 0 ? (
                     users.map((user) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.name} ({user.email})
@@ -650,7 +641,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {packages.length > 0 ? (
+                  {Array.isArray(packages) && packages.length > 0 ? (
                     packages.filter(pkg => pkg?.isActive).map((pkg) => (
                       <SelectItem key={pkg.id} value={pkg.id.toString()}>
                         {pkg.name} - {formatPrice(pkg.price)}
