@@ -30,6 +30,7 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { useLocation } from "wouter";
 import { PWAInstallButton } from "@/components/pwa-install-button";
+import { PWAPullToRefresh } from "@/components/pwa-refresh-button";
 
 import AddTransactionModal from "@/components/modals/add-transaction-modal";
 import AddAccountModal from "@/components/modals/add-account-modal";
@@ -187,6 +188,7 @@ function App() {
             <AppRouter />
             <Toaster />
             <PWAInstallButton />
+            <PWAPullToRefresh />
           </EnhancedPermissionsProvider>
         </AuthProvider>
       </TooltipProvider>

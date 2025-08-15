@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function PWARefreshButton() {
+export function PWAPullToRefresh() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const startY = useRef(0);
+  const currentY = useRef(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,7 +33,49 @@ export function PWARefreshButton() {
         }
       });
     }
-  }, [needRefresh]);
+
+    // Touch events for pull-to-refresh
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY === 0) {
+        startY.current = e.touches[0].clientY;
+        setIsPulling(false);
+        setPullDistance(0);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (window.scrollY === 0 && startY.current > 0) {
+        currentY.current = e.touches[0].clientY;
+        const distance = currentY.current - startY.current;
+        
+        if (distance > 0) {
+          e.preventDefault();
+          setIsPulling(true);
+          setPullDistance(Math.min(distance, 150));
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (isPulling && pullDistance > 80) {
+        handleRefresh();
+      }
+      setIsPulling(false);
+      setPullDistance(0);
+      startY.current = 0;
+      currentY.current = 0;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [needRefresh, isPulling, pullDistance]);
 
   const handleRefresh = async () => {
     if (!('serviceWorker' in navigator)) {
@@ -66,50 +111,62 @@ export function PWARefreshButton() {
     }
   };
 
-  const handleForceRefresh = () => {
-    // Force clear cache and reload
-    if ('caches' in window) {
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => caches.delete(cacheName))
-        );
-      }).then(() => {
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
-      });
-    } else {
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
-    }
-  };
+  const refreshThreshold = 80;
+  const maxPullDistance = 150;
 
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-        className="flex items-center gap-2"
-        data-testid="button-refresh"
-      >
-        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        {needRefresh ? 'Update Tersedia' : 'Refresh'}
-      </Button>
-      
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleForceRefresh}
-        className="flex items-center gap-2"
-        title="Force refresh - clear cache dan reload"
-        data-testid="button-force-refresh"
-      >
-        <RotateCcw className="h-4 w-4" />
-        Reset
-      </Button>
-    </div>
+    <>
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-200"
+          style={{ 
+            height: `${Math.min(pullDistance, maxPullDistance)}px`,
+            transform: `translateY(-${maxPullDistance - pullDistance}px)`
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <RefreshCw 
+              className={`h-6 w-6 text-green-600 transition-transform duration-200 ${
+                pullDistance > refreshThreshold ? 'animate-spin' : ''
+              }`}
+              style={{ 
+                transform: `rotate(${pullDistance * 2}deg)` 
+              }}
+            />
+            <span className="text-xs text-gray-600 mt-1">
+              {pullDistance > refreshThreshold ? 'Lepas untuk refresh' : 'Tarik ke bawah'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Update notification */}
+      {needRefresh && !isPulling && (
+        <div className="fixed top-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-80">
+          <div className="bg-green-600 text-white p-3 rounded-lg shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Update tersedia</span>
+              <button
+                onClick={handleRefresh}
+                className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading overlay during refresh */}
+      {isRefreshing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center">
+            <RefreshCw className="h-8 w-8 text-green-600 animate-spin" />
+            <span className="text-sm text-gray-600 mt-2">Memperbarui aplikasi...</span>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
