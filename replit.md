@@ -205,6 +205,20 @@ mkdir -p server/public
 cp -r dist/public/* server/public/
 ```
 
+### PostgreSQL Sequence Fix (August 15, 2025)
+**Problem**: Registration failing with "duplicate key value violates unique constraint" error after database seeding.
+**Root Cause**: Database sequences not synchronized with explicitly inserted seed data (IDs 1-5).
+**Solution**: 
+1. Created `fix-sequences.sql` script to synchronize all PostgreSQL sequences with existing data
+2. Fixed sequences for users, roles, permissions, subscription_packages, workspaces, categories, etc.
+3. Registration now works correctly for new users
+
+**Test Results**:
+- ✅ Registration successful for new user with email "newuser@example.com"
+- ✅ Personal workspace created automatically
+- ✅ JWT token generated and returned properly
+- ✅ User ID sequence continues from 6 (after seed users 1-5)
+
 ### Netlify Deployment Setup (August 15, 2025)
 **Objective**: Configure application for Netlify serverless deployment following TradingJournal project pattern.
 **Implementation**: 
