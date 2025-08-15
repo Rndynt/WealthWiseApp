@@ -13,8 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
 import { 
   useEnhancedPermissions, 
-  ENHANCED_NAVIGATION_ITEMS, 
-  ENHANCED_ADMIN_NAVIGATION_ITEMS 
+  ENHANCED_PERMISSIONS
 } from '@/lib/enhanced-permissions';
 import { Workspace } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
@@ -41,22 +40,22 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, ...ENHANCED_NAVIGATION_ITEMS[0] },
-  { path: '/accounts', label: 'Accounts', icon: Wallet, ...ENHANCED_NAVIGATION_ITEMS[1] },
-  { path: '/transactions', label: 'Transactions', icon: ArrowLeftRight, ...ENHANCED_NAVIGATION_ITEMS[2] },
-  { path: '/categories', label: 'Categories', icon: Tags, ...ENHANCED_NAVIGATION_ITEMS[3] },
-  { path: '/budget', label: 'Budget', icon: Calculator, ...ENHANCED_NAVIGATION_ITEMS[4] },
-  { path: '/reports', label: 'Reports', icon: BarChart3, ...ENHANCED_NAVIGATION_ITEMS[5] },
-  { path: '/debts', label: 'Debts', icon: CreditCard, ...ENHANCED_NAVIGATION_ITEMS[6] },
-  { path: '/collaboration', label: 'Collaboration', icon: Users, ...ENHANCED_NAVIGATION_ITEMS[7] },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, pagePermission: ENHANCED_PERMISSIONS.USER_DASHBOARD_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_DASHBOARD_ACCESS },
+  { path: '/accounts', label: 'Accounts', icon: Wallet, pagePermission: ENHANCED_PERMISSIONS.USER_ACCOUNTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_ACCOUNTS_ACCESS },
+  { path: '/transactions', label: 'Transactions', icon: ArrowLeftRight, pagePermission: ENHANCED_PERMISSIONS.USER_TRANSACTIONS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_TRANSACTIONS_ACCESS },
+  { path: '/categories', label: 'Categories', icon: Tags, pagePermission: ENHANCED_PERMISSIONS.USER_CATEGORIES_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_CATEGORIES_ACCESS },
+  { path: '/budget', label: 'Budget', icon: Calculator, pagePermission: ENHANCED_PERMISSIONS.USER_BUDGETS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_BUDGETS_ACCESS },
+  { path: '/reports', label: 'Reports', icon: BarChart3, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
+  { path: '/debts', label: 'Debts', icon: CreditCard, pagePermission: ENHANCED_PERMISSIONS.USER_DEBTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_DEBTS_ACCESS },
+  { path: '/collaboration', label: 'Collaboration', icon: Users, pagePermission: ENHANCED_PERMISSIONS.USER_COLLABORATION_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_COLLABORATION_ACCESS },
 ];
 
 const adminNavigationItems = [
-  { path: '/users', label: 'User Management', icon: UserCog, ...ENHANCED_ADMIN_NAVIGATION_ITEMS[0] },
-  { path: '/roles', label: 'Role Management', icon: Shield, ...ENHANCED_ADMIN_NAVIGATION_ITEMS[1] },
-  { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, ...ENHANCED_ADMIN_NAVIGATION_ITEMS[2] },
-  { path: '/user-subscriptions', label: 'User Subscriptions', icon: Crown, ...ENHANCED_ADMIN_NAVIGATION_ITEMS[3] },
-  { path: '/settings', label: 'App Settings', icon: Settings, ...ENHANCED_ADMIN_NAVIGATION_ITEMS[4] },
+  { path: '/users', label: 'User Management', icon: UserCog, pagePermission: ENHANCED_PERMISSIONS.ADMIN_USERS_PAGES, accessPermission: ENHANCED_PERMISSIONS.ADMIN_USERS_ACCESS },
+  { path: '/roles', label: 'Role Management', icon: Shield, pagePermission: ENHANCED_PERMISSIONS.ADMIN_ROLES_PAGES, accessPermission: ENHANCED_PERMISSIONS.ADMIN_ROLES_ACCESS },
+  { path: '/subscription-packages', label: 'Subscription Packages', icon: Package, pagePermission: ENHANCED_PERMISSIONS.ADMIN_SUBSCRIPTIONS_PAGES, accessPermission: ENHANCED_PERMISSIONS.ADMIN_SUBSCRIPTIONS_ACCESS },
+  { path: '/user-subscriptions', label: 'User Subscriptions', icon: Crown, pagePermission: ENHANCED_PERMISSIONS.ADMIN_SUBSCRIPTIONS_PAGES, accessPermission: ENHANCED_PERMISSIONS.ADMIN_SUBSCRIPTIONS_ACCESS },
+  { path: '/settings', label: 'App Settings', icon: Settings, pagePermission: ENHANCED_PERMISSIONS.ADMIN_SETTINGS_PAGES, accessPermission: ENHANCED_PERMISSIONS.ADMIN_SETTINGS_ACCESS },
 ];
 
 // UserSubscriptionBadge Component
