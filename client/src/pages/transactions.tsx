@@ -112,6 +112,16 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   const filteredTransactions = transactions?.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || transaction.type === filterType;
+    
+    // Apply date filter if dateRange is provided
+    if (dateRange && dateRange.from && dateRange.to) {
+      const transactionDate = new Date(transaction.date);
+      const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+      const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59);
+      const matchesDate = transactionDate >= fromDate && transactionDate <= toDate;
+      return matchesSearch && matchesType && matchesDate;
+    }
+    
     return matchesSearch && matchesType;
   }) || [];
 
@@ -184,78 +194,63 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
-              <Card key={transaction.id} className="hover:shadow-md transition-all duration-200 group">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    {/* Mobile/Desktop Layout */}
-                    <div className="flex items-center gap-3 flex-1">
-                      {/* Category Icon */}
-                      <div className="flex-shrink-0">
-                        {transaction.categoryId ? (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                            {(() => {
-                              const category = categories?.find(cat => cat.id === transaction.categoryId);
-                              return category ? (iconMap[category.icon] || category.icon) : '📝';
-                            })()}
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <ArrowUpDown className="h-5 w-5 text-gray-500" />
-                          </div>
-                        )}
-                      </div>
+              <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    {/* Category Icon - Smaller */}
+                    <div className="flex-shrink-0">
+                      {transaction.categoryId ? (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm">
+                          {(() => {
+                            const category = categories?.find(cat => cat.id === transaction.categoryId);
+                            return category ? (iconMap[category.icon] || category.icon) : '📝';
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ArrowUpDown className="h-4 w-4 text-gray-500" />
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Transaction Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    {/* Transaction Details - Compact */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
+                            <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate">
                               {transaction.description}
                             </h3>
-                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs hidden sm:inline-flex`}>
+                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-[10px] px-1.5 py-0.5`}>
                               {transaction.type}
                             </Badge>
                           </div>
-                          
-                          {/* Amount - Mobile: below title, Desktop: right side */}
-                          <p className={`font-bold text-lg sm:text-xl ${amount.color} order-last sm:order-none`}>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-500">
+                              {getAccountName(transaction.accountId)}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">
+                              {format(new Date(transaction.date), 'dd MMM yyyy')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Amount - Compact */}
+                        <div className="text-right">
+                          <p className={`font-semibold text-sm ${amount.color}`}>
                             {amount.text}
                           </p>
                         </div>
-
-                        {/* Transaction metadata */}
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs sm:hidden`}>
-                            {transaction.type}
-                          </Badge>
-                          <span className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span>{getAccountName(transaction.accountId)}</span>
-                          {transaction.categoryId && (
-                            <>
-                              <span className="hidden sm:inline">•</span>
-                              <span className="text-blue-600 dark:text-blue-400">
-                                {categories?.find(cat => cat.id === transaction.categoryId)?.name}
-                              </span>
-                            </>
-                          )}
-                          {transaction.toAccountId && (
-                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                              <ArrowRight className="h-3 w-3" />
-                              {getAccountName(transaction.toAccountId)}
-                            </span>
-                          )}
-                        </div>
                       </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900">
-                        <Edit className="h-4 w-4" />
+                    
+                    {/* Action Buttons - Compact */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900">
+                        <Edit className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900">
-                        <Trash2 className="h-4 w-4" />
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900">
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
