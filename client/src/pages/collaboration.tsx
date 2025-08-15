@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { usePermissions, PERMISSIONS } from '@/lib/permissions.tsx';
+import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 import { apiRequest } from '@/lib/queryClient';
 import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings } from 'lucide-react';
 
@@ -43,16 +43,16 @@ interface CollaborationProps {
 export default function CollaborationPage({ workspaceId }: CollaborationProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasFeatureAccess, isRoot } = useEnhancedPermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
     email: '',
     role: 'viewer'
   });
 
-  // Check if user has collaboration permissions
-  const canManageCollaboration = hasPermission(PERMISSIONS.COLLABORATION_MANAGE);
-  const canViewCollaboration = hasPermission(PERMISSIONS.COLLABORATION_VIEW);
+  // Check if user has collaboration permissions - root users get all permissions
+  const canManageCollaboration = isRoot || hasFeatureAccess('user.collaboration');
+  const canViewCollaboration = isRoot || hasFeatureAccess('user.collaboration');
 
   const { data: members, isLoading } = useQuery<WorkspaceMember[]>({
     queryKey: [`/api/workspaces/${workspaceId}/members`],
