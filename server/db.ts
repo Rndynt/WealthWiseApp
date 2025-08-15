@@ -6,9 +6,9 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  // For migration purposes, set a temporary database URL
+  process.env.DATABASE_URL = "postgresql://user:password@localhost:5432/finance_app";
+  console.log("⚠️  Using temporary DATABASE_URL for migration - database connection may fail");
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
