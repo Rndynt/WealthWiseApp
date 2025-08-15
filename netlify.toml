@@ -1,5 +1,5 @@
 [build]
-  command    = "npm ci && npm run build:frontend && npm run build:functions"
+  command    = "npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions"
   publish    = "dist/public"
   functions  = "netlify/functions"
 

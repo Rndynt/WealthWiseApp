@@ -35,8 +35,8 @@ NODE_ENV=production
 **Important**: Make sure your DATABASE_URL is properly set. The build will fail if this environment variable is missing.
 
 ### 3. Build Commands
-The netlify.toml file already configures the build settings. Make sure these are set in your Netlify dashboard:
-- **Build command**: `npm ci && npm run build:frontend && npm run build:functions`
+The netlify.toml file already configures the build settings. The build command uses npx to avoid devDependencies issues:
+- **Build command**: `npm ci && npx vite build && npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions`
 - **Publish directory**: `dist/public`
 - **Functions directory**: `netlify/functions`
 

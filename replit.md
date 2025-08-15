@@ -226,12 +226,17 @@ cp -r dist/public/* server/public/
 ./build-netlify.sh
 
 # Or manually:
-npm run build
-esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 \
+npx vite build
+npx esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 \
   --external:@neondatabase/serverless --external:express-session \
   --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken \
   --external:ws --format=esm --outdir=netlify/functions
 ```
+
+**Fixed Issues**:
+- Resolved "vite: not found" error by moving vite to dependencies and using npx commands
+- Updated netlify.toml to use direct npx commands instead of npm scripts
+- Fixed devDependencies installation issue in Netlify production environment
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
