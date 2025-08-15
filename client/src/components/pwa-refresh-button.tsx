@@ -34,9 +34,10 @@ export function PWAPullToRefresh() {
       });
     }
 
-    // Touch events for pull-to-refresh
+    // Touch events for pull-to-refresh - improved sensitivity
     const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) {
+      // Only trigger if at the very top and no horizontal movement
+      if (window.scrollY <= 2) {
         startY.current = e.touches[0].clientY;
         setIsPulling(false);
         setPullDistance(0);
@@ -44,42 +45,50 @@ export function PWAPullToRefresh() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (window.scrollY === 0 && startY.current > 0) {
+      if (window.scrollY <= 2 && startY.current > 0) {
         currentY.current = e.touches[0].clientY;
         const distance = currentY.current - startY.current;
         
-        if (distance > 20) { // Increased threshold to prevent accidental triggering
+        // Much higher threshold - require 60px minimum pull to start
+        if (distance > 60) {
           e.preventDefault();
           setIsPulling(true);
-          const normalizedDistance = Math.min(distance - 20, 120); // Subtract offset and limit range
+          
+          // More controlled distance calculation with dampening
+          const normalizedDistance = Math.min((distance - 60) * 0.4, 100);
           setPullDistance(normalizedDistance);
           
-          // Smoother transform with easing - more dramatic visual feedback
-          const pullAmount = Math.min(normalizedDistance * 0.6, 80);
-          document.body.style.transform = `translateY(${pullAmount}px)`;
-          document.body.style.transition = 'none';
-          document.body.style.overflow = 'hidden';
+          // Smoother, less intrusive transform
+          const pullAmount = Math.min(normalizedDistance * 0.3, 30);
           
-          // Add background gradient effect during pull
-          document.body.style.background = `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 0%, transparent ${pullAmount}px)`;
+          // Create isolated container instead of transforming body
+          const refreshContainer = document.getElementById('refresh-container');
+          if (refreshContainer) {
+            refreshContainer.style.transform = `translateY(${pullAmount}px)`;
+            refreshContainer.style.transition = 'none';
+          }
         }
       }
     };
 
     const handleTouchEnd = () => {
-      if (isPulling && pullDistance > 60) { // Lower threshold for triggering
+      // Require 80px+ pull distance to trigger refresh (much higher threshold)
+      if (isPulling && pullDistance > 80) {
         handleRefresh();
       }
       
-      // Smooth reset with better animation
-      document.body.style.transform = '';
-      document.body.style.background = '';
-      document.body.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-      document.body.style.overflow = '';
-      
-      setTimeout(() => {
-        document.body.style.transition = '';
-      }, 500);
+      // Clean reset animation
+      const refreshContainer = document.getElementById('refresh-container');
+      if (refreshContainer) {
+        refreshContainer.style.transform = '';
+        refreshContainer.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        setTimeout(() => {
+          if (refreshContainer) {
+            refreshContainer.style.transition = '';
+          }
+        }, 300);
+      }
       
       setIsPulling(false);
       setPullDistance(0);
@@ -133,37 +142,37 @@ export function PWAPullToRefresh() {
   };
 
   const refreshThreshold = 80;
-  const maxPullDistance = 150;
+  const maxPullDistance = 120;
 
   return (
-    <>
-      {/* Pull-to-refresh indicator */}
+    <div id="refresh-container">
+      {/* Pull-to-refresh indicator - improved positioning */}
       {isPulling && (
         <div 
-          className="fixed left-0 right-0 z-50 flex items-center justify-center bg-gradient-to-b from-blue-50/95 to-white/95 backdrop-blur-md transition-all duration-300 shadow-sm"
+          className="fixed left-4 right-4 z-40 flex items-center justify-center bg-gradient-to-b from-blue-50/90 to-transparent backdrop-blur-sm transition-all duration-200 shadow-lg border border-blue-200/50"
           style={{ 
-            top: 'env(safe-area-inset-top, 0px)',
-            height: `${Math.min(pullDistance + 40, maxPullDistance)}px`,
-            transform: `translateY(-${Math.max(maxPullDistance - pullDistance - 40, 0)}px)`,
-            borderRadius: '0 0 16px 16px'
+            top: `20px`,
+            height: `${Math.min(pullDistance * 0.8 + 50, maxPullDistance)}px`,
+            borderRadius: '12px',
+            opacity: Math.min(pullDistance / 40, 1)
           }}
         >
-          <div className="flex flex-col items-center animate-in fade-in duration-200">
+          <div className="flex flex-col items-center">
             <div className="relative">
               <RefreshCw 
-                className={`h-5 w-5 text-blue-600 transition-all duration-300 ${
-                  pullDistance > refreshThreshold ? 'animate-spin scale-110' : ''
+                className={`h-4 w-4 text-blue-600 transition-all duration-200 ${
+                  pullDistance > refreshThreshold ? 'animate-spin' : ''
                 }`}
                 style={{ 
-                  transform: `rotate(${pullDistance * 3}deg) ${pullDistance > refreshThreshold ? 'scale(1.1)' : ''}` 
+                  transform: `rotate(${Math.min(pullDistance * 2, 180)}deg)` 
                 }}
               />
               {pullDistance > refreshThreshold && (
-                <div className="absolute -inset-2 border-2 border-blue-300 rounded-full animate-pulse"></div>
+                <div className="absolute -inset-1 border border-blue-400 rounded-full animate-ping opacity-75"></div>
               )}
             </div>
-            <span className="text-xs text-blue-700 mt-2 font-medium animate-in slide-in-from-top-2 duration-200">
-              {pullDistance > refreshThreshold ? 'Lepas untuk refresh' : 'Tarik ke bawah'}
+            <span className="text-xs text-blue-700 mt-1 font-medium opacity-80">
+              {pullDistance > refreshThreshold ? 'Lepas untuk refresh' : 'Tarik lebih jauh'}
             </span>
           </div>
         </div>
@@ -195,6 +204,6 @@ export function PWAPullToRefresh() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
