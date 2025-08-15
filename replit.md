@@ -42,10 +42,12 @@ Development approach: Mobile-first UI/UX with ultra-compact designs for optimal 
 - **PWA Support**: Implemented as a Progressive Web App (PWA) with manifest, service worker for offline caching, push notifications, and app shortcuts.
 
 ### Recent Changes (August 2025)
+- **Migration to Replit**: Successfully migrated from Replit Agent to standard Replit environment with proper build configuration
+- **User Subscriptions Page Fixed**: Resolved data loading issues by fixing safeFetch function and API response parsing
+- **Pull-to-Refresh Improvements**: Significantly reduced sensitivity (increased threshold from 20px to 60px), improved animations, and prevented element overlapping
 - **Database Seeding Fixed**: Resolved foreign key constraint issues using TRUNCATE CASCADE approach for proper database reset
 - **Mobile UI Optimization**: Implemented dramatic size reductions for mobile view including ultra-compact transaction cards, notification tabs, and profile sidebar
 - **Date Filter Enhancement**: Fixed timezone handling and synchronization for accurate transaction filtering
-- **Performance Improvements**: Enhanced pull-to-refresh animations and improved mobile responsiveness
 
 ## External Dependencies
 
