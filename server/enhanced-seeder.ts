@@ -616,9 +616,17 @@ async function seedEnhancedAccounts() {
 
 async function main() {
   console.log("🚀 Starting enhanced RBAC database seeding...");
-
+  
+  // Check for --reset flag
+  const shouldReset = process.argv.includes('--reset');
+  
   try {
-    await resetDatabase();
+    if (shouldReset) {
+      console.log("🔄 --reset flag detected, resetting database first...");
+      await resetDatabase();
+    } else {
+      console.log("ℹ️  Skipping reset (use --reset flag to reset database)");
+    }
     await seedEnhancedRoles();
     await seedEnhancedPermissions();
     await seedEnhancedRolePermissions();
