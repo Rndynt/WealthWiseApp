@@ -110,10 +110,16 @@ export default function UserSubscriptionsManagement() {
 
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      return await apiRequest('GET', '/api/users') as any as User[];
+    },
   });
 
   const { data: packages } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
+    queryFn: async () => {
+      return await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
+    },
   });
 
   // Mutations
