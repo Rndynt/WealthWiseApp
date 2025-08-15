@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock, Tag } from 'lucide-react';
+import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock, Tags } from 'lucide-react';
 import { Category } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -84,6 +84,48 @@ export default function Categories({ workspaceId }: CategoriesProps) {
   return (
     <PageContainer>
       <div className="space-y-6 mb-6">
+
+        <div className="flex flex-col space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Tags className="h-5 w-5 text-green-600" />
+                  Categories
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                  Organize your transactions by category
+                </p>
+                {categoryLimits && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
+                    {limitText} categories used • {packageType} Package
+                  </p>
+                )}
+              </div>
+              <div className="flex-shrink-0 w-full sm:w-auto">
+                 <Button 
+                    onClick={() => setShowAddModal(true)} 
+                    disabled={isLimitReached}
+                    size="lg"
+                    className="w-full max-w-xs"
+                  >
+                    {isLimitReached ? (
+                      <>
+                        <Lock className="mr-2" size={16} />
+                        Limit Reached
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2" size={16} />
+                        Add Category
+                      </>
+                    )}
+                  </Button>
+              </div>
+            </div>
+          </div>
+
+
+
         {/* Mobile Header */}
         <div className="block sm:hidden">
           <div className="flex items-center justify-center mb-4">
