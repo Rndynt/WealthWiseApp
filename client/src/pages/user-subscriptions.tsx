@@ -457,7 +457,7 @@ export default function UserSubscriptionsManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Package</SelectItem>
-                {packages?.map((pkg) => (
+                {(packages || []).map((pkg) => (
                   <SelectItem key={pkg.id} value={pkg.id.toString()}>
                     {pkg.name} ({formatPrice(pkg.price)})
                   </SelectItem>
@@ -606,7 +606,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users?.map((user) => (
+                  {(users || []).map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()}>
                       {user.name} ({user.email})
                     </SelectItem>
@@ -625,7 +625,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {packages?.filter(pkg => pkg.isActive).map((pkg) => (
+                  {(packages || []).filter(pkg => pkg?.isActive).map((pkg) => (
                     <SelectItem key={pkg.id} value={pkg.id.toString()}>
                       {pkg.name} - {formatPrice(pkg.price)}
                     </SelectItem>
