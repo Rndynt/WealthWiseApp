@@ -266,52 +266,59 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           )}
         </div>
 
-        {/* User Info */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto space-y-4">
-          {/* Upgrade Button for Non-Admin Users */}
-          {!isAdmin && !isRoot && (
-            <Link href="/upgrade">
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-medium">
-                <Zap size={16} className="mr-2" />
-                Upgrade Plan
-              </Button>
-            </Link>
-          )}
-
-          <UserSubscriptionBadge />
-
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+        {/* User Profile Section - Compact */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+          {/* User Badge with Actions */}
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar className="w-9 h-9 flex-shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
                 {user?.name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-600 truncate">{user?.email}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
             </div>
             <div className="flex items-center gap-1">
               <Link href="/profile">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-gray-600 p-1"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5"
                   data-testid="button-profile"
                 >
-                  <User size={16} />
+                  <User size={14} />
                 </Button>
               </Link>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1.5"
                 data-testid="button-logout"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
               </Button>
             </div>
           </div>
+
+          {/* Subscription Badge */}
+          <div className="mb-3">
+            <UserSubscriptionBadge />
+          </div>
+
+          {/* Upgrade Button - Compact */}
+          {!isAdmin && !isRoot && (
+            <Link href="/upgrade">
+              <Button 
+                size="sm" 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-medium py-1.5 h-8"
+              >
+                <Zap size={12} className="mr-1.5" />
+                Upgrade Plan
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
