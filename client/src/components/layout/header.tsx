@@ -1,4 +1,6 @@
-import { Menu, Bell, Calendar, Plus, CreditCard, PieChart, TrendingUp } from 'lucide-react';
+import { Menu, Bell, Calendar, Plus, 
+        CreditCard, PieChart, TrendingUp, Target, ChartNoAxesCombined, ArrowLeftRight, ChartColumn, Tags, WalletCards, Handshake
+       } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation, Link } from 'wouter';
 import { DateFilter } from '@/components/date-filter';
@@ -11,14 +13,14 @@ interface HeaderProps {
 
 const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean, icon?: React.ElementType }> = {
   '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
-  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: PieChart  },
-  '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: TrendingUp },
-  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true, icon : PieChart },
-  '/categories': { title: 'Categories', subtitle: 'Organize your transactions' },
-  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending' },
-  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data' },
-  '/debts': { title: 'Debts', subtitle: 'Manage your debts and credits' },
-  '/collaboration': { title: 'Collaboration', subtitle: 'Share workspace with others' },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: ChartNoAxesCombined  },
+  '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: WalletCards },
+  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true, icon : ArrowLeftRight },
+  '/categories': { title: 'Categories', subtitle: 'Organize your transactions', icon : Tags },
+  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending', icon : Target },
+  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data', icon : ChartColumn },
+  '/debts': { title: 'Debts', subtitle: 'Manage your debts and credits', icon : CreditCard },
+  '/collaboration': { title: 'Collaboration', subtitle: 'Share workspace with others', icon : Handshake },
   '/users': { title: 'User Management', subtitle: 'Manage system users' },
   '/roles': { title: 'Role Management', subtitle: 'Manage user roles and permissions' },
   '/subscription-packages': { title: 'Subscription Packages', subtitle: 'Manage subscription plans' },
@@ -62,6 +64,7 @@ export default function Header({ onToggleSidebar, onDateRangeChange, currentDate
             {pageInfo.icon && <pageInfo.icon className="w-5 h-5 mr-2 text-gray-500" />}
 
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+              {pageInfo.icon && <pageInfo.icon className="w-5 h-5 mr-2 text-gray-500" />}
               {pageInfo.title}
             </h1>
             {pageInfo.subtitle && (
