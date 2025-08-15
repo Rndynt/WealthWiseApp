@@ -1,4 +1,4 @@
-import { Menu, Bell, Calendar, Plus } from 'lucide-react';
+import { Menu, Bell, Calendar, Plus, CreditCard, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation, Link } from 'wouter';
 import { DateFilter } from '@/components/date-filter';
@@ -11,9 +11,9 @@ interface HeaderProps {
 
 const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean }> = {
   '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
-  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances' },
-  '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts' },
-  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: PieChart  },
+  '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: TrendingUp },
+  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true, icon : PieChart },
   '/categories': { title: 'Categories', subtitle: 'Organize your transactions' },
   '/budget': { title: 'Budget', subtitle: 'Plan and track your spending' },
   '/reports': { title: 'Reports', subtitle: 'Analyze your financial data' },
@@ -59,6 +59,7 @@ export default function Header({ onToggleSidebar, onDateRangeChange, currentDate
             <Menu size={20} />
           </Button>
           <div className="flex-1 min-w-0">
+            { pageInfo.icon }
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
               {pageInfo.title}
             </h1>
