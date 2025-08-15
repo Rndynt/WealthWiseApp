@@ -595,7 +595,12 @@ export class DatabaseStorage implements IStorage {
       })
       .from(userSubscriptions)
       .innerJoin(subscriptionPackages, eq(userSubscriptions.packageId, subscriptionPackages.id))
-      .where(eq(userSubscriptions.userId, userId));
+      .where(and(
+        eq(userSubscriptions.userId, userId),
+        eq(userSubscriptions.status, 'active')
+      ))
+      .orderBy(desc(userSubscriptions.createdAt))
+      .limit(1);
 
     return result || undefined;
   }
