@@ -195,6 +195,7 @@ async function seedSubscriptionPackages() {
       price: "0.00",
       features: [
         "1 workspace pribadi",
+        "2 account",
         "Maksimal 3 kategori", 
         "Maksimal 2 budget plan per periode",
         "Unlimited transaksi",
@@ -202,6 +203,7 @@ async function seedSubscriptionPackages() {
         "Export PDF"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 2,
       maxMembers: 1,
       maxCategories: 3,
       maxBudgets: 2,
@@ -217,17 +219,19 @@ async function seedSubscriptionPackages() {
       price: "15000.00",
       features: [
         "1 workspace pribadi",
+        "5 account",
         "Unlimited kategori",
-        "Unlimited budget plan",
+        "Unlimited budget plan per periode",
         "Unlimited transaksi",
         "Advanced reports & analytics",
         "Export ke Excel & CSV",
         "Priority support"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 5, // Pro package allows up to 5 accounts
       maxMembers: 1,
-      maxCategories: 999999, // unlimited (using large number)
-      maxBudgets: 999999, // unlimited (using large number)
+      maxCategories: 5, // unlimited (using large number)
+      maxBudgets: 5, // unlimited (using large number)
       maxSharedWorkspaces: 0,
       canCreateSharedWorkspace: false,
       type: "personal",
@@ -240,10 +244,11 @@ async function seedSubscriptionPackages() {
       price: "25000.00",
       features: [
         "1 workspace pribadi unlimited",
-        "1 shared workspace",
+        "2 shared workspace",
+        "7 account",
         "Kolaborasi hingga 7 anggota per shared workspace",
-        "Unlimited kategori",
-        "Unlimited budget plan",
+        "10 kategori",
+        "10 budget plan",
         "Advanced collaboration tools",
         "Team reports & analytics",
         "Real-time sync",
@@ -251,9 +256,10 @@ async function seedSubscriptionPackages() {
         "Priority support"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 7, // Professional package allows up to 7 accounts
       maxMembers: 7,
-      maxCategories: 999999, // unlimited (using large number)
-      maxBudgets: 999999, // unlimited (using large number)
+      maxCategories: 10, // unlimited (using large number)
+      maxBudgets: 10, // unlimited (using large number)
       maxSharedWorkspaces: 1,
       canCreateSharedWorkspace: true,
       type: "hybrid",
@@ -265,11 +271,12 @@ async function seedSubscriptionPackages() {
       name: "business",
       price: "50000.00",
       features: [
-        "Unlimited workspace pribadi",
-        "Unlimited shared workspace",
+        "7 workspace pribadi",
+        "10 shared workspace",
         "Kolaborasi hingga 15 anggota per shared workspace",
-        "Unlimited kategori",
-        "Unlimited budget plan",
+        "15 account",
+        "20 kategori",
+        "20 budget plan",
         "Advanced team management",
         "Custom roles & permissions",
         "Advanced analytics & insights",
@@ -277,11 +284,12 @@ async function seedSubscriptionPackages() {
         "White-label options",
         "Dedicated support"
       ],
-      maxWorkspaces: 999999, // unlimited (using large number)
+      maxWorkspaces: 7, // unlimited (using large number)
+      maxAccounts: 15,
       maxMembers: 15,
-      maxCategories: 999999, // unlimited (using large number)
-      maxBudgets: 999999, // unlimited (using large number)
-      maxSharedWorkspaces: 999999, // unlimited (using large number)
+      maxCategories: 20, // unlimited (using large number)
+      maxBudgets: 20, // unlimited (using large number)
+      maxSharedWorkspaces: 10, // unlimited (using large number)
       canCreateSharedWorkspace: true,
       type: "hybrid",
       description: "Paket business untuk tim dan organisasi",
@@ -341,13 +349,16 @@ async function seedUserSubscriptions() {
   const now = new Date();
   const oneYearLater = new Date();
   oneYearLater.setFullYear(now.getFullYear() + 1);
+
+  const unlimitedYear = new Date();
+  unlimitedYear.setFullYear(now.getFullYear() + 999);
   
   await db.insert(userSubscriptions).values([
     {
       userId: 1,
       packageId: 2, // Premium for root
       startDate: now,
-      endDate: oneYearLater,
+      endDate: unlimitedYear,
       status: "active"
     },
     {

@@ -153,7 +153,8 @@ export interface IStorage {
   getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
 
-  // Category & Budget Limits Validation
+  // Account, Category & Budget Limits Validation
+  checkAccountLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
   checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
   checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
 
@@ -677,7 +678,29 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Category & Budget Limits Validation
+  // Account, Category & Budget Limits Validation
+  async checkAccountLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+    // Get user subscription with package
+    const userSubResult = await this.getUserSubscriptionWithPackage(userId);
+
+    // Get current category count
+    const currentAccounts = await this.getWorkspaceAccounts(workspaceId);
+    const current = currentAccounts.length;
+
+    if (userSubResult) {
+      const packageName = userSubResult.package.name;
+      // Check package limit (null means unlimited)
+      const limit = userSubResult.package.maxAccounts;
+      const canCreate = limit === null || current < limit;
+      return { canCreate, limit, current, packageName };
+    } else {
+      // Default basic package limits for users without subscription
+      const limit = 2; // Basic package max accounts
+      const canCreate = current < limit;
+      return { canCreate, limit, current };
+    }
+  }
+
   async checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
@@ -688,6 +711,7 @@ export class DatabaseStorage implements IStorage {
 
     if (userSubResult) {
       // Check package limit (null means unlimited)
+      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
       return { canCreate, limit, current };
@@ -695,7 +719,7 @@ export class DatabaseStorage implements IStorage {
       // Default basic package limits for users without subscription
       const limit = 3; // Basic package max categories
       const canCreate = current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     }
   }
 
@@ -708,6 +732,8 @@ export class DatabaseStorage implements IStorage {
     const current = currentBudgets.length;
 
     if (userSubResult) {
+      const packageName = userSubResult.package.name;
+
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
@@ -716,7 +742,7 @@ export class DatabaseStorage implements IStorage {
       // Default basic package limits for users without subscription
       const limit = 2; // Basic package max budgets per period
       const canCreate = current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     }
   }
 
