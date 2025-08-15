@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import PageContainer from '@/components/ui/page-container';
 
 
 interface AccountsProps {
