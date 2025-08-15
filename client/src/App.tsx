@@ -20,6 +20,7 @@ import RolesManagement from "@/pages/roles";
 import SubscriptionPackagesManagement from './pages/subscription-packages';
 import UserSubscriptionsManagement from './pages/user-subscriptions';
 import SubscriptionPage from './pages/subscription';
+import Notifications from './pages/notifications';
 import UpgradePage from './pages/upgrade';
 import ProfilePage from './pages/profile';
 import SettingsPage from './pages/settings';
@@ -154,6 +155,7 @@ function AppRouter() {
             } />
 
             <Route path="/profile" component={ProfilePage} />
+            <Route path="/notifications" component={Notifications} />
             <Route path="/settings" component={() => 
               <ProtectedRoute>
                 <SettingsPage />

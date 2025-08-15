@@ -95,17 +95,15 @@ export function DateFilter({ onDateRangeChange, currentRange }: DateFilterProps)
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="sm" 
-          className="flex items-center gap-2 text-xs sm:text-sm"
+          className="relative p-2 flex items-center gap-1"
           data-testid="button-date-filter"
         >
-          <Calendar size={14} className="sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">{getDisplayText()}</span>
-          <span className="sm:hidden">
-            {selectedRange ? format(selectedRange.from, 'dd/MM') : 'Filter'}
-          </span>
-          <ChevronDown size={12} className="opacity-50" />
+          <Calendar size={16} className="text-gray-600 dark:text-gray-300" />
+          {selectedRange && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       
