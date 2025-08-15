@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { User, Lock, Mail, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -111,33 +112,37 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Overview */}
+        {/* Profile Overview - Compact */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User size={20} />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User size={16} />
               Profile Overview
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-0 space-y-3">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="w-20 h-20 mb-4">
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+              <Avatar className="w-16 h-16 mb-3">
+                <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                   {user?.name?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <h3 className="font-semibold text-lg">{user?.name}</h3>
-              <p className="text-gray-600">{user?.email}</p>
+              <h3 className="font-semibold text-base">{user?.name}</h3>
+              <p className="text-gray-600 text-sm">{user?.email}</p>
             </div>
             <Separator />
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Member Since:</span>
                 <span>January 2024</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Role:</span>
-                <span className="capitalize">User</span>
+                <Badge variant="secondary" className="text-[10px] px-2 py-0.5">User</Badge>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Subscription:</span>
+                <Badge variant="default" className="text-[10px] px-2 py-0.5">Premium</Badge>
               </div>
             </div>
           </CardContent>

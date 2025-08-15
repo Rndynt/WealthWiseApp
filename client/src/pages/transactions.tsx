@@ -112,8 +112,27 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   const filteredTransactions = transactions?.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || transaction.type === filterType;
+    
+    // Filter by date range with proper timezone handling
+    if (dateRange && dateRange.from && dateRange.to) {
+      const transactionDate = new Date(transaction.date);
+      const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+      const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59, 999);
+      const matchesDate = transactionDate >= fromDate && transactionDate <= toDate;
+      return matchesSearch && matchesType && matchesDate;
+    }
+    
+    // Apply date filter if dateRange is provided
+    if (dateRange && dateRange.from && dateRange.to) {
+      const transactionDate = new Date(transaction.date);
+      const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+      const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59);
+      const matchesDate = transactionDate >= fromDate && transactionDate <= toDate;
+      return matchesSearch && matchesType && matchesDate;
+    }
+    
     return matchesSearch && matchesType;
-  }) || [];
+  })?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || [];
 
   if (isLoading) {
     return (
@@ -179,84 +198,57 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
         </Select>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2">
         {filteredTransactions.length > 0 ? (
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
-              <Card key={transaction.id} className="hover:shadow-md transition-all duration-200 group">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    {/* Mobile/Desktop Layout */}
-                    <div className="flex items-center gap-3 flex-1">
-                      {/* Category Icon */}
-                      <div className="flex-shrink-0">
-                        {transaction.categoryId ? (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                            {(() => {
-                              const category = categories?.find(cat => cat.id === transaction.categoryId);
-                              return category ? (iconMap[category.icon] || category.icon) : '📝';
-                            })()}
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <ArrowUpDown className="h-5 w-5 text-gray-500" />
-                          </div>
-                        )}
-                      </div>
+              <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group border-l-4 border-l-blue-500">
+                <CardContent className="p-2">
+                  <div className="flex items-start gap-2">
+                    {/* Category Icon - Very Small */}
+                    <div className="flex-shrink-0 mt-0.5">
+                      {transaction.categoryId ? (
+                        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px]">
+                          {(() => {
+                            const category = categories?.find(cat => cat.id === transaction.categoryId);
+                            return category ? (iconMap[category.icon] || category.icon) : '📝';
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Transaction Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
+                    {/* Transaction Content - Very Compact */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {/* Title and Amount on same line for mobile */}
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-medium text-gray-900 dark:text-white text-xs truncate flex-1">
                               {transaction.description}
                             </h3>
-                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs hidden sm:inline-flex`}>
+                            <p className={`font-semibold text-xs ${amount.color} flex-shrink-0`}>
+                              {amount.text}
+                            </p>
+                          </div>
+                          
+                          {/* Meta info and badge on second line */}
+                          <div className="flex items-center justify-between gap-1 mt-1">
+                            <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                              <span className="truncate max-w-[80px]">{getAccountName(transaction.accountId)}</span>
+                              <span>•</span>
+                              <span>{format(new Date(transaction.date), 'dd MMM')}</span>
+                            </div>
+                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-[8px] px-1 py-0 h-4`}>
                               {transaction.type}
                             </Badge>
                           </div>
-                          
-                          {/* Amount - Mobile: below title, Desktop: right side */}
-                          <p className={`font-bold text-lg sm:text-xl ${amount.color} order-last sm:order-none`}>
-                            {amount.text}
-                          </p>
-                        </div>
-
-                        {/* Transaction metadata */}
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-xs sm:hidden`}>
-                            {transaction.type}
-                          </Badge>
-                          <span className="font-medium">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span>{getAccountName(transaction.accountId)}</span>
-                          {transaction.categoryId && (
-                            <>
-                              <span className="hidden sm:inline">•</span>
-                              <span className="text-blue-600 dark:text-blue-400">
-                                {categories?.find(cat => cat.id === transaction.categoryId)?.name}
-                              </span>
-                            </>
-                          )}
-                          {transaction.toAccountId && (
-                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                              <ArrowRight className="h-3 w-3" />
-                              {getAccountName(transaction.toAccountId)}
-                            </span>
-                          )}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 </CardContent>
