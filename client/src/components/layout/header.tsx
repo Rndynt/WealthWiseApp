@@ -1,4 +1,4 @@
-import { Menu, Bell, Calendar, Plus, CreditCard, PieChart } from 'lucide-react';
+import { Menu, Bell, Calendar, Plus, CreditCard, PieChart, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation, Link } from 'wouter';
 import { DateFilter } from '@/components/date-filter';
