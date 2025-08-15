@@ -51,6 +51,7 @@ function AppRouter() {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -94,7 +95,11 @@ function AppRouter() {
       />
 
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Header 
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onDateRangeChange={setDateRange}
+          currentDateRange={dateRange}
+        />
 
         <main className="p-4 sm:p-6">
           <Switch>
@@ -102,7 +107,7 @@ function AppRouter() {
             <Route path="/dashboard" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
             <Route path="/accounts" component={() => <Accounts workspaceId={currentWorkspace?.id} />} />
             <Route path="/categories" component={() => <Categories workspaceId={currentWorkspace?.id} />} />
-            <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} />} />
+            <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} dateRange={dateRange} />} />
             <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
             <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
             <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />

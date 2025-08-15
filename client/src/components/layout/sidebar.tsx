@@ -146,9 +146,11 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
       {/* Sidebar overlay for mobile */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden overflow-hidden"
           onClick={onToggle}
+          onTouchMove={(e) => e.preventDefault()}
           data-testid="sidebar-overlay"
+          style={{ touchAction: 'none' }}
         />
       )}
 

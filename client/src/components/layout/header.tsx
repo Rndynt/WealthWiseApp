@@ -1,19 +1,22 @@
 import { Menu, Bell, Calendar, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
+import { DateFilter } from '@/components/date-filter';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
+  onDateRangeChange?: (range: { from: Date; to: Date } | null) => void;
+  currentDateRange?: { from: Date; to: Date } | null;
 }
 
-const pageConfig: Record<string, { title: string, subtitle?: string, showDate?: boolean }> = {
-  '/': { title: 'Dashboard', subtitle: 'Overview of your finances', showDate: true },
-  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', showDate: true },
+const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean }> = {
+  '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances' },
   '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts' },
-  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDate: true },
+  '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true },
   '/categories': { title: 'Categories', subtitle: 'Organize your transactions' },
-  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending', showDate: true },
-  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data', showDate: true },
+  '/budget': { title: 'Budget', subtitle: 'Plan and track your spending' },
+  '/reports': { title: 'Reports', subtitle: 'Analyze your financial data' },
   '/debts': { title: 'Debts', subtitle: 'Manage your debts and credits' },
   '/collaboration': { title: 'Collaboration', subtitle: 'Share workspace with others' },
   '/users': { title: 'User Management', subtitle: 'Manage system users' },
@@ -25,7 +28,7 @@ const pageConfig: Record<string, { title: string, subtitle?: string, showDate?: 
   '/upgrade': { title: 'Upgrade Plan', subtitle: 'Choose your subscription package' },
 };
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
+export default function Header({ onToggleSidebar, onDateRangeChange, currentDateRange }: HeaderProps) {
   const [location] = useLocation();
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'short', 
@@ -37,7 +40,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const pageInfo = pageConfig[location] || { title: 'FinanceFlow' };
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4">
+    <header 
+      className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4"
+      style={{ 
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+        marginTop: 'env(safe-area-inset-top, 0px)'
+      }}
+    >
       <div className="flex items-center justify-between">
         {/* Left: Menu + Title/Subtitle */}
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
@@ -61,16 +70,15 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           </div>
         </div>
 
-        {/* Right: Date + Notifications */}
+        {/* Right: Date Filter + Notifications */}
         <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-          {pageInfo.showDate && (
-            <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-              <Calendar size={14} className="sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{currentDate}</span>
-              <span className="sm:hidden">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-            </div>
+          {pageInfo.showDateFilter && onDateRangeChange && (
+            <DateFilter 
+              onDateRangeChange={onDateRangeChange}
+              currentRange={currentDateRange}
+            />
           )}
-
+          
           <Button variant="ghost" size="sm" className="relative p-2">
             <Bell size={18} className="text-gray-600 dark:text-gray-300" />
             <span className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></span>
