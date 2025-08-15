@@ -1,0 +1,139 @@
+File `page-container.tsx` **secara kode terlihat benar** — named exports ada (`export function PageContainer`) dan struktur komponennya sederhana sehingga tidak seharusnya menimbulkan error `cant find variable PageContainer` sendirian. Jadi masalahnya **kemungkinan besar bukan pada isi file ini**, melainkan pada **urutan evaluasi modul / circular import / error runtime ketika modul lain dievaluasi** hanya pada halaman `Accounts`.
+
+Berikut penjelasan singkat + langkah debugging dan perbaikan yang bisa langsung Anda coba (copy-paste-ready).
+
+---
+
+## Kenapa ini bisa terjadi (penyebab paling mungkin)
+
+* **Circular import (paling sering)** — ada siklus dependensi sehingga saat bundle dieksekusi, `PageContainer` belum ter-definisi ketika dipakai → ReferenceError `Can't find variable: PageContainer`.
+* **Error runtime di modul lain yang di-import oleh `Accounts`** (mis. `AddAccountModal` atau komponen yang diimpor oleh modal) yang menghentikan evaluasi modul sebelum `PageContainer` tersedia.
+* **Perbedaan bundling / SSR vs client eval** — modul dievaluasi di server/hydration dan ada mismatch; atau modul di-bundle berbeda untuk halaman `Accounts`.
+* **(Kurang mungkin)** case-sensitive path atau export mismatch — tapi karena `categories.tsx` pakai import sama dan bekerja, ini kecil kemungkinannya.
+
+---
+
+## Langkah debugging cepat (urut, lakukan di browser / terminal)
+
+1. **Tambahkan `console.log` untuk memeriksa apakah `page-container` dievaluasi**
+
+   * Di `components/ui/page-container.tsx` paling atas:
+
+   ```ts
+   console.log('page-container.tsx evaluated');
+   ```
+
+   * Di `accounts.tsx` tepat setelah import PageContainer:
+
+   ```ts
+   console.log('accounts.tsx: PageContainer ->', PageContainer);
+   ```
+
+   * Reload halaman Accounts. Hasil:
+
+     * Jika `page-container.tsx evaluated` **tidak muncul** → modul tidak dievaluasi (ciri circular import).
+     * Jika `page-container.tsx evaluated` tampil tapi `PageContainer` `undefined` → ada masalah export/evaluasi order.
+
+2. **Cari dependensi yang mungkin memicu siklus**
+
+   * Di root project jalankan:
+
+   ```bash
+   # cari semua pemakaian page-container
+   grep -R "page-container" -n .
+
+   # cari modal yang diimpor oleh Accounts
+   grep -R "add-account-modal" -n .
+   ```
+
+   Periksa apakah `AddAccountModal` atau file lain mengimpor `page-container` atau balik mengimpor file yang mengimpor `Accounts`. Itu yang bikin loop.
+
+3. **Tes cepat: pakai fallback lokal untuk memastikan PageContainer import penyebabnya**
+
+   * Di `accounts.tsx` sementara gantikan import PageContainer dengan komponen lokal:
+
+   ```tsx
+   // sementara untuk debug — hapus/mute import PageContainer saat mengetes
+   const PageContainer = ({ children }: { children?: React.ReactNode }) => (
+     <div className="container mx-auto p-4">{children}</div>
+   );
+   ```
+
+   * Jika halaman **muncul normal**, 100% masalah terkait modul `page-container` (evaluation/circular).
+
+4. **Gunakan dynamic import / lazy load untuk mem-bypass circular (fix sementara)**
+
+   * Jika Anda pakai **Next.js**:
+
+   ```ts
+   import dynamic from 'next/dynamic';
+   const PageContainer = dynamic(
+     () => import('@/components/ui/page-container').then(m => m.PageContainer ?? m.default),
+     { ssr: false }
+   );
+   ```
+
+   * Jika bukan Next, gunakan `React.lazy`:
+
+   ```ts
+   import React, { Suspense } from 'react';
+   const PageContainer = React.lazy(() => import('@/components/ui/page-container').then(m => ({ default: m.PageContainer ?? m.default })));
+
+   // lalu bungkus return dengan <Suspense fallback={...}>
+   ```
+
+   * **Atau** lazy-load `AddAccountModal` daripada PageContainer (lebih sering memutus loop):
+
+   ```ts
+   // Next.js dynamic
+   const AddAccountModal = dynamic(() => import('@/components/modals/add-account-modal'), { ssr: false });
+   ```
+
+   Lazy-loading modal/komponen yang menyebabkan loop sering menyelesaikan masalah sementara.
+
+5. **Tambahkan default export (tindakan safe & minim perubahan)**
+
+   * Di `page-container.tsx` tambahkan di bawah export existing:
+
+   ```ts
+   export default PageContainer;
+   ```
+
+   Ini tidak memperbaiki circular, tapi membuat import lebih toleran (named/default) sehingga lebih sulit terserang mismatch import.
+
+6. **Periksa stack trace & build logs**
+
+   * Buka Console di browser dan lihat stack trace lengkap dari error `Can't find variable PageContainer` — biasanya menunjukkan modul/file mana yang memicu.
+   * Cek build/deploy logs (Netlify/Vercel) untuk error waktu evaluasi/module failing.
+
+---
+
+## Contoh solusi cepat (recommended)
+
+**Preferensi**: lazy-load modal yang kemungkinan besar menyebabkan siklus.
+
+Ganti import modal statis:
+
+```ts
+// sebelum:
+// import AddAccountModal from '@/components/modals/add-account-modal';
+
+// Next.js:
+import dynamic from 'next/dynamic';
+const AddAccountModal = dynamic(() => import('@/components/modals/add-account-modal'), { ssr: false });
+```
+
+atau React.lazy variant dengan `Suspense`. Ini memecah dependency graph sehingga `page-container` tidak terjebak dalam siklus.
+
+---
+
+## Ringkasan singkat
+
+* `page-container.tsx` **sepertinya baik** — bukan sumber langsung error.
+* Kemungkinan besar **circular import / modul lain error** ketika `Accounts` dieksekusi (seringnya `AddAccountModal`).
+* Lakukan console.log, `grep` untuk menemukan siklus, gunakan lazy/dynamic import untuk mem-bypass sementara.
+* Jika mau perbaikan permanen, temukan dan hapus loop dependensi (pindahkan util/shared ke modul yang netral).
+
+---
+
+Kalau Anda mau, **kirim isi `components/modals/add-account-modal.tsx`** (atau file lain yang diimpor di `Accounts`) dan saya akan telusuri langsung di sini dan berikan patch perbaikan spesifik.
