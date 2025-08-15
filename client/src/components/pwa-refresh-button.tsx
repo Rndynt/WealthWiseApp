@@ -54,11 +54,14 @@ export function PWAPullToRefresh() {
           const normalizedDistance = Math.min(distance - 20, 120); // Subtract offset and limit range
           setPullDistance(normalizedDistance);
           
-          // Smoother transform with easing
-          const pullAmount = Math.min(normalizedDistance * 0.4, 50);
+          // Smoother transform with easing - more dramatic visual feedback
+          const pullAmount = Math.min(normalizedDistance * 0.6, 80);
           document.body.style.transform = `translateY(${pullAmount}px)`;
           document.body.style.transition = 'none';
-          document.body.style.overflow = 'hidden'; // Prevent scrolling during pull
+          document.body.style.overflow = 'hidden';
+          
+          // Add background gradient effect during pull
+          document.body.style.background = `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 0%, transparent ${pullAmount}px)`;
         }
       }
     };
@@ -70,12 +73,13 @@ export function PWAPullToRefresh() {
       
       // Smooth reset with better animation
       document.body.style.transform = '';
-      document.body.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      document.body.style.background = '';
+      document.body.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
       document.body.style.overflow = '';
       
       setTimeout(() => {
         document.body.style.transition = '';
-      }, 400);
+      }, 500);
       
       setIsPulling(false);
       setPullDistance(0);

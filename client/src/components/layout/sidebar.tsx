@@ -266,62 +266,60 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           )}
         </div>
 
-        {/* User Profile Section - Compact */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
-          {/* User Badge with Actions */}
-          <div className="flex items-center gap-3 mb-3">
-            <Avatar className="w-9 h-9 flex-shrink-0">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+        {/* User Profile Section - Ultra Compact */}
+        <div className="p-2 border-t border-gray-200 dark:border-gray-700 mt-auto">
+          {/* User Badge with Actions - Very Compact */}
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar className="w-7 h-7 flex-shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                 {user?.name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+              <p className="text-[11px] font-semibold text-gray-900 dark:text-white truncate">{user?.name}</p>
+              <p className="text-[9px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Link href="/profile">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 h-6 w-6"
                   data-testid="button-profile"
                 >
-                  <User size={14} />
+                  <User size={12} />
                 </Button>
               </Link>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1.5"
+                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1 h-6 w-6"
                 data-testid="button-logout"
               >
-                <LogOut size={14} />
+                <LogOut size={12} />
               </Button>
             </div>
           </div>
 
-          {/* Subscription Info - Compact */}
-          <div className="mb-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500">Plan:</span>
-              <Badge variant="default" className="text-[10px] px-2 py-0.5 h-5">Premium</Badge>
+          {/* Single Line Plan + Upgrade */}
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] text-gray-500">Plan:</span>
+              <Badge variant="default" className="text-[8px] px-1 py-0 h-4">Premium</Badge>
             </div>
+            {!isAdmin && !isRoot && (
+              <Link href="/upgrade">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[9px] font-medium px-2 py-0.5 h-5"
+                >
+                  <Zap size={8} className="mr-0.5" />
+                  Upgrade
+                </Button>
+              </Link>
+            )}
           </div>
-
-          {/* Upgrade Button - Compact */}
-          {!isAdmin && !isRoot && (
-            <Link href="/upgrade">
-              <Button 
-                size="sm" 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-medium py-1 h-7"
-              >
-                <Zap size={10} className="mr-1" />
-                Upgrade
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
 
