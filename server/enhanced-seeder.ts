@@ -228,6 +228,7 @@ async function seedEnhancedSubscriptionPackages() {
         "Support standar"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 2,
       maxMembers: 1,
       maxCategories: 3,
       maxBudgets: 2,
@@ -242,18 +243,20 @@ async function seedEnhancedSubscriptionPackages() {
       name: "premium",
       price: "15000.00",
       features: [
-        "1 workspace pribadi unlimited",
+        "1 workspace pribadi",
+        "5 account",
         "Unlimited kategori",
-        "Unlimited budget plan",
+        "Unlimited budget plan per periode",
         "Unlimited transaksi",
         "Advanced reports & analytics",
         "Export ke Excel & CSV",
         "Priority support"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 5,
       maxMembers: 1,
-      maxCategories: 999999,
-      maxBudgets: 999999,
+      maxCategories: 5,
+      maxBudgets: 5,
       maxSharedWorkspaces: 0,
       canCreateSharedWorkspace: false,
       type: "personal",
@@ -266,10 +269,11 @@ async function seedEnhancedSubscriptionPackages() {
       price: "25000.00",
       features: [
         "1 workspace pribadi unlimited",
-        "1 shared workspace",
+        "2 shared workspace",
+        "7 account",
         "Kolaborasi hingga 7 anggota per shared workspace",
-        "Unlimited kategori",
-        "Unlimited budget plan",
+        "10 kategori",
+        "10 budget plan",
         "Advanced collaboration tools",
         "Team reports & analytics",
         "Real-time sync",
@@ -277,9 +281,10 @@ async function seedEnhancedSubscriptionPackages() {
         "Priority support"
       ],
       maxWorkspaces: 1,
+      maxAccounts: 7,
       maxMembers: 7,
-      maxCategories: 999999,
-      maxBudgets: 999999,
+      maxCategories: 10,
+      maxBudgets: 10,
       maxSharedWorkspaces: 1,
       canCreateSharedWorkspace: true,
       type: "hybrid",
@@ -291,11 +296,12 @@ async function seedEnhancedSubscriptionPackages() {
       name: "business",
       price: "50000.00",
       features: [
-        "Unlimited workspace pribadi",
-        "Unlimited shared workspace",
+         "7 workspace pribadi",
+        "10 shared workspace",
         "Kolaborasi hingga 15 anggota per shared workspace",
-        "Unlimited kategori",
-        "Unlimited budget plan",
+        "15 account",
+        "20 kategori",
+        "20 budget plan",
         "Advanced team management",
         "Custom roles & permissions",
         "Advanced analytics & insights",
@@ -303,11 +309,12 @@ async function seedEnhancedSubscriptionPackages() {
         "White-label options",
         "Dedicated support"
       ],
-      maxWorkspaces: 999999,
+      maxWorkspaces: 7,
+      maxAccounts: 15,
       maxMembers: 15,
-      maxCategories: 999999,
-      maxBudgets: 999999,
-      maxSharedWorkspaces: 999999,
+      maxCategories: 20,
+      maxBudgets: 20,
+      maxSharedWorkspaces: 10,
       canCreateSharedWorkspace: true,
       type: "hybrid",
       description: "Paket business untuk tim dan organisasi besar",
@@ -368,12 +375,15 @@ async function seedEnhancedUserSubscriptions() {
   const oneYearLater = new Date();
   oneYearLater.setFullYear(now.getFullYear() + 1);
 
+  const unlimitedYear = new Date();
+  unlimitedYear.setFullYear(now.getFullYear() + 999);
+
   await db.insert(userSubscriptions).values([
     {
       userId: 1,
       packageId: 4, // Business for root
       startDate: now,
-      endDate: oneYearLater,
+      endDate: unlimitedYear,
       status: "active"
     },
     {
