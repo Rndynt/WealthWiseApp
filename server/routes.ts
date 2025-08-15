@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { DatabaseStorage } from "./storage";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
   insertUserSchema, insertWorkspaceSchema, insertCategorySchema, 
