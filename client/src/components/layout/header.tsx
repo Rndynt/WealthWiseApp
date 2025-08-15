@@ -9,7 +9,7 @@ interface HeaderProps {
   currentDateRange?: { from: Date; to: Date } | null;
 }
 
-const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean }> = {
+const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean, icon?: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
   '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: PieChart  },
   '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: TrendingUp },
