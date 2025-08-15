@@ -166,8 +166,8 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
               <ChartLine className="text-white" size={20} />
             </div>
             <div>
-              <h1 className="font-bold text-gray-900">FinanceFlow</h1>
-              <p className="text-xs text-gray-600">Financial Management</p>
+              <h1 className="font-bold text-gray-900">Fincoo</h1>
+              <p className="text-xs text-gray-600">Plan Your Wealth</p>
             </div>
           </div>
         </div>
