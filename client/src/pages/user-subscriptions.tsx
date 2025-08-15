@@ -290,10 +290,10 @@ export default function UserSubscriptionsManagement() {
   // Filter data with proper null safety
   const filteredSubscriptions = React.useMemo(() => {
     if (!subscriptions || !Array.isArray(subscriptions)) return [];
-    
+
     return subscriptions.filter((sub) => {
       if (!sub || !sub.user || !sub.package) return false;
-      
+
       const matchesSearch = 
         sub.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         sub.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -470,7 +470,7 @@ export default function UserSubscriptionsManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Package</SelectItem>
-                {Array.isArray(packages) && packages.length > 0 ? (
+                {packages.length > 0 ? (
                   packages.map((pkg) => (
                     <SelectItem key={pkg.id} value={pkg.id.toString()}>
                       {pkg.name} ({formatPrice(pkg.price)})
@@ -625,7 +625,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.isArray(users) && users.length > 0 ? (
+                  {users.length > 0 ? (
                     users.map((user) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.name} ({user.email})
@@ -650,7 +650,7 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.isArray(packages) && packages.length > 0 ? (
+                  {packages.length > 0 ? (
                     packages.filter(pkg => pkg?.isActive).map((pkg) => (
                       <SelectItem key={pkg.id} value={pkg.id.toString()}>
                         {pkg.name} - {formatPrice(pkg.price)}
