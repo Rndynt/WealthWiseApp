@@ -13,6 +13,7 @@ interface HeaderProps {
 
 const pageConfig: Record<string, { title: string, subtitle?: string, showDateFilter?: boolean, icon?: React.ElementType }> = {
   '/': { title: 'Dashboard', subtitle: 'Overview of your finances' },
+  '/notifications': { title: 'Notifications', subtitle: '', icon: Bell  },
   '/dashboard': { title: 'Dashboard', subtitle: 'Overview of your finances', icon: ChartNoAxesCombined  },
   '/accounts': { title: 'Accounts', subtitle: 'Manage your financial accounts', icon: WalletCards },
   '/transactions': { title: 'Transactions', subtitle: 'Track your income and expenses', showDateFilter: true, icon : ArrowLeftRight },
