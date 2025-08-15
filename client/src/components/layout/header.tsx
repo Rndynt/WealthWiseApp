@@ -1,7 +1,6 @@
 import { Menu, Bell, Calendar, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
-import { PWARefreshButton } from '@/components/pwa-refresh-button';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -62,7 +61,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           </div>
         </div>
 
-        {/* Right: Date + Refresh + Notifications */}
+        {/* Right: Date + Notifications */}
         <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
           {pageInfo.showDate && (
             <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
@@ -71,8 +70,6 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               <span className="sm:hidden">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
           )}
-
-          <PWARefreshButton />
 
           <Button variant="ghost" size="sm" className="relative p-2">
             <Bell size={18} className="text-gray-600 dark:text-gray-300" />
