@@ -305,7 +305,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
           {/* Single Line Plan + Upgrade */}
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1">
-              <span className="text-[9px] text-gray-500">Plan:</span>
+              {/*<span className="text-[9px] text-gray-500">Plan:</span>*/}
               <Badge variant="default" className="text-[8px] px-1 py-0 h-4">Premium</Badge>
             </div>
             {!isAdmin && !isRoot && (
