@@ -86,7 +86,8 @@ interface SubscriptionFormData {
 // Safe data fetching functions
 const safeFetch = async (endpoint: string): Promise<any[]> => {
   try {
-    const result = await apiRequest('GET', endpoint);
+    const response = await apiRequest('GET', endpoint);
+    const result = await response.json();
     return Array.isArray(result) ? result : [];
   } catch (error) {
     console.error(`Error fetching ${endpoint}:`, error);
@@ -111,37 +112,35 @@ export default function UserSubscriptionsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Safe data queries
-  const { data: subscriptions = [], isLoading: subscriptionsLoading } = useQuery<UserSubscription[]>({
+  // Data queries using proper queryFn
+  const { data: subscriptions = [], isLoading: subscriptionsLoading, error: subscriptionsError } = useQuery<UserSubscription[]>({
     queryKey: ['/api/admin/user-subscriptions'],
-    queryFn: () => safeFetch('/api/admin/user-subscriptions'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    queryFn: () => safeFetch('/api/users'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    staleTime: 30 * 1000,
   });
 
-  const { data: packages = [], isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
+  const { data: packages = [], isLoading: packagesLoading, error: packagesError } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
-    queryFn: () => safeFetch('/api/subscription-packages'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    staleTime: 30 * 1000,
   });
 
   // Mutations
   const createSubscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormData) => {
-      return apiRequest('POST', `/api/users/${data.userId}/subscription`, {
+      const response = await apiRequest('POST', `/api/users/${data.userId}/subscription`, {
         packageId: data.packageId,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         status: data.status
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -163,12 +162,13 @@ export default function UserSubscriptionsManagement() {
 
   const updateSubscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormData & { subscriptionId: number }) => {
-      return apiRequest('PUT', `/api/admin/user-subscriptions/${data.subscriptionId}`, {
+      const response = await apiRequest('PUT', `/api/admin/user-subscriptions/${data.subscriptionId}`, {
         packageId: data.packageId,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         status: data.status
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -190,9 +190,10 @@ export default function UserSubscriptionsManagement() {
 
   const suspendSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
-      return apiRequest('PUT', `/api/admin/user-subscriptions/${subscriptionId}`, {
+      const response = await apiRequest('PUT', `/api/admin/user-subscriptions/${subscriptionId}`, {
         status: 'cancelled'
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -316,6 +317,14 @@ export default function UserSubscriptionsManagement() {
   }, [subscriptions, searchTerm, statusFilter, packageFilter]);
 
   const isLoading = subscriptionsLoading || usersLoading || packagesLoading;
+  const hasError = subscriptionsError || usersError || packagesError;
+
+  // Debug logging
+  console.log('Data states:', {
+    subscriptions: { data: subscriptions, loading: subscriptionsLoading, error: subscriptionsError },
+    users: { data: users, loading: usersLoading, error: usersError },
+    packages: { data: packages, loading: packagesLoading, error: packagesError }
+  });
 
   if (isLoading) {
     return (
@@ -324,6 +333,36 @@ export default function UserSubscriptionsManagement() {
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
+      </PageContainer>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <PageContainer>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-red-600 mb-2">Error Loading Data</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                {subscriptionsError && <p>Subscriptions: {subscriptionsError.message}</p>}
+                {usersError && <p>Users: {usersError.message}</p>}
+                {packagesError && <p>Packages: {packagesError.message}</p>}
+              </div>
+              <Button 
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/admin/user-subscriptions'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/subscription-packages'] });
+                }}
+                className="mt-4"
+              >
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </PageContainer>
     );
   }
