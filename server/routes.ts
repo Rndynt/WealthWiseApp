@@ -478,6 +478,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workspaces/:workspaceId/accounts", authenticateToken, async (req, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
+
+      // Check category limits untuk basic package users
+      const accountLimit = await storage.checkAccountLimit(workspaceId, req.user.userId);
+      if (!accountLimit.canCreate) {
+        return res.status(403).json({
+          message: `Anda telah mencapai batas maksimal account untuk paket basic (${accountLimit.current}/${accountLimit.limit}). Upgrade ke paket premium untuk account lebih banyak.`,
+          limits: accountLimit
+        });
+      }
+
       const accountData = insertAccountSchema.parse({
         ...req.body,
         workspaceId,
@@ -1108,6 +1118,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: "Failed to create user subscription" });
     }
   });
+
+  // Check account limits
+  app.get('/api/workspaces/:workspaceId/account-limits', authenticateToken, async (req, res) => {
+    const workspaceId = parseInt(req.params.workspaceId);
+
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const limits = await storage.checkAccountLimit(workspaceId, req.user.userId);
+      res.json(limits);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to check account limits' });
+    }
+  });
+
 
   // Check category limits
   app.get('/api/workspaces/:workspaceId/category-limits', authenticateToken, async (req, res) => {

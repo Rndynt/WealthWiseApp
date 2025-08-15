@@ -36,6 +36,7 @@ export const subscriptionPackages = pgTable("subscription_packages", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   features: text("features").array().notNull(),
   maxWorkspaces: integer("max_workspaces").notNull(),
+  maxAccounts: integer("max_accounts").notNull(),
   maxMembers: integer("max_members").notNull(),
   maxCategories: integer("max_categories"), // null = unlimited
   maxBudgets: integer("max_budgets"), // null = unlimited

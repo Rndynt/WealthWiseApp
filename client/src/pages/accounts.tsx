@@ -19,6 +19,16 @@ export default function Accounts({ workspaceId }: AccountsProps) {
     enabled: !!workspaceId,
   });
 
+  // Check account limits
+  const { data: accountLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
+    queryKey: [`/api/workspaces/${workspaceId}/account-limits`],
+    enabled: !!workspaceId,
+  });
+
+  const isLimitReached = accountLimits ? !accountLimits.canCreate : false;
+  const limitText = accountLimits ? `${accountLimits.current}/${accountLimits.limit ?? '∞'}` : '';
+  const packageName = accountLimits?.packageName ===  null ? 'unknown' : accountLimits?.packageName ;
+
   const { data: transactions } = useQuery<Transaction[]>({
     queryKey: [`/api/workspaces/${workspaceId}/transactions`],
     enabled: !!workspaceId,
@@ -60,6 +70,11 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                 <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
                   Kelola akun dan rekening keuangan Anda
                 </p>
+                 {accountLimits && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {limitText} accounts used • {packageName} Package
+                    </p>
+                  )}
               </div>
               <div className="flex-shrink-0 w-full sm:w-auto">
                 <Button onClick={() => alert('Add Account Modal - Coming Soon!')} className="w-full sm:w-auto">
