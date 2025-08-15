@@ -10,6 +10,7 @@ NODE_ENV=production npx vite build
 # Fix asset paths for Netlify
 echo "🔧 Fixing asset paths for Netlify..."
 sed -i 's|/WealthWise/assets/|/assets/|g' dist/public/index.html
+sed -i 's|/FinanceFlow/assets/|/assets/|g' dist/public/index.html
 
 # Build Netlify functions
 echo "⚡ Building Netlify functions..."
