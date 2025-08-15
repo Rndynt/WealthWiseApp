@@ -1,0 +1,113 @@
+12:23:24 PM: build-image version: e5074bde24e53715f94c72a3902b7868fbfe84e1 (noble)
+12:23:24 PM: buildbot version: e5074bde24e53715f94c72a3902b7868fbfe84e1
+12:23:24 PM: Building without cache
+12:23:24 PM: Starting to prepare the repo for build
+12:23:24 PM: No cached dependencies found. Cloning fresh repo
+12:23:24 PM: git clone --filter=blob:none https://github.com/Rndynt/WealthWiseApp
+12:23:24 PM: Preparing Git Reference refs/heads/main
+12:23:25 PM: Custom build path detected. Proceeding with the specified path: ''
+12:23:25 PM: Custom publish path detected. Proceeding with the specified path: 'dist/public'
+12:23:25 PM: Custom functions path detected. Proceeding with the specified path: 'netlify/functions'
+12:23:25 PM: Custom build command detected. Proceeding with the specified command: 'npm ci && npm run migrate && npm run build:frontend && npm run build:functions'
+12:23:26 PM: Starting to install dependencies
+12:23:27 PM: v22.18.0 is already installed.
+12:23:27 PM: Now using node v22.18.0 (npm v10.9.3)
+12:23:27 PM: Enabling Node.js Corepack
+12:23:27 PM: Started restoring cached build plugins
+12:23:27 PM: Finished restoring cached build plugins
+12:23:27 PM: Started restoring cached corepack dependencies
+12:23:27 PM: Finished restoring cached corepack dependencies
+12:23:27 PM: No npm workspaces detected
+12:23:27 PM: Started restoring cached node modules
+12:23:27 PM: Finished restoring cached node modules
+12:23:27 PM: Installing npm packages using npm version 10.9.3
+12:23:30 PM: npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+12:23:30 PM: npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+12:23:34 PM: added 538 packages in 6s
+12:23:34 PM: npm packages installed
+12:23:34 PM: Successfully installed dependencies
+12:23:34 PM: Starting build script
+12:23:35 PM: Detected 1 framework(s)
+12:23:35 PM: "vite" at version "5.4.19"
+12:23:35 PM: Section completed: initializing
+12:23:36 PM: ​
+12:23:36 PM: Netlify Build                                                 
+12:23:36 PM: ────────────────────────────────────────────────────────────────
+12:23:36 PM: ​
+12:23:36 PM: ❯ Version
+12:23:36 PM:   @netlify/build 35.0.7
+12:23:36 PM: ​
+12:23:36 PM: ❯ Flags
+12:23:36 PM:   accountId: 6866e1b0d9019f32fa5343d0
+12:23:36 PM:   baseRelDir: true
+12:23:36 PM:   buildId: 689ec44b35c7e4912f2ca285
+12:23:36 PM:   deployId: 689ec44b35c7e4912f2ca287
+12:23:36 PM: ​
+12:23:36 PM: ❯ Current directory
+12:23:36 PM:   /opt/build/repo
+12:23:36 PM: ​
+12:23:36 PM: ❯ Config file
+12:23:36 PM:   /opt/build/repo/netlify.toml
+12:23:36 PM: ​
+12:23:36 PM: ❯ Context
+12:23:36 PM:   production
+12:23:36 PM: ​
+12:23:36 PM: ❯ Installing extensions
+12:23:36 PM:    - neon
+12:23:55 PM: ​
+12:23:55 PM: ❯ Loading extensions
+12:23:55 PM:    - neon
+12:23:56 PM: ​
+12:23:56 PM: build.command from netlify.toml                               
+12:23:56 PM: ────────────────────────────────────────────────────────────────
+12:23:56 PM: ​
+12:23:56 PM: $ npm ci && npm run migrate && npm run build:frontend && npm run build:functions
+12:23:59 PM: npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+12:23:59 PM: npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+12:24:02 PM: added 538 packages, and audited 539 packages in 6s
+12:24:02 PM: 70 packages are looking for funding
+12:24:02 PM:   run `npm fund` for details
+12:24:02 PM: 5 moderate severity vulnerabilities
+12:24:02 PM: To address all issues (including breaking changes), run:
+12:24:02 PM:   npm audit fix --force
+12:24:02 PM: Run `npm audit` for details.
+12:24:02 PM: > rest-express@1.0.0 migrate
+12:24:02 PM: > drizzle-kit migrate
+12:24:02 PM: No config path provided, using default 'drizzle.config.ts'
+12:24:02 PM: Reading config file '/opt/build/repo/drizzle.config.ts'
+12:24:02 PM: DATABASE_URL, ensure the database is provisioned
+12:24:02 PM: ​
+12:24:02 PM: "build.command" failed                                        
+12:24:02 PM: ────────────────────────────────────────────────────────────────
+12:24:02 PM: ​
+12:24:02 PM:   Error message
+12:24:02 PM:   Command failed with exit code 1: npm ci && npm run migrate && npm run build:frontend && npm run build:functions (https://ntl.fyi/exit-code-1)
+12:24:02 PM: ​
+12:24:02 PM:   Error location
+12:24:02 PM:   In build.command from netlify.toml:
+12:24:02 PM:   npm ci && npm run migrate && npm run build:frontend && npm run build:functions
+12:24:02 PM: ​
+12:24:02 PM:   Resolved config
+12:24:02 PM:   build:
+12:24:02 PM:     base: /opt/build/repo
+12:24:02 PM:     command: npm ci && npm run migrate && npm run build:frontend && npm run
+12:24:02 PM:       build:functions
+12:24:02 PM:     commandOrigin: config
+12:24:02 PM:     environment:
+12:24:02 PM:       - NETLIFY_DATABASE_URL
+12:24:02 PM:       - NETLIFY_DATABASE_URL_UNPOOLED
+12:24:02 PM:     publish: /opt/build/repo/dist/public
+12:24:02 PM:     publishOrigin: config
+12:24:02 PM:   functionsDirectory: /opt/build/repo/netlify/functions
+12:24:02 PM:   redirects:
+12:24:03 PM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+12:24:03 PM:     - from: /api/*
+      status: 200
+      to: /.netlify/functions/api/:splat
+    - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+12:24:03 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+12:24:03 PM: Failing build: Failed to build site
+12:24:03 PM: Finished processing build request in 39.196s

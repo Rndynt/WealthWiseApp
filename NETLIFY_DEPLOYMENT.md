@@ -24,19 +24,23 @@ The application uses a multi-step build process:
 - Environment variables configured in Netlify dashboard
 
 ### 2. Environment Variables
-Configure these in your Netlify dashboard:
+Configure these in your Netlify dashboard (Site settings > Environment variables):
 ```
 DATABASE_URL=your_neon_database_url
-SESSION_SECRET=your_session_secret_key
+SESSION_SECRET=your_session_secret_key  
 JWT_SECRET=your_jwt_secret_key
 NODE_ENV=production
 ```
 
+**Important**: Make sure your DATABASE_URL is properly set. The build will fail if this environment variable is missing.
+
 ### 3. Build Commands
-In Netlify dashboard, use these build settings:
-- **Build command**: `npm ci && npm run build:frontend && esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 --external:@neondatabase/serverless --external:express-session --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken --external:ws --format=esm --outdir=netlify/functions`
+The netlify.toml file already configures the build settings. Make sure these are set in your Netlify dashboard:
+- **Build command**: `npm ci && npm run build:frontend && npm run build:functions`
 - **Publish directory**: `dist/public`
 - **Functions directory**: `netlify/functions`
+
+**Note**: Database migrations are handled separately - not during build time.
 
 ### 4. Alternative Build Script
 Use the provided build script:
@@ -102,9 +106,16 @@ netlify dev
 ## Common Issues
 
 ### Build Errors
-- Ensure all external dependencies are listed in esbuild externals
-- Check for missing environment variables
-- Verify database connection string format
+- **Migration Error**: If you see "DATABASE_URL, ensure the database is provisioned", make sure the DATABASE_URL environment variable is set in Netlify dashboard
+- **Dependencies**: Ensure all external dependencies are listed in esbuild externals
+- **Environment Variables**: Check that all required environment variables are configured
+
+### Database Migration
+Run database migrations manually after deployment:
+```bash
+# In your local environment or via Netlify CLI
+npm run db:push
+```
 
 ### Runtime Errors
 - Check Netlify function logs
