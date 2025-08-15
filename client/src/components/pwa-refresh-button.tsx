@@ -48,29 +48,38 @@ export function PWAPullToRefresh() {
         currentY.current = e.touches[0].clientY;
         const distance = currentY.current - startY.current;
         
-        if (distance > 0) {
+        if (distance > 20) { // Increased threshold to prevent accidental triggering
           e.preventDefault();
           setIsPulling(true);
-          setPullDistance(Math.min(distance, 150));
+          const normalizedDistance = Math.min(distance - 20, 120); // Subtract offset and limit range
+          setPullDistance(normalizedDistance);
           
-          // Apply transform to body for pull effect
-          document.body.style.transform = `translateY(${Math.min(distance * 0.5, 75)}px)`;
+          // Smoother transform with easing - more dramatic visual feedback
+          const pullAmount = Math.min(normalizedDistance * 0.6, 80);
+          document.body.style.transform = `translateY(${pullAmount}px)`;
           document.body.style.transition = 'none';
+          document.body.style.overflow = 'hidden';
+          
+          // Add background gradient effect during pull
+          document.body.style.background = `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 0%, transparent ${pullAmount}px)`;
         }
       }
     };
 
     const handleTouchEnd = () => {
-      if (isPulling && pullDistance > 80) {
+      if (isPulling && pullDistance > 60) { // Lower threshold for triggering
         handleRefresh();
       }
       
-      // Reset body transform
+      // Smooth reset with better animation
       document.body.style.transform = '';
-      document.body.style.transition = 'transform 0.3s ease-out';
+      document.body.style.background = '';
+      document.body.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      document.body.style.overflow = '';
+      
       setTimeout(() => {
         document.body.style.transition = '';
-      }, 300);
+      }, 500);
       
       setIsPulling(false);
       setPullDistance(0);
@@ -131,23 +140,29 @@ export function PWAPullToRefresh() {
       {/* Pull-to-refresh indicator */}
       {isPulling && (
         <div 
-          className="fixed left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-200"
+          className="fixed left-0 right-0 z-50 flex items-center justify-center bg-gradient-to-b from-blue-50/95 to-white/95 backdrop-blur-md transition-all duration-300 shadow-sm"
           style={{ 
             top: 'env(safe-area-inset-top, 0px)',
-            height: `${Math.min(pullDistance, maxPullDistance)}px`,
-            transform: `translateY(-${maxPullDistance - pullDistance}px)`
+            height: `${Math.min(pullDistance + 40, maxPullDistance)}px`,
+            transform: `translateY(-${Math.max(maxPullDistance - pullDistance - 40, 0)}px)`,
+            borderRadius: '0 0 16px 16px'
           }}
         >
-          <div className="flex flex-col items-center">
-            <RefreshCw 
-              className={`h-6 w-6 text-green-600 transition-transform duration-200 ${
-                pullDistance > refreshThreshold ? 'animate-spin' : ''
-              }`}
-              style={{ 
-                transform: `rotate(${pullDistance * 2}deg)` 
-              }}
-            />
-            <span className="text-xs text-gray-600 mt-1">
+          <div className="flex flex-col items-center animate-in fade-in duration-200">
+            <div className="relative">
+              <RefreshCw 
+                className={`h-5 w-5 text-blue-600 transition-all duration-300 ${
+                  pullDistance > refreshThreshold ? 'animate-spin scale-110' : ''
+                }`}
+                style={{ 
+                  transform: `rotate(${pullDistance * 3}deg) ${pullDistance > refreshThreshold ? 'scale(1.1)' : ''}` 
+                }}
+              />
+              {pullDistance > refreshThreshold && (
+                <div className="absolute -inset-2 border-2 border-blue-300 rounded-full animate-pulse"></div>
+              )}
+            </div>
+            <span className="text-xs text-blue-700 mt-2 font-medium animate-in slide-in-from-top-2 duration-200">
               {pullDistance > refreshThreshold ? 'Lepas untuk refresh' : 'Tarik ke bawah'}
             </span>
           </div>
