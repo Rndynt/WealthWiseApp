@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
-import { PageContainer } from '@/components/ui/page-container';
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -36,16 +35,19 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
   if (!workspaceId) {
     return (
-      <PageContainer>
-        <div className="text-center py-8">
-          <p className="text-gray-500">Please select a workspace to view accounts</p>
+      <div className="w-full max-w-full overflow-hidden">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="text-center py-8">
+            <p className="text-gray-500">Please select a workspace to view accounts</p>
+          </div>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
+    <div className="w-full max-w-full overflow-hidden">
+      <div className="space-y-4 sm:space-y-6">
       <div className="space-y-6">
         <div className="mb-6">
           <div className="flex flex-col space-y-4">
@@ -202,6 +204,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
           </CardContent>
         </Card>
       </div>
-    </PageContainer>
+      </div>
+    </div>
   );
 }
