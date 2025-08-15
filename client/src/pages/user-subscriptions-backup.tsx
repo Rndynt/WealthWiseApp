@@ -83,17 +83,6 @@ interface SubscriptionFormData {
   status: 'active' | 'expired' | 'cancelled';
 }
 
-// Safe data fetching functions
-const safeFetch = async (endpoint: string): Promise<any[]> => {
-  try {
-    const result = await apiRequest('GET', endpoint);
-    return Array.isArray(result) ? result : [];
-  } catch (error) {
-    console.error(`Error fetching ${endpoint}:`, error);
-    return [];
-  }
-};
-
 export default function UserSubscriptionsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -111,26 +100,28 @@ export default function UserSubscriptionsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Safe data queries
-  const { data: subscriptions = [], isLoading: subscriptionsLoading } = useQuery<UserSubscription[]>({
+  // Fetch all users with their subscriptions - use direct API endpoint
+  const { data: subscriptions, isLoading } = useQuery<UserSubscription[]>({
     queryKey: ['/api/admin/user-subscriptions'],
-    queryFn: () => safeFetch('/api/admin/user-subscriptions'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      return await apiRequest('GET', '/api/admin/user-subscriptions') as any as UserSubscription[];
+    },
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    queryFn: () => safeFetch('/api/users'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      return await apiRequest('GET', '/api/users') as any as User[];
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const { data: packages = [], isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
-    queryFn: () => safeFetch('/api/subscription-packages'),
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      return await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Mutations
@@ -292,21 +283,21 @@ export default function UserSubscriptionsManagement() {
   };
 
   const formatPrice = (price: string) => {
-    const numPrice = parseFloat(price || '0');
+    const numPrice = parseFloat(price);
     return numPrice === 0 ? 'Gratis' : `Rp ${numPrice.toLocaleString('id-ID')}`;
   };
 
-  // Safe filtering with comprehensive null checks
+  // Filter data with proper null safety
   const filteredSubscriptions = React.useMemo(() => {
-    if (!Array.isArray(subscriptions)) return [];
-    
+    if (!subscriptions || !Array.isArray(subscriptions)) return [];
+
     return subscriptions.filter((sub) => {
       if (!sub || !sub.user || !sub.package) return false;
-      
+
       const matchesSearch = 
-        (sub.user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sub.user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sub.package.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        sub.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.package.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
       const matchesPackage = packageFilter === 'all' || sub.package.id.toString() === packageFilter;
@@ -315,9 +306,7 @@ export default function UserSubscriptionsManagement() {
     });
   }, [subscriptions, searchTerm, statusFilter, packageFilter]);
 
-  const isLoading = subscriptionsLoading || usersLoading || packagesLoading;
-
-  if (isLoading) {
+  if (isLoading || usersLoading || packagesLoading) {
     return (
       <PageContainer>
         <div className="animate-pulse space-y-4">
@@ -327,6 +316,8 @@ export default function UserSubscriptionsManagement() {
       </PageContainer>
     );
   }
+
+  
 
   return (
     <PageContainer>
@@ -391,7 +382,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-green-600">
-                {filteredSubscriptions.filter(s => s?.status === 'active').length}
+                {(filteredSubscriptions || []).filter(s => s?.status === 'active').length}
               </p>
               <p className="text-gray-600">Aktif</p>
             </div>
@@ -403,7 +394,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-red-600">
-                {filteredSubscriptions.filter(s => s?.endDate && isBefore(new Date(s.endDate), new Date())).length}
+                {(filteredSubscriptions || []).filter(s => s?.endDate && isBefore(new Date(s.endDate), new Date())).length}
               </p>
               <p className="text-gray-600">Expired</p>
             </div>
@@ -415,7 +406,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-gray-600">
-                {filteredSubscriptions.filter(s => s?.status === 'cancelled').length}
+                {(filteredSubscriptions || []).filter(s => s?.status === 'cancelled').length}
               </p>
               <p className="text-gray-600">Diberhentikan</p>
             </div>
@@ -427,7 +418,7 @@ export default function UserSubscriptionsManagement() {
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-2xl font-bold text-blue-600">
-                {filteredSubscriptions.length}
+                {(filteredSubscriptions || []).length}
               </p>
               <p className="text-gray-600">Total</p>
             </div>
@@ -470,11 +461,20 @@ export default function UserSubscriptionsManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Package</SelectItem>
-                {packages.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                    {pkg.name} ({formatPrice(pkg.price)})
+                {Array.isArray(packages) && packages.length > 0 ? (
+                  packages.map((pkg) => {
+                    if (!pkg || !pkg.id || !pkg.name) return null;
+                    return (
+                      <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                        {pkg.name} ({formatPrice(pkg.price || '0')})
+                      </SelectItem>
+                    );
+                  }).filter(Boolean)
+                ) : (
+                  <SelectItem value="loading" disabled>
+                    Loading...
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -500,7 +500,7 @@ export default function UserSubscriptionsManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubscriptions.map((subscription) => {
+              {(filteredSubscriptions || []).map((subscription) => {
                 const daysRemaining = Math.ceil(
                   (new Date(subscription.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                 );
@@ -509,14 +509,14 @@ export default function UserSubscriptionsManagement() {
                   <TableRow key={subscription.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{subscription.user?.name || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500">{subscription.user?.email || 'No email'}</p>
+                        <p className="font-medium">{subscription.user.name}</p>
+                        <p className="text-sm text-gray-500">{subscription.user.email}</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium capitalize">{subscription.package?.name || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500">{formatPrice(subscription.package?.price || '0')}/bulan</p>
+                        <p className="font-medium capitalize">{subscription.package.name}</p>
+                        <p className="text-sm text-gray-500">{formatPrice(subscription.package.price)}/bulan</p>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(subscription)}</TableCell>
@@ -591,7 +591,7 @@ export default function UserSubscriptionsManagement() {
             </TableBody>
           </Table>
 
-          {filteredSubscriptions.length === 0 && (
+          {(!filteredSubscriptions || filteredSubscriptions.length === 0) && (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Tidak ada subscription yang ditemukan</p>
@@ -619,11 +619,17 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.name} ({user.email})
+                  {Array.isArray(users) && users.length > 0 ? (
+                    users.map((user) => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="loading" disabled>
+                      Loading users...
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -638,11 +644,17 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {packages.filter(pkg => pkg?.isActive).map((pkg) => (
-                    <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                      {pkg.name} - {formatPrice(pkg.price)}
+                  {Array.isArray(packages) && packages.length > 0 ? (
+                    packages.filter(pkg => pkg?.isActive).map((pkg) => (
+                      <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                        {pkg.name} - {formatPrice(pkg.price)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="loading" disabled>
+                      Loading packages...
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -694,11 +706,9 @@ export default function UserSubscriptionsManagement() {
               </Button>
               <Button 
                 type="submit" 
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
                 disabled={createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending}
               >
-                {createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending ? 'Loading...' : 
-                 editingSubscription ? 'Update' : 'Create'}
+                {editingSubscription ? 'Update' : 'Assign'}
               </Button>
             </DialogFooter>
           </form>
