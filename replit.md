@@ -113,17 +113,24 @@ FinanceFlow is a full-stack personal finance management application built with a
 
 ## Deployment Strategy
 
-### Development Environment
-- Local development with Vite dev server
-- Hot module replacement for rapid iteration
+### Development Environment (Replit)
+- Local development with static file serving for compatibility
+- Hot module replacement during development
 - Development-specific middleware and logging
-- Database connection to remote Neon instance
+- Database connection to remote PostgreSQL instance
 
 ### Production Build Process
-1. Frontend built with Vite to static assets
+#### Replit Hosting
+1. Frontend built with Vite to static assets (`dist/public`)
 2. Backend bundled with ESBuild for Node.js runtime
 3. Static assets served from Express.js
 4. Environment variables for configuration management
+
+#### Netlify Hosting (Serverless)
+1. Frontend built with Vite to static assets (`dist/public`)
+2. Backend bundled as Netlify serverless function (`netlify/functions/api.js`)
+3. Static assets served from Netlify CDN
+4. Database migrations and environment variables managed through Netlify dashboard
 
 ### Database Management
 - Schema defined in shared TypeScript files
@@ -163,6 +170,7 @@ FinanceFlow is a full-stack personal finance management application built with a
 - August 14, 2025. Fixed Replit hosting compatibility by switching from Vite dev server to static file serving to resolve "blocked request" host validation errors
 - August 14, 2025. Conducted comprehensive security audit and implemented enhanced RBAC with admin/user permission separation, .pages/.access granularity, and subscription-aware enforcement
 - August 14, 2025. Successfully migrated from Replit Agent to Replit environment with PostgreSQL database setup and static file serving configuration
+- August 15, 2025. Added Netlify deployment support with serverless functions following TradingJournal architecture pattern
 
 ## Recent Solutions
 
@@ -195,6 +203,34 @@ FinanceFlow is a full-stack personal finance management application built with a
 npm run build
 mkdir -p server/public
 cp -r dist/public/* server/public/
+```
+
+### Netlify Deployment Setup (August 15, 2025)
+**Objective**: Configure application for Netlify serverless deployment following TradingJournal project pattern.
+**Implementation**: 
+1. **Netlify Configuration**: Created `netlify.toml` with build commands, redirects, and function settings
+2. **Serverless Function**: Built `netlify/functions/api.ts` using serverless-http wrapper around Express routes
+3. **Build Process**: Created `build-netlify.sh` script for frontend and function compilation
+4. **Session Management**: Configured cookie-based sessions for serverless compatibility
+5. **Asset Handling**: Fixed asset paths and configured proper static file serving
+
+**Files Created**:
+- `netlify.toml` - Netlify platform configuration
+- `netlify/functions/api.ts` - Serverless API handler
+- `build-netlify.sh` - Deployment build script
+- `NETLIFY_DEPLOYMENT.md` - Comprehensive deployment guide
+
+**Deployment Commands**:
+```bash
+# Build for Netlify
+./build-netlify.sh
+
+# Or manually:
+npm run build
+esbuild netlify/functions/api.ts --bundle --platform=node --target=node18 \
+  --external:@neondatabase/serverless --external:express-session \
+  --external:connect-pg-simple --external:bcrypt --external:jsonwebtoken \
+  --external:ws --format=esm --outdir=netlify/functions
 ```
 
 ## User Preferences
