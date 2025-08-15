@@ -1,1 +1,0 @@
-ALTER TABLE "subscription_packages" ADD COLUMN "max_accounts" integer DEFAULT 1 NOT NULL;
