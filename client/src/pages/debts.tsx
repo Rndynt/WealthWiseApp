@@ -107,6 +107,30 @@ export default function Debts({ workspaceId }: DebtsProps) {
 
   return (
     <div className="space-y-6">
+
+      <div className="mb-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-green-600" />
+                Debt Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                Manage your debts and credits
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <Button onClick={() => setShowDebtModal(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Debt Record
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/*}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Debt Management</h1>
         <Button onClick={() => setShowDebtModal(true)}>
@@ -114,6 +138,7 @@ export default function Debts({ workspaceId }: DebtsProps) {
           Add Debt Record
         </Button>
       </div>
+      */}
 
       {/* Summary Cards */}
       {debts && debts.length > 0 && (
