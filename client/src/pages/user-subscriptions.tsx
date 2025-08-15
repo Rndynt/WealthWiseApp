@@ -108,18 +108,20 @@ export default function UserSubscriptionsManagement() {
     },
   });
 
-  const { data: users } = useQuery<User[]>({
+  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
       return await apiRequest('GET', '/api/users') as any as User[];
     },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const { data: packages } = useQuery<SubscriptionPackage[]>({
+  const { data: packages, isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
     queryFn: async () => {
       return await apiRequest('GET', '/api/subscription-packages') as any as SubscriptionPackage[];
     },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Mutations
@@ -304,12 +306,23 @@ export default function UserSubscriptionsManagement() {
     });
   }, [subscriptions, searchTerm, statusFilter, packageFilter]);
 
-  if (isLoading) {
+  if (isLoading || usersLoading || packagesLoading) {
     return (
       <PageContainer>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Safety check - ensure data is available
+  if (!subscriptions || !users || !packages) {
+    return (
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading data...</p>
         </div>
       </PageContainer>
     );
@@ -457,11 +470,17 @@ export default function UserSubscriptionsManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Package</SelectItem>
-                {(packages || []).map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                    {pkg.name} ({formatPrice(pkg.price)})
+                {Array.isArray(packages) && packages.length > 0 ? (
+                  packages.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                      {pkg.name} ({formatPrice(pkg.price)})
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="loading" disabled>
+                    Loading...
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -606,11 +625,17 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(users || []).map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.name} ({user.email})
+                  {Array.isArray(users) && users.length > 0 ? (
+                    users.map((user) => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="loading" disabled>
+                      Loading users...
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -625,11 +650,17 @@ export default function UserSubscriptionsManagement() {
                   <SelectValue placeholder="Pilih package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(packages || []).filter(pkg => pkg?.isActive).map((pkg) => (
-                    <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                      {pkg.name} - {formatPrice(pkg.price)}
+                  {Array.isArray(packages) && packages.length > 0 ? (
+                    packages.filter(pkg => pkg?.isActive).map((pkg) => (
+                      <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                        {pkg.name} - {formatPrice(pkg.price)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="loading" disabled>
+                      Loading packages...
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
