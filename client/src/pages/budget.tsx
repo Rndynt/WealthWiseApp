@@ -139,6 +139,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
                 Kelola budget dan rencana keuangan Anda
               </p>
             </div>
+          </div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
