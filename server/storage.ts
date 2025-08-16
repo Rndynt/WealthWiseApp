@@ -96,6 +96,7 @@ export interface IStorage {
   createDebt(debt: InsertDebt): Promise<Debt>;
   updateDebt(id: number, debt: Partial<InsertDebt>): Promise<Debt>;
   deleteDebt(id: number): Promise<void>;
+  getDebtRepayments(debtId: number): Promise<Transaction[]>;
 
   // Dashboard data
   getDashboardData(workspaceId: number): Promise<{
@@ -266,10 +267,18 @@ export class DatabaseStorage implements IStorage {
           .from(transactions)
           .where(eq(transactions.accountId, account.id));
 
-        // Calculate balance: income adds, expense subtracts
+        // Calculate balance: income and debt add, expense and repayment subtract
         const calculatedBalance = accountTransactions.reduce((sum: number, transaction: any) => {
           const amount = parseFloat(transaction.amount);
-          return transaction.type === 'income' ? sum + amount : sum - amount;
+          if (transaction.type === 'income' || transaction.type === 'debt') {
+            return sum + amount;
+          } else if (transaction.type === 'expense' || transaction.type === 'repayment') {
+            return sum - amount;
+          } else if (transaction.type === 'transfer') {
+            // For transfers, it depends on whether this is the source or destination account
+            return sum; // Transfer logic is handled separately in createTransaction
+          }
+          return sum;
         }, 0);
 
         return {
@@ -324,7 +333,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
-    const [newTransaction] = await db.insert(transactions).values(transaction).returning();
+    let transactionToCreate = { ...transaction };
+    
+    // Auto-create debt record if this is a new debt transaction and no debtId provided
+    if (transaction.type === 'debt' && !transaction.debtId) {
+      const newDebt = await this.createDebt({
+        name: transaction.description || 'New Debt',
+        type: 'debt',
+        totalAmount: transaction.amount,
+        remainingAmount: transaction.amount,
+        status: 'active',
+        workspaceId: transaction.workspaceId,
+      });
+      transactionToCreate.debtId = newDebt.id;
+    }
+    
+    const [newTransaction] = await db.insert(transactions).values(transactionToCreate).returning();
 
     // Update account balance
     const account = await this.getAccount(transaction.accountId);
@@ -431,6 +455,16 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDebt(id: number): Promise<void> {
     await db.delete(debts).where(eq(debts.id, id));
+  }
+
+  // Get repayment transactions for a specific debt
+  async getDebtRepayments(debtId: number): Promise<Transaction[]> {
+    return await db.select().from(transactions)
+      .where(and(
+        eq(transactions.debtId, debtId),
+        eq(transactions.type, 'repayment')
+      ))
+      .orderBy(desc(transactions.date));
   }
 
   // Update debt remaining amount when repayment is made

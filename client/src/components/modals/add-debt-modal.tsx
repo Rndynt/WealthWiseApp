@@ -97,27 +97,28 @@ export default function AddDebtModal({ open, onOpenChange, workspaceId }: AddDeb
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
           <DialogTitle>Add Debt Record</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-field">
-            <Label htmlFor="debt-name">Name</Label>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="debt-name" className="text-sm font-medium">Name</Label>
             <Input
               id="debt-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g., Car Loan, Credit Card"
+              className="h-9"
               required
             />
           </div>
 
-          <div className="form-field">
-            <Label htmlFor="debt-type">Type</Label>
+          <div className="space-y-2">
+            <Label htmlFor="debt-type" className="text-sm font-medium">Type</Label>
             <Select value={form.type} onValueChange={(value: 'debt' | 'credit') => setForm({ ...form, type: value })}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
               <SelectContent>
@@ -127,52 +128,73 @@ export default function AddDebtModal({ open, onOpenChange, workspaceId }: AddDeb
             </Select>
           </div>
 
-          <div className="form-field">
-            <Label htmlFor="debt-total">Total Amount</Label>
-            <Input
-              id="debt-total"
-              type="number"
-              value={form.totalAmount}
-              onChange={(e) => handleTotalAmountChange(e.target.value)}
-              placeholder="0"
-              min="0"
-              step="0.01"
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="debt-total" className="text-sm font-medium">Total Amount</Label>
+              <Input
+                id="debt-total"
+                type="number"
+                value={form.totalAmount}
+                onChange={(e) => handleTotalAmountChange(e.target.value)}
+                placeholder="0"
+                className="h-9"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="debt-remaining" className="text-sm font-medium">Remaining Amount</Label>
+              <Input
+                id="debt-remaining"
+                type="number"
+                value={form.remainingAmount}
+                onChange={(e) => setForm({ ...form, remainingAmount: e.target.value })}
+                placeholder="0"
+                className="h-9"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-field">
-            <Label htmlFor="debt-remaining">Remaining Amount</Label>
-            <Input
-              id="debt-remaining"
-              type="number"
-              value={form.remainingAmount}
-              onChange={(e) => setForm({ ...form, remainingAmount: e.target.value })}
-              placeholder="0"
-              min="0"
-              step="0.01"
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="debt-interest" className="text-sm font-medium">Interest Rate (%)</Label>
+              <Input
+                id="debt-interest"
+                type="number"
+                value={form.interestRate}
+                onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
+                placeholder="0"
+                className="h-9"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="debt-status" className="text-sm font-medium">Status</Label>
+              <Select value={form.status} onValueChange={(value: 'active' | 'paid' | 'overdue') => setForm({ ...form, status: value })}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="form-field">
-            <Label htmlFor="debt-interest">Interest Rate (%)</Label>
-            <Input
-              id="debt-interest"
-              type="number"
-              value={form.interestRate}
-              onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
-              placeholder="0"
-              min="0"
-              step="0.01"
-            />
-          </div>
-
-          <div className="form-field">
-            <Label>Due Date (Optional)</Label>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Due Date (Optional)</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <Button variant="outline" className="w-full h-9 justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {form.dueDate ? format(form.dueDate, "PPP") : <span>Select due date</span>}
                 </Button>
@@ -187,33 +209,19 @@ export default function AddDebtModal({ open, onOpenChange, workspaceId }: AddDeb
               </PopoverContent>
             </Popover>
           </div>
-
-          <div className="form-field">
-            <Label htmlFor="debt-status">Status</Label>
-            <Select value={form.status} onValueChange={(value: 'active' | 'paid' | 'overdue') => setForm({ ...form, status: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           
-          <div className="flex space-x-3">
+          <div className="flex space-x-3 pt-2 border-t">
             <Button 
               type="button" 
               variant="outline" 
-              className="flex-1"
+              className="flex-1 h-9"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              className="flex-1"
+              className="flex-1 h-9"
               disabled={createDebtMutation.isPending || !form.name || !form.type || !form.totalAmount || !form.remainingAmount}
             >
               {createDebtMutation.isPending ? 'Adding...' : 'Add Debt'}
