@@ -161,7 +161,8 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
     );
   }
 
-  if (isBasicUser && !canCreateSharedWorkspace) {
+  // Root users bypass subscription checks
+  if (!isRoot && isBasicUser && !canCreateSharedWorkspace) {
     return (
       <div className="text-center py-8 max-w-md mx-auto">
         <Users size={48} className="mx-auto mb-4 text-gray-400" />
