@@ -696,10 +696,11 @@ export class DatabaseStorage implements IStorage {
     const current = currentAccounts.length;
 
     if (userSubResult) {
+      const packageName = userSubResult.package.name;
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxAccounts;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     } else {
       // Default basic package limits for users without subscription
       const limit = 2; // Basic package max accounts
@@ -718,14 +719,16 @@ export class DatabaseStorage implements IStorage {
 
     if (userSubResult) {
       // Check package limit (null means unlimited)
+      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     } else {
       // Default basic package limits for users without subscription
+      const packageName = "basic";
       const limit = 3; // Basic package max categories
       const canCreate = current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     }
   }
 
@@ -738,15 +741,17 @@ export class DatabaseStorage implements IStorage {
     const current = currentBudgets.length;
 
     if (userSubResult) {
+      const packageName = userSubResult.package.name;
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     } else {
       // Default basic package limits for users without subscription
+      const packageName = "basic";
       const limit = 2; // Basic package max budgets per period
       const canCreate = current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     }
   }
 
