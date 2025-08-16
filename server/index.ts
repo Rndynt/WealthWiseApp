@@ -54,11 +54,8 @@ app.use((req, res, next) => {
   console.log("Environment:", process.env.NODE_ENV);
   console.log("App env:", app.get("env"));
 
-  if (app.get("env") === "development") {
-    setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Force static serving to test with built assets
+  serveStatic(app);
 
   // Use port 5000 as configured in .replit file
   // this serves both the API and the client.
