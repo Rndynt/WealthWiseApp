@@ -9,6 +9,30 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Category } from '@/types';
 
+const iconMap: Record<string, string> = {
+  'briefcase': '💼',
+  'shopping-cart': '🛒',
+  'bolt': '⚡',
+  'bus': '🚌',
+  'tv': '📺',
+  'home': '🏠',
+  'car': '🚗',
+  'heart': '❤️',
+  'gamepad': '🎮',
+  'coffee': '☕',
+  'utensils': '🍽️',
+  'shirt': '👕',
+  'plane': '✈️',
+  'graduation-cap': '🎓',
+  'stethoscope': '🩺',
+  'gift': '🎁',
+  'phone': '📱',
+  'wifi': '📶',
+  'credit-card': '💳',
+  'banknote': '💸',
+  'piggy-bank': '🐷',
+};
+
 interface AddBudgetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -109,7 +133,7 @@ export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddB
               <SelectContent>
                 {expenseCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.icon} {category.name}
+                    {iconMap[category.icon] || category.icon} {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>

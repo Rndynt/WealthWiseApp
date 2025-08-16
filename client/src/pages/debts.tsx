@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, CreditCard, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Calendar } from 'lucide-react';
+import { Plus, CreditCard, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Calendar, ChevronDown, ChevronUp, ArrowDownLeft } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,33 @@ interface DebtsProps {
 
 export default function Debts({ workspaceId }: DebtsProps) {
   const [showDebtModal, setShowDebtModal] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+
+  const toggleCard = (debtId: number) => {
+    const newExpandedCards = new Set(expandedCards);
+    if (expandedCards.has(debtId)) {
+      newExpandedCards.delete(debtId);
+    } else {
+      newExpandedCards.add(debtId);
+    }
+    setExpandedCards(newExpandedCards);
+  };
+
+  // Query to get repayment transactions for expanded cards
+  const { data: allRepayments } = useQuery<Record<number, any[]>>({
+    queryKey: [`/api/debts/repayments`, Array.from(expandedCards)],
+    queryFn: async () => {
+      if (expandedCards.size === 0) return {};
+      const repaymentPromises = Array.from(expandedCards).map(async (debtId) => {
+        const response = await fetch(`/api/debts/${debtId}/repayments`);
+        const data = await response.json();
+        return [debtId, data];
+      });
+      const results = await Promise.all(repaymentPromises);
+      return Object.fromEntries(results);
+    },
+    enabled: expandedCards.size > 0,
+  });
 
   if (!workspaceId) {
     return (
@@ -204,32 +232,41 @@ export default function Debts({ workspaceId }: DebtsProps) {
             const total = parseFloat(debt.totalAmount);
             const paid = total - remaining;
 
+            const isExpanded = expandedCards.has(debt.id);
+            const repayments = allRepayments?.[debt.id] || [];
+
             return (
-              <Card key={debt.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{debt.name}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={`${typeDisplay.color} bg-gray-100`}>
-                          {typeDisplay.label}
-                        </Badge>
-                        <Badge className={`${statusConfig.bg} ${statusConfig.color}`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig.label}
-                        </Badge>
+              <Collapsible key={debt.id} open={isExpanded} onOpenChange={() => toggleCard(debt.id)}>
+                <Card className="hover:shadow-md transition-shadow">
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="pb-3 cursor-pointer">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {debt.name}
+                            {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`${typeDisplay.color} bg-gray-100`}>
+                              {typeDisplay.label}
+                            </Badge>
+                            <Badge className={`${statusConfig.bg} ${statusConfig.color}`}>
+                              <StatusIcon className="w-3 h-3 mr-1" />
+                              {statusConfig.label}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
+                    </CardHeader>
+                  </CollapsibleTrigger>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -269,7 +306,37 @@ export default function Debts({ workspaceId }: DebtsProps) {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+
+                <CollapsibleContent>
+                  <div className="border-t bg-gray-50 dark:bg-gray-800/50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+                      <h4 className="font-medium text-gray-900 dark:text-white">Repayment History</h4>
+                    </div>
+                    {repayments.length > 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {repayments.map((repayment: any) => (
+                          <div key={repayment.id} className="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded-lg border">
+                            <div>
+                              <p className="font-medium text-sm">{repayment.description}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{format(new Date(repayment.date), 'dd MMM yyyy')}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-green-600">-Rp {parseFloat(repayment.amount).toLocaleString('id-ID')}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <p className="text-sm">No repayment history yet</p>
+                        <p className="text-xs mt-1">Repayments will appear here when you make payments</p>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+                </Card>
+              </Collapsible>
             );
           })}
         </div>
