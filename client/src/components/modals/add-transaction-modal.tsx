@@ -12,7 +12,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Account, Category } from '@/types';
+import { Account, Category, Debt } from '@/types';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -31,6 +31,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
     accountId: '',
     categoryId: '',
     toAccountId: '', // For transfers
+    debtId: '', // For debt repayments
   });
 
   const { toast } = useToast();
@@ -47,6 +48,11 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
     enabled: !!workspaceId,
   });
 
+  const { data: debts } = useQuery<Debt[]>({
+    queryKey: [`/api/workspaces/${workspaceId}/debts`],
+    enabled: !!workspaceId,
+  });
+
   const createTransactionMutation = useMutation({
     mutationFn: (data: any) =>
       apiRequest('POST', `/api/workspaces/${workspaceId}/transactions`, data),
@@ -54,10 +60,13 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/dashboard`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/debts`] });
       
       toast({
         title: "Transaction created",
-        description: "Your transaction has been recorded successfully.",
+        description: form.type === 'repayment' 
+          ? "Debt repayment recorded and debt balance updated"
+          : "Your transaction has been recorded successfully.",
       });
       
       resetForm();
@@ -81,12 +90,22 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       accountId: '',
       categoryId: '',
       toAccountId: '',
+      debtId: '',
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validation
     if (!form.type || !form.amount || !form.description || !form.accountId) return;
+    if (form.type === 'repayment' && !form.debtId) {
+      toast({
+        variant: "destructive",
+        title: "Repayment Error",
+        description: "Please select a debt to repay",
+      });
+      return;
+    }
     
     const transactionData = {
       ...form,
@@ -94,6 +113,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       accountId: parseInt(form.accountId),
       categoryId: form.categoryId ? parseInt(form.categoryId) : undefined,
       toAccountId: form.toAccountId ? parseInt(form.toAccountId) : undefined,
+      debtId: form.debtId ? parseInt(form.debtId) : undefined,
       workspaceId,
     };
     
@@ -114,6 +134,12 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
 
   const isTransfer = form.type === 'transfer';
   const requiresCategory = form.type === 'income' || form.type === 'expense';
+  const isRepayment = form.type === 'repayment';
+  
+  // Get active debts for repayment selection
+  const getActiveDebts = () => {
+    return debts?.filter(debt => debt.status === 'active' && parseFloat(debt.remainingAmount) > 0) || [];
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -125,7 +151,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-field">
             <Label htmlFor="transaction-type">Transaction Type</Label>
-            <Select value={form.type} onValueChange={(value: TransactionType) => setForm({ ...form, type: value, categoryId: '', toAccountId: '' })}>
+            <Select value={form.type} onValueChange={(value: TransactionType) => setForm({ ...form, type: value, categoryId: '', toAccountId: '', debtId: '' })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
@@ -234,6 +260,27 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {isRepayment && (
+            <div className="form-field">
+              <Label htmlFor="transaction-debt">Select Debt to Repay</Label>
+              <Select value={form.debtId} onValueChange={(value) => setForm({ ...form, debtId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select debt..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {getActiveDebts().map((debt) => (
+                    <SelectItem key={debt.id} value={debt.id.toString()}>
+                      {debt.name} (Remaining: {parseFloat(debt.remainingAmount).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {getActiveDebts().length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">No active debts available for repayment</p>
+              )}
             </div>
           )}
           

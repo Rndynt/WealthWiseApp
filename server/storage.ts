@@ -336,6 +336,17 @@ export class DatabaseStorage implements IStorage {
         newBalance += parseFloat(transaction.amount);
       } else if (transaction.type === 'expense') {
         newBalance -= parseFloat(transaction.amount);
+      } else if (transaction.type === 'debt') {
+        // For new debt: money comes into account
+        newBalance += parseFloat(transaction.amount);
+      } else if (transaction.type === 'repayment') {
+        // For repayment: money goes out of account
+        newBalance -= parseFloat(transaction.amount);
+        
+        // Update debt remaining amount if debtId is provided
+        if (transaction.debtId) {
+          await this.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
+        }
       } else if (transaction.type === 'transfer' && transaction.toAccountId) {
         // Subtract from source account
         newBalance -= parseFloat(transaction.amount);
@@ -420,6 +431,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDebt(id: number): Promise<void> {
     await db.delete(debts).where(eq(debts.id, id));
+  }
+
+  // Update debt remaining amount when repayment is made
+  async updateDebtRepayment(debtId: number, repaymentAmount: number): Promise<void> {
+    const debt = await db.select().from(debts).where(eq(debts.id, debtId)).then(rows => rows[0]);
+    if (!debt) {
+      throw new Error('Debt not found');
+    }
+
+    const currentRemaining = parseFloat(debt.remainingAmount);
+    const newRemaining = Math.max(0, currentRemaining - repaymentAmount);
+    
+    // Update status if fully paid
+    const newStatus = newRemaining === 0 ? 'paid' : debt.status;
+    
+    await db.update(debts)
+      .set({ 
+        remainingAmount: newRemaining.toString(),
+        status: newStatus 
+      })
+      .where(eq(debts.id, debtId));
+  }
+
+  // Get debt repayment history
+  async getDebtRepayments(debtId: number): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.debtId, debtId),
+          eq(transactions.type, 'repayment')
+        )
+      )
+      .orderBy(desc(transactions.date));
   }
 
   // Dashboard data
