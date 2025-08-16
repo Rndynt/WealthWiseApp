@@ -42,6 +42,7 @@ export interface Transaction {
   accountId: number;
   categoryId?: number;
   toAccountId?: number;
+  debtId?: number;
   workspaceId: number;
   createdAt: string;
 }

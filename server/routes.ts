@@ -756,6 +756,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get debt repayment history
+  app.get("/api/debts/:id/repayments", authenticateToken, async (req, res) => {
+    try {
+      const debtId = parseInt(req.params.id);
+      const repayments = await storage.getDebtRepayments(debtId);
+      res.json(repayments);
+    } catch (error) {
+      console.error("Get debt repayments error:", error);
+      res.status(500).json({ message: "Failed to get debt repayments" });
+    }
+  });
+
   // RBAC - Roles Management
   app.get("/api/roles", authenticateToken, requirePermission('roles.read'), async (req, res) => {
     try {

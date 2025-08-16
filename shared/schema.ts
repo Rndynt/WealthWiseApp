@@ -153,6 +153,7 @@ export const transactions = pgTable("transactions", {
   accountId: integer("account_id").references(() => accounts.id).notNull(),
   categoryId: integer("category_id").references(() => categories.id),
   toAccountId: integer("to_account_id").references(() => accounts.id), // For transfers
+  debtId: integer("debt_id").references(() => debts.id), // Link to debt record for repayments
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -316,11 +317,12 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
   }),
 }));
 
-export const debtsRelations = relations(debts, ({ one }) => ({
+export const debtsRelations = relations(debts, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [debts.workspaceId],
     references: [workspaces.id],
   }),
+  repaymentTransactions: many(transactions),
 }));
 
 // Insert schemas
