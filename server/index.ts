@@ -51,14 +51,16 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   
-  // Force production mode to avoid Vite config issues in Replit
   console.log("Environment:", process.env.NODE_ENV);
   console.log("App env:", app.get("env"));
 
-  // Always use static serving for Replit compatibility
-  serveStatic(app);
+  if (app.get("env") === "development") {
+    setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
-  // Use port 5000 as standard
+  // Use port 5000 as configured in .replit file
   // this serves both the API and the client.
   const port = 5000;
   server.listen(port, "0.0.0.0", () => {
