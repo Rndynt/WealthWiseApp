@@ -6,9 +6,12 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  // For migration purposes, set a temporary database URL
-  process.env.DATABASE_URL = "postgresql://user:password@localhost:5432/finance_app";
-  console.log("⚠️  Using temporary DATABASE_URL for migration - database connection may fail");
+  // Check for Netlify environment variables as fallback
+  process.env.DATABASE_URL = process.env.NETLIFY_DATABASE_URL_UNPOOLED || process.env.NETLIFY_DATABASE_URL;
+  if (!process.env.DATABASE_URL) {
+    console.log("⚠️  No DATABASE_URL found - please set database environment variable");
+    throw new Error("DATABASE_URL environment variable is required");
+  }
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });

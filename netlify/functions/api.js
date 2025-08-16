@@ -44755,8 +44755,11 @@ var insertDebtSchema = createInsertSchema(debts).omit({
 // server/db.ts
 neonConfig2.webSocketConstructor = wrapper_default;
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "postgresql://user:password@localhost:5432/finance_app";
-  console.log("\u26A0\uFE0F  Using temporary DATABASE_URL for migration - database connection may fail");
+  process.env.DATABASE_URL = process.env.NETLIFY_DATABASE_URL_UNPOOLED || process.env.NETLIFY_DATABASE_URL;
+  if (!process.env.DATABASE_URL) {
+    console.log("\u26A0\uFE0F  No DATABASE_URL found - please set database environment variable");
+    throw new Error("DATABASE_URL environment variable is required");
+  }
 }
 var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db = drizzle({ client: pool, schema: schema_exports });
@@ -45119,10 +45122,10 @@ var DatabaseStorage = class {
     const currentAccounts = await this.getWorkspaceAccounts(workspaceId);
     const current = currentAccounts.length;
     if (userSubResult) {
-      const packageName2 = userSubResult.package.name;
+      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxAccounts;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName: packageName2 };
+      return { canCreate, limit, current, packageName };
     } else {
       const limit = 2;
       const canCreate = current < limit;
@@ -45134,11 +45137,12 @@ var DatabaseStorage = class {
     const currentCategories = await this.getWorkspaceCategories(workspaceId);
     const current = currentCategories.length;
     if (userSubResult) {
-      const packageName2 = userSubResult.package.name;
+      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     } else {
+      const packageName = "basic";
       const limit = 3;
       const canCreate = current < limit;
       return { canCreate, limit, current, packageName };
@@ -45149,11 +45153,12 @@ var DatabaseStorage = class {
     const currentBudgets = await this.getWorkspaceBudgets(workspaceId, year, month);
     const current = currentBudgets.length;
     if (userSubResult) {
-      const packageName2 = userSubResult.package.name;
+      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current };
+      return { canCreate, limit, current, packageName };
     } else {
+      const packageName = "basic";
       const limit = 2;
       const canCreate = current < limit;
       return { canCreate, limit, current, packageName };
