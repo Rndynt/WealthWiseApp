@@ -168,6 +168,12 @@ export interface IStorage {
 
   // Public APIs
   getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]>;
+
+  // Analytics methods
+  getAnalyticsData(workspaceId: number, timeframe: string): Promise<any>;
+  getFinancialHealthData(workspaceId: number): Promise<any>;
+  checkDebtReminders(workspaceId: number): Promise<any[]>;
+  checkBudgetAlerts(workspaceId: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -934,6 +940,151 @@ export class DatabaseStorage implements IStorage {
   // Public APIs
   async getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]> {
     return await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.isActive, true));
+  }
+
+  // Analytics methods
+  async getAnalyticsData(workspaceId: number, timeframe: string): Promise<any> {
+    // This would normally calculate real analytics from transactions
+    // For now, returning structure for frontend to use mock data
+    return {
+      timeframe,
+      spendingTrends: [],
+      categoryData: [],
+      cashFlowForecast: [],
+      budgetComparison: []
+    };
+  }
+
+  async getFinancialHealthData(workspaceId: number): Promise<any> {
+    // Get all transactions for the workspace
+    const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
+    const accounts = await this.getWorkspaceAccounts(workspaceId);
+    const debts = await this.getWorkspaceDebts(workspaceId);
+    
+    // Calculate total balance
+    const totalBalance = accounts.reduce((sum, account) => sum + parseFloat(account.balance), 0);
+    
+    // Calculate total debt
+    const totalDebt = debts
+      .filter(debt => debt.type === 'debt')
+      .reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
+    
+    // Calculate monthly income and expenses
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const currentMonthTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+    });
+    
+    const monthlyIncome = currentMonthTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+    const monthlyExpenses = currentMonthTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    // Calculate ratios
+    const debtToIncomeRatio = monthlyIncome > 0 ? totalDebt / (monthlyIncome * 12) : 0;
+    const savingsRate = monthlyIncome > 0 ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome) : 0;
+    
+    // Calculate financial health score (0-100)
+    let score = 100;
+    if (debtToIncomeRatio > 0.4) score -= 30;
+    else if (debtToIncomeRatio > 0.3) score -= 20;
+    else if (debtToIncomeRatio > 0.2) score -= 10;
+    
+    if (savingsRate < 0.1) score -= 25;
+    else if (savingsRate < 0.2) score -= 15;
+    
+    if (totalBalance < monthlyExpenses * 3) score -= 20; // Emergency fund
+    
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      debtToIncomeRatio,
+      savingsRate,
+      budgetCompliance: 0.82, // Mock for now
+      totalBalance,
+      totalDebt,
+      monthlyIncome,
+      monthlyExpenses,
+      trends: {
+        score: 'stable',
+        debtRatio: 'improving',
+        savings: 'stable'
+      }
+    };
+  }
+
+  // Notification methods
+  async checkDebtReminders(workspaceId: number): Promise<any[]> {
+    const debts = await this.getWorkspaceDebts(workspaceId);
+    const reminders = [];
+    const now = new Date();
+    
+    for (const debt of debts) {
+      if (debt.status === 'active' && debt.dueDate) {
+        const dueDate = new Date(debt.dueDate);
+        const diffTime = dueDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Check if reminder should be sent (7, 3, 1 days before)
+        if (diffDays === 7 || diffDays === 3 || diffDays === 1) {
+          reminders.push({
+            debtId: debt.id,
+            debtName: debt.name,
+            daysLeft: diffDays,
+            amount: parseFloat(debt.remainingAmount),
+            dueDate: debt.dueDate
+          });
+        }
+      }
+    }
+    
+    return reminders;
+  }
+
+  async checkBudgetAlerts(workspaceId: number): Promise<any[]> {
+    const budgets = await this.getWorkspaceBudgets(workspaceId, new Date().getFullYear(), new Date().getMonth() + 1);
+    const alerts = [];
+    
+    for (const budget of budgets) {
+      // Get current month transactions for this category
+      const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      const categorySpending = transactions
+        .filter(t => {
+          const transactionDate = new Date(t.date);
+          return t.categoryId === budget.categoryId &&
+                 t.type === 'expense' &&
+                 transactionDate.getMonth() === currentMonth &&
+                 transactionDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const budgetAmount = parseFloat(budget.amount);
+      const percentage = budgetAmount > 0 ? (categorySpending / budgetAmount) * 100 : 0;
+      
+      // Alert at 80%, 90%, and 100%+
+      if (percentage >= 80) {
+        const category = await db.select().from(categories).where(eq(categories.id, budget.categoryId)).then(rows => rows[0]);
+        alerts.push({
+          budgetId: budget.id,
+          categoryId: budget.categoryId,
+          categoryName: category?.name || 'Unknown',
+          percentage,
+          budgetAmount,
+          spentAmount: categorySpending
+        });
+      }
+    }
+    
+    return alerts;
   }
 }
 

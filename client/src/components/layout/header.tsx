@@ -4,6 +4,7 @@ import { Menu, Bell, Calendar, Plus,
 import { Button } from '@/components/ui/button';
 import { useLocation, Link } from 'wouter';
 import { DateFilter } from '@/components/date-filter';
+import NotificationCenter from '@/components/notifications/notification-center';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -85,12 +86,7 @@ export default function Header({ onToggleSidebar, onDateRangeChange, currentDate
           )}
           
           {!pageInfo.showDateFilter && (
-            <Link href="/notifications">
-              <Button variant="ghost" size="sm" className="relative p-2" data-testid="button-notifications">
-                <Bell size={18} className="text-gray-600 dark:text-gray-300" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></span>
-              </Button>
-            </Link>
+            <NotificationCenter />
           )}
         </div>
       </div>

@@ -13,6 +13,7 @@ import Categories from "@/pages/categories";
 import Transactions from "@/pages/transactions";
 import Budget from "@/pages/budget";
 import Reports from "@/pages/reports";
+import Analytics from "@/pages/analytics";
 import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
 import UsersManagement from "@/pages/users";
@@ -112,6 +113,7 @@ function AppRouter() {
               <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} dateRange={dateRange} />} />
               <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
               <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
+              <Route path="/analytics" component={() => <Analytics workspaceId={currentWorkspace?.id} />} />
               <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
               <Route path="/collaboration" component={() => 
                 <ProtectedRoute requiredPermission="user.collaboration.pages">
