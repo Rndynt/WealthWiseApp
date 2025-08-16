@@ -82,8 +82,10 @@ export default function SettingsPage() {
 
   // Update settings mutation
   const updateSettingsMutation = useMutation({
-    mutationFn: (updatedSettings: Partial<AppSettings>) =>
-      apiRequest('PUT', '/api/settings', updatedSettings),
+    mutationFn: async (data: Partial<AppSettings>) => {
+      const response = await apiRequest('PUT', '/api/settings', data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
       setHasChanges(false);
@@ -119,17 +121,17 @@ export default function SettingsPage() {
   // Apply theme changes immediately
   const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
     handleInputChange('defaultTheme', theme);
-    
+
     // Apply theme immediately to the document
     const root = window.document.documentElement;
-    
+
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.toggle('dark', systemTheme === 'dark');
     } else {
       root.classList.toggle('dark', theme === 'dark');
     }
-    
+
     // Store in localStorage
     localStorage.setItem('theme', theme);
   };
@@ -173,7 +175,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Manage application settings and configuration</p>
         </div>
-        
+
         {hasChanges && canUpdateSettings && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleReset}>
@@ -227,7 +229,7 @@ export default function SettingsPage() {
                   data-testid="input-app-name"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="appDescription">Description</Label>
                 <Textarea
@@ -238,7 +240,7 @@ export default function SettingsPage() {
                   data-testid="input-app-description"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="defaultCurrency">Default Currency</Label>
                 <Select 
@@ -259,7 +261,7 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="defaultLanguage">Default Language</Label>
                 <Select 
@@ -322,7 +324,7 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="customCss">Custom CSS</Label>
                 <Textarea
@@ -359,7 +361,7 @@ export default function SettingsPage() {
                   data-testid="switch-allow-registration"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Require Email Verification</Label>
@@ -371,7 +373,7 @@ export default function SettingsPage() {
                   data-testid="switch-email-verification"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
                 <Input
@@ -387,7 +389,7 @@ export default function SettingsPage() {
                   How long users stay logged in without activity
                 </p>
               </div>
-              
+
               <div>
                 <Label htmlFor="maxWorkspaces">Max Workspaces per User</Label>
                 <Input
@@ -421,7 +423,7 @@ export default function SettingsPage() {
                   data-testid="switch-notifications"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Maintenance Mode</Label>
@@ -433,7 +435,7 @@ export default function SettingsPage() {
                   data-testid="switch-maintenance-mode"
                 />
               </div>
-              
+
               {formData.maintenanceMode && (
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                   <p className="text-yellow-800 dark:text-yellow-200 text-sm">
@@ -443,7 +445,7 @@ export default function SettingsPage() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Data Management</CardTitle>
