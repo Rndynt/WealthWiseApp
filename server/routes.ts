@@ -1212,6 +1212,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics routes
+  app.get("/api/workspaces/:workspaceId/analytics", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const timeframe = (req.query.timeframe as string) || '6months';
+      
+      const analyticsData = await storage.getAnalyticsData(workspaceId, timeframe);
+      res.json(analyticsData);
+    } catch (error) {
+      console.error("Failed to get analytics data:", error);
+      res.status(500).json({ message: "Failed to get analytics data" });
+    }
+  });
+
+  app.get("/api/workspaces/:workspaceId/financial-health", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      
+      const healthData = await storage.getFinancialHealthData(workspaceId);
+      res.json(healthData);
+    } catch (error) {
+      console.error("Failed to get financial health data:", error);
+      res.status(500).json({ message: "Failed to get financial health data" });
+    }
+  });
+
+  // Notification routes
+  app.get("/api/workspaces/:workspaceId/notifications/debt-reminders", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      
+      const reminders = await storage.checkDebtReminders(workspaceId);
+      res.json(reminders);
+    } catch (error) {
+      console.error("Failed to get debt reminders:", error);
+      res.status(500).json({ message: "Failed to get debt reminders" });
+    }
+  });
+
+  app.get("/api/workspaces/:workspaceId/notifications/budget-alerts", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      
+      const alerts = await storage.checkBudgetAlerts(workspaceId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Failed to get budget alerts:", error);
+      res.status(500).json({ message: "Failed to get budget alerts" });
+    }
+  });
+
   // Payment routes (dummy implementation)
   app.post("/api/payment/process", authenticateToken, async (req, res) => {
     try {
