@@ -260,14 +260,14 @@ export class DatabaseStorage implements IStorage {
 
     // Calculate balance from transactions for each account
     const accountsWithCalculatedBalance = await Promise.all(
-      workspaceAccounts.map(async (account) => {
+      workspaceAccounts.map(async (account: any) => {
         const accountTransactions = await db
           .select()
           .from(transactions)
           .where(eq(transactions.accountId, account.id));
 
         // Calculate balance: income adds, expense subtracts
-        const calculatedBalance = accountTransactions.reduce((sum, transaction) => {
+        const calculatedBalance = accountTransactions.reduce((sum: number, transaction: any) => {
           const amount = parseFloat(transaction.amount);
           return transaction.type === 'income' ? sum + amount : sum - amount;
         }, 0);
@@ -436,7 +436,7 @@ export class DatabaseStorage implements IStorage {
       .from(accounts)
       .where(eq(accounts.workspaceId, workspaceId));
 
-    const totalBalance = accountsResult.reduce((sum, account) => sum + parseFloat(account.balance), 0);
+    const totalBalance = accountsResult.reduce((sum: number, account: any) => sum + parseFloat(account.balance), 0);
 
     // Get current month's income and expenses
     const currentDate = new Date();
@@ -453,7 +453,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    const monthlyIncome = monthlyIncomeResult.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const monthlyIncome = monthlyIncomeResult.reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
 
     const monthlyExpensesResult = await db
       .select({ amount: transactions.amount })
@@ -466,7 +466,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    const monthlyExpenses = monthlyExpensesResult.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const monthlyExpenses = monthlyExpensesResult.reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
 
     // Get recent transactions
     const recentTransactions = await this.getWorkspaceTransactions(workspaceId, 10);
@@ -696,11 +696,10 @@ export class DatabaseStorage implements IStorage {
     const current = currentAccounts.length;
 
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxAccounts;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
       const limit = 2; // Basic package max accounts
@@ -719,7 +718,6 @@ export class DatabaseStorage implements IStorage {
 
     if (userSubResult) {
       // Check package limit (null means unlimited)
-      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
       return { canCreate, limit, current };
@@ -727,7 +725,7 @@ export class DatabaseStorage implements IStorage {
       // Default basic package limits for users without subscription
       const limit = 3; // Basic package max categories
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
 
@@ -740,8 +738,6 @@ export class DatabaseStorage implements IStorage {
     const current = currentBudgets.length;
 
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
-
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
@@ -750,7 +746,7 @@ export class DatabaseStorage implements IStorage {
       // Default basic package limits for users without subscription
       const limit = 2; // Basic package max budgets per period
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
 
