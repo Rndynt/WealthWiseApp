@@ -64,6 +64,8 @@ async function checkTransactionNotifications(workspaceId: number, transaction: a
   }
 }
 
+
+
 async function calculateCategorySpending(workspaceId: number, categoryId: number): Promise<number> {
   const currentMonth = new Date();
   const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -947,6 +949,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Subscription package deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Failed to delete subscription package" });
+    }
+  });
+
+  // Notification routes
+  app.get('/api/workspaces/:workspaceId/notifications', authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const notifications = await storage.getNotificationsByWorkspace(workspaceId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.post('/api/workspaces/:workspaceId/notifications', authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const notificationData = req.body;
+      const notification = await storage.createNotification({
+        ...notificationData,
+        workspaceId
+      });
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create notification' });
+    }
+  });
+
+  app.patch('/api/notifications/:id/read', authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.markNotificationAsRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
+  // Recurring transaction automation endpoint
+  app.post('/api/workspaces/:workspaceId/execute-recurring', authenticateToken, async (req: any, res) => {
+    try {
+      await storage.executeRecurringTransactions();
+      res.json({ success: true, message: 'Recurring transactions processed' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to execute recurring transactions' });
     }
   });
 

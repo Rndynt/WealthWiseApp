@@ -592,7 +592,10 @@ export default function Automation({ workspaceId }: AutomationProps) {
 
                     <div>
                       <Label htmlFor="categoryId">Category</Label>
-                      <Select onValueChange={(value) => ruleForm.setValue('categoryId', parseInt(value))}>
+                      <Select 
+                        value={ruleForm.watch('categoryId')?.toString() || ''} 
+                        onValueChange={(value) => ruleForm.setValue('categoryId', parseInt(value))}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -671,6 +674,10 @@ export default function Automation({ workspaceId }: AutomationProps) {
                                 categoryId: rule.categoryId,
                                 isActive: rule.isActive,
                               });
+                              // Ensure category ID is properly set for Select component
+                              setTimeout(() => {
+                                ruleForm.setValue('categoryId', rule.categoryId);
+                              }, 0);
                               setIsRuleDialogOpen(true);
                             }}
                           >
