@@ -30,6 +30,52 @@ const storage = new DatabaseStorage();
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+// Smart notification triggers
+async function checkTransactionNotifications(workspaceId: number, transaction: any) {
+  try {
+    // Check for unusual transaction amounts
+    const amount = parseFloat(transaction.amount);
+    if (amount > 1000000) { // > 1M IDR
+      console.log(`Unusual transaction detected: ${amount} IDR`);
+    }
+    
+    // Check budget compliance if expense
+    if (transaction.type === 'expense' && transaction.categoryId) {
+      const budgets = await storage.getWorkspaceBudgets(workspaceId);
+      const categoryBudget = budgets.find(b => b.categoryId === transaction.categoryId);
+      if (categoryBudget) {
+        const spent = await calculateCategorySpending(workspaceId, transaction.categoryId);
+        const budgetAmount = parseFloat(categoryBudget.amount);
+        const percentage = (spent / budgetAmount) * 100;
+        
+        if (percentage >= 90) {
+          console.log(`Budget alert: ${percentage.toFixed(0)}% spent in category`);
+        }
+      }
+    }
+    
+    // Check debt payment progress
+    if (transaction.type === 'repayment' && transaction.debtId) {
+      await storage.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
+      console.log(`Debt payment processed: ${transaction.amount}`);
+    }
+  } catch (error) {
+    console.error('Smart notification error:', error);
+  }
+}
+
+async function calculateCategorySpending(workspaceId: number, categoryId: number): Promise<number> {
+  const currentMonth = new Date();
+  const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const transactions = await storage.getWorkspaceTransactions(workspaceId, 1000);
+  
+  return transactions
+    .filter(t => t.type === 'expense' && 
+                 t.categoryId === categoryId && 
+                 new Date(t.date) >= startOfMonth)
+    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+}
+
 // Middleware to verify JWT token
 async function authenticateToken(req: any, res: any, next: any) {
   const authHeader = req.headers['authorization'];
@@ -552,6 +598,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const transaction = await storage.createTransaction(transactionData);
+      
+      // Check for smart notifications triggers
+      await checkTransactionNotifications(workspaceId, transaction);
+      
       res.json(transaction);
     } catch (error) {
       console.error("Transaction creation error:", error);
@@ -1319,7 +1369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const goalData = insertGoalSchema.parse({
         ...req.body,
         workspaceId,
-        targetDate: new Date(req.body.targetDate),
+        targetDate: req.body.targetDate, // Keep as string
       });
       const goal = await storage.createGoal(goalData);
       res.json(goal);
@@ -1334,9 +1384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const workspaceId = parseInt(req.params.workspaceId);
       const updates = req.body;
-      if (updates.targetDate) {
-        updates.targetDate = new Date(updates.targetDate);
-      }
+      // Keep dates as strings - Drizzle will handle conversion
       const goal = await storage.updateGoal(id, updates);
       res.json(goal);
     } catch (error) {
@@ -1379,12 +1427,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionData = insertRecurringTransactionSchema.parse({
         ...req.body,
         workspaceId,
-        startDate,
-        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
-        nextExecution,
+        startDate: req.body.startDate, // Keep as string
+        endDate: req.body.endDate || undefined, // Keep as string or undefined
       });
       
-      const transaction = await storage.createRecurringTransaction(transactionData);
+      // Add nextExecution separately since it's not in the schema
+      const createData = {
+        ...transactionData,
+        nextExecution,
+      };
+      
+      const transaction = await storage.createRecurringTransaction(createData);
       res.json(transaction);
     } catch (error) {
       console.error("Failed to create recurring transaction:", error);
@@ -1396,12 +1449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      if (updates.startDate) {
-        updates.startDate = new Date(updates.startDate);
-      }
-      if (updates.endDate) {
-        updates.endDate = new Date(updates.endDate);
-      }
+      // Keep dates as strings - Drizzle will handle conversion
       const transaction = await storage.updateRecurringTransaction(id, updates);
       res.json(transaction);
     } catch (error) {
