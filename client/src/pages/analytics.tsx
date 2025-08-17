@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import { PageContainer } from '@/components/ui/page-container';
 
@@ -33,18 +33,38 @@ export default function Analytics({ workspaceId }: AnalyticsProps) {
   const { data: analytics, isLoading } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/analytics`, timeframe],
     queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${workspaceId}/analytics?timeframe=${timeframe}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/workspaces/${workspaceId}/analytics?timeframe=${timeframe}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
       return response.json();
     },
+    enabled: !!workspaceId,
   });
 
   // Fetch financial health data
   const { data: healthData } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/financial-health`],
     queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${workspaceId}/financial-health`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/workspaces/${workspaceId}/financial-health`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch financial health');
+      }
       return response.json();
     },
+    enabled: !!workspaceId,
   });
 
   const generateMockData = () => {

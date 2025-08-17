@@ -490,6 +490,11 @@ export class DatabaseStorage implements IStorage {
     await db.delete(debts).where(eq(debts.id, id));
   }
 
+  async getDebtById(id: number): Promise<Debt | null> {
+    const result = await db.select().from(debts).where(eq(debts.id, id));
+    return result[0] || null;
+  }
+
   // Get repayment transactions for a specific debt
   async getDebtRepayments(debtId: number): Promise<Transaction[]> {
     return await db.select().from(transactions)
@@ -521,19 +526,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(debts.id, debtId));
   }
 
-  // Get debt repayment history
-  async getDebtRepayments(debtId: number): Promise<Transaction[]> {
-    return await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.debtId, debtId),
-          eq(transactions.type, 'repayment')
-        )
-      )
-      .orderBy(desc(transactions.date));
-  }
+
 
   // Dashboard data
   async getDashboardData(workspaceId: number): Promise<{
@@ -971,14 +964,92 @@ export class DatabaseStorage implements IStorage {
 
   // Analytics methods
   async getAnalyticsData(workspaceId: number, timeframe: string): Promise<any> {
-    // This would normally calculate real analytics from transactions
-    // For now, returning structure for frontend to use mock data
+    const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
+    const categories = await this.getWorkspaceCategories(workspaceId);
+    const budgets = await this.getWorkspaceBudgets(workspaceId);
+    
+    // Calculate timeframe boundaries
+    const now = new Date();
+    let months = 6;
+    if (timeframe === '12months') months = 12;
+    if (timeframe === '3months') months = 3;
+    
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    
+    // Filter transactions within timeframe
+    const filteredTransactions = transactions.filter(t => new Date(t.date) >= startDate);
+    
+    // Generate spending trends by month
+    const spendingTrends = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const monthDate = new Date();
+      monthDate.setMonth(monthDate.getMonth() - i);
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      
+      const monthTransactions = filteredTransactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= monthStart && transactionDate <= monthEnd;
+      });
+      
+      const income = monthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const expenses = monthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      spendingTrends.push({
+        month: monthDate.toLocaleString('default', { month: 'short' }),
+        income,
+        expenses,
+        savings: income - expenses
+      });
+    }
+    
+    // Generate category analysis
+    const categoryMap = new Map();
+    categories.forEach(cat => categoryMap.set(cat.id, cat.name));
+    
+    const categorySpending = new Map();
+    filteredTransactions
+      .filter(t => t.type === 'expense')
+      .forEach(t => {
+        const categoryName = categoryMap.get(t.categoryId) || 'Uncategorized';
+        const current = categorySpending.get(categoryName) || 0;
+        categorySpending.set(categoryName, current + parseFloat(t.amount));
+      });
+    
+    const totalExpenses = Array.from(categorySpending.values()).reduce((sum, amount) => sum + amount, 0);
+    const categoryData = Array.from(categorySpending.entries()).map(([name, value]) => ({
+      name,
+      value,
+      percentage: totalExpenses > 0 ? (value / totalExpenses) * 100 : 0
+    }));
+    
+    // Budget comparison
+    const budgetComparison = budgets.map(budget => {
+      const categoryName = categoryMap.get(budget.categoryId) || 'Unknown';
+      const spent = categorySpending.get(categoryName) || 0;
+      const budgetAmount = parseFloat(budget.amount);
+      
+      return {
+        category: categoryName,
+        budget: budgetAmount,
+        spent,
+        remaining: budgetAmount - spent,
+        percentage: budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0
+      };
+    });
+    
     return {
       timeframe,
-      spendingTrends: [],
-      categoryData: [],
-      cashFlowForecast: [],
-      budgetComparison: []
+      spendingTrends,
+      categoryData: categoryData.slice(0, 10), // Top 10 categories
+      cashFlowForecast: spendingTrends, // Reuse for forecast
+      budgetComparison
     };
   }
 
