@@ -1414,6 +1414,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Goal Performance Metrics - MUST BE BEFORE /:id routes
+  app.get("/api/workspaces/:workspaceId/goals/metrics", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const metrics = await storage.getGoalPerformanceMetrics(workspaceId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Failed to get goal metrics:", error);
+      res.status(500).json({ message: "Failed to get goal metrics" });
+    }
+  });
+
+  // Smart Goal Suggestions - MUST BE BEFORE /:id routes
+  app.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const suggestions = await storage.getSmartGoalSuggestions(workspaceId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Failed to get goal suggestions:", error);
+      res.status(500).json({ message: "Failed to get goal suggestions" });
+    }
+  });
+
+  // Goal Insights API - MUST BE BEFORE /:id routes
+  app.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const limit = parseInt(req.query.limit as string) || 50;
+      const insights = await storage.getWorkspaceGoalInsights(workspaceId, limit);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get goal insights:", error);
+      res.status(500).json({ message: "Failed to get goal insights" });
+    }
+  });
+
   // Get goal with detailed information
   app.get("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
     try {
@@ -1490,29 +1527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Goal Performance Metrics
-  app.get("/api/workspaces/:workspaceId/goals/metrics", authenticateToken, async (req: any, res) => {
-    try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const metrics = await storage.getGoalPerformanceMetrics(workspaceId);
-      res.json(metrics);
-    } catch (error) {
-      console.error("Failed to get goal metrics:", error);
-      res.status(500).json({ message: "Failed to get goal metrics" });
-    }
-  });
-
-  // Smart Goal Suggestions
-  app.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req: any, res) => {
-    try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const suggestions = await storage.getSmartGoalSuggestions(workspaceId);
-      res.json(suggestions);
-    } catch (error) {
-      console.error("Failed to get goal suggestions:", error);
-      res.status(500).json({ message: "Failed to get goal suggestions" });
-    }
-  });
+  // These have been moved above to prevent route conflicts
 
   // Goal Milestones API
   app.get("/api/workspaces/:workspaceId/goals/:id/milestones", authenticateToken, async (req: any, res) => {
@@ -1554,18 +1569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Goal Insights API
-  app.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req: any, res) => {
-    try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const limit = parseInt(req.query.limit as string) || 50;
-      const insights = await storage.getWorkspaceGoalInsights(workspaceId, limit);
-      res.json(insights);
-    } catch (error) {
-      console.error("Failed to get goal insights:", error);
-      res.status(500).json({ message: "Failed to get goal insights" });
-    }
-  });
+  // This has been moved above to prevent route conflicts
 
   app.patch("/api/workspaces/:workspaceId/goals/insights/:id/read", authenticateToken, async (req: any, res) => {
     try {

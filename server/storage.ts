@@ -1523,106 +1523,67 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Debt Payoff Strategy
-    const hasDebtGoal = existingGoals.some(g => g.type === 'debt_payment' && g.status === 'active');
-    if (!hasDebtGoal && financialHealth.totalDebt > 0) {
-      const monthlyCapacity = financialHealth.monthlyIncome - financialHealth.monthlyExpenses;
-      if (monthlyCapacity > 0) {
-        suggestions.push({
-          type: 'debt_payment',
-          title: 'Debt Freedom Plan',
-          description: 'Eliminate all debts systematically',
-          recommendedAmount: financialHealth.totalDebt,
-          priority: 'high',
-          reasoning: `With ${this.formatCurrency(monthlyCapacity)} monthly capacity, you can be debt-free in ${Math.ceil(financialHealth.totalDebt / monthlyCapacity)} months.`,
-          confidence: 0.88
-        });
-      }
+    const hasDebtGoals = existingGoals.some(g => g.type === 'debt_payment');
+    if (!hasDebtGoals && financialHealth.totalDebt > 0) {
+      suggestions.push({
+        type: 'debt_payment',
+        title: 'Accelerate Debt Payoff',
+        description: 'Create a focused debt elimination plan',
+        recommendedAmount: financialHealth.totalDebt * 0.15, // 15% extra payment
+        priority: 'high',
+        timeline: '24 months',
+        reasoning: `You have ${financialHealth.totalDebt.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })} in debt. Paying extra can save significant interest.`,
+        confidence: 0.85
+      });
     }
 
-    // Investment Goals for good savers
-    if (financialHealth.savingsRate > 0.2 && financialHealth.totalDebt === 0) {
-      const hasInvestmentGoal = existingGoals.some(g => g.type === 'investment' && g.status === 'active');
-      if (!hasInvestmentGoal) {
-        const annualInvestmentCapacity = (financialHealth.monthlyIncome - financialHealth.monthlyExpenses) * 12;
-        suggestions.push({
-          type: 'investment',
-          title: 'Wealth Building Goal',
-          description: 'Start investing for long-term wealth',
-          recommendedAmount: annualInvestmentCapacity,
-          priority: 'medium',
-          reasoning: 'Your excellent savings rate indicates readiness for investment goals.',
-          confidence: 0.78
-        });
-      }
+    // Investment Goals
+    if (hasEmergencyFund && financialHealth.monthlyIncome > financialHealth.monthlyExpenses * 1.5) {
+      suggestions.push({
+        type: 'investment',
+        title: 'Start Investment Portfolio',
+        description: 'Begin building long-term wealth through investments',
+        recommendedAmount: financialHealth.monthlyIncome * 0.2 * 12, // 20% of annual income
+        priority: 'medium',
+        timeline: '12 months',
+        reasoning: 'You have stable finances and emergency fund. Time to grow wealth through investments.',
+        confidence: 0.75
+      });
     }
 
     return suggestions;
   }
 
-  // Financial Health Integration
+  // Financial Health Analysis for Goals
   async getWorkspaceFinancialHealth(workspaceId: number): Promise<any> {
     const accounts = await this.getWorkspaceAccounts(workspaceId);
-    const debts = await this.getWorkspaceDebts(workspaceId);
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = new Date();
     const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
+    const debts = await this.getWorkspaceDebts(workspaceId);
+
+    const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
+    const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
     
-    // Calculate total balance
-    const totalBalance = accounts.reduce((sum, account) => sum + parseFloat(account.balance), 0);
-    
-    // Calculate total debt
-    const totalDebt = debts
-      .filter(d => d.status === 'active')
-      .reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
-    
-    // Calculate monthly income and expenses (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentTransactions = transactions.filter(t => new Date(t.date) >= thirtyDaysAgo);
-    
-    const monthlyIncome = recentTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    // Filter transactions from last 30 days
+    const recentTransactions = transactions.filter(t => new Date(t.date) >= startDate);
     
     const monthlyExpenses = recentTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-    // Calculate net worth and savings rate
-    const netWorth = totalBalance - totalDebt;
-    const savingsRate = monthlyIncome > 0 ? (monthlyIncome - monthlyExpenses) / monthlyIncome : 0;
-    
+      
+    const monthlyIncome = recentTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
     return {
       totalBalance,
       totalDebt,
-      netWorth,
       monthlyIncome,
       monthlyExpenses,
-      savingsRate,
-      financialHealthScore: this.calculateFinancialHealthScore(totalBalance, totalDebt, monthlyIncome, monthlyExpenses)
+      netWorth: totalBalance - totalDebt,
+      savingsRate: monthlyIncome > 0 ? (monthlyIncome - monthlyExpenses) / monthlyIncome : 0
     };
-  }
-
-  private calculateFinancialHealthScore(balance: number, debt: number, income: number, expenses: number): number {
-    let score = 0;
-    
-    // Emergency fund (30% of score)
-    const emergencyFundRatio = balance / (expenses * 6); // 6 months expenses
-    score += Math.min(emergencyFundRatio, 1) * 30;
-    
-    // Debt-to-income ratio (25% of score)
-    const debtToIncomeRatio = income > 0 ? debt / (income * 12) : 1; // Annual income
-    score += Math.max(0, 1 - debtToIncomeRatio) * 25;
-    
-    // Savings rate (25% of score)
-    const savingsRate = income > 0 ? (income - expenses) / income : 0;
-    score += Math.max(0, savingsRate) * 25;
-    
-    // Net worth (20% of score)
-    const netWorth = balance - debt;
-    const netWorthRatio = income > 0 ? netWorth / (income * 12) : 0;
-    score += Math.min(Math.max(0, netWorthRatio), 1) * 20;
-    
-    return Math.round(score);
   }
 
   // Helper methods
