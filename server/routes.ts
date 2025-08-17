@@ -8,7 +8,7 @@ import {
   insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema,
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
   insertSubscriptionPackageSchema, insertUserSubscriptionSchema,
-  insertGoalSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema
+  insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
@@ -27,6 +27,7 @@ declare global {
 }
 
 const storage = new DatabaseStorage();
+import { goalsService } from './goals-service';
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -1401,7 +1402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Goals API endpoints
+  // Enhanced Goals API endpoints
   app.get("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
@@ -1413,15 +1414,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get goal with detailed information
+  app.get("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const goalDetails = await storage.getGoalWithDetails(id);
+      if (!goalDetails) {
+        return res.status(404).json({ message: "Goal not found" });
+      }
+      res.json(goalDetails);
+    } catch (error) {
+      console.error("Failed to get goal details:", error);
+      res.status(500).json({ message: "Failed to get goal details" });
+    }
+  });
+
+  // Get goal analytics and AI insights
+  app.get("/api/workspaces/:workspaceId/goals/:id/analytics", authenticateToken, async (req: any, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const analytics = await goalsService.analyzeGoal(goalId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Failed to get goal analytics:", error);
+      res.status(500).json({ message: "Failed to get goal analytics" });
+    }
+  });
+
   app.post("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
       const goalData = insertGoalSchema.parse({
         ...req.body,
         workspaceId,
-        targetDate: req.body.targetDate, // Keep as string
+        targetDate: req.body.targetDate,
       });
       const goal = await storage.createGoal(goalData);
+      
+      // Auto-create milestones if requested
+      if (req.body.createMilestones) {
+        await goalsService.createIntelligentMilestones(goal.id);
+      }
+      
       res.json(goal);
     } catch (error) {
       console.error("Failed to create goal:", error);
@@ -1434,7 +1468,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const workspaceId = parseInt(req.params.workspaceId);
       const updates = req.body;
-      // Keep dates as strings - Drizzle will handle conversion
       const goal = await storage.updateGoal(id, updates);
       res.json(goal);
     } catch (error) {
@@ -1451,6 +1484,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to delete goal:", error);
       res.status(400).json({ message: "Failed to delete goal" });
+    }
+  });
+
+  // Goal Performance Metrics
+  app.get("/api/workspaces/:workspaceId/goals/metrics", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const metrics = await storage.getGoalPerformanceMetrics(workspaceId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Failed to get goal metrics:", error);
+      res.status(500).json({ message: "Failed to get goal metrics" });
+    }
+  });
+
+  // Smart Goal Suggestions
+  app.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const suggestions = await storage.getSmartGoalSuggestions(workspaceId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Failed to get goal suggestions:", error);
+      res.status(500).json({ message: "Failed to get goal suggestions" });
+    }
+  });
+
+  // Goal Milestones API
+  app.get("/api/workspaces/:workspaceId/goals/:id/milestones", authenticateToken, async (req: any, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const milestones = await storage.getGoalMilestones(goalId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Failed to get goal milestones:", error);
+      res.status(500).json({ message: "Failed to get goal milestones" });
+    }
+  });
+
+  app.post("/api/workspaces/:workspaceId/goals/:id/milestones", authenticateToken, async (req: any, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const milestoneData = insertGoalMilestoneSchema.parse({
+        ...req.body,
+        goalId,
+      });
+      const milestone = await storage.createGoalMilestone(milestoneData);
+      res.json(milestone);
+    } catch (error) {
+      console.error("Failed to create milestone:", error);
+      res.status(400).json({ message: "Failed to create milestone" });
+    }
+  });
+
+  // Auto-create intelligent milestones
+  app.post("/api/workspaces/:workspaceId/goals/:id/milestones/generate", authenticateToken, async (req: any, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      await goalsService.createIntelligentMilestones(goalId);
+      const milestones = await storage.getGoalMilestones(goalId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Failed to generate milestones:", error);
+      res.status(400).json({ message: "Failed to generate milestones" });
+    }
+  });
+
+  // Goal Insights API
+  app.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const limit = parseInt(req.query.limit as string) || 50;
+      const insights = await storage.getWorkspaceGoalInsights(workspaceId, limit);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get goal insights:", error);
+      res.status(500).json({ message: "Failed to get goal insights" });
+    }
+  });
+
+  app.patch("/api/workspaces/:workspaceId/goals/insights/:id/read", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const insight = await storage.markGoalInsightAsRead(id);
+      res.json(insight);
+    } catch (error) {
+      console.error("Failed to mark insight as read:", error);
+      res.status(400).json({ message: "Failed to mark insight as read" });
     }
   });
 
