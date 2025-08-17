@@ -16,6 +16,9 @@ import {
   subscriptionPackages,
   userSubscriptions,
   appSettings,
+  goals,
+  recurringTransactions,
+  categoryRules,
   type User,
   type Workspace,
   type Category,
@@ -29,6 +32,14 @@ import {
   type SubscriptionPackage,
   type UserSubscription,
   type WorkspaceSubscription,
+  type AppSettings,
+  type InsertAppSettings,
+  type Goal,
+  type InsertGoal,
+  type RecurringTransaction,
+  type InsertRecurringTransaction,
+  type CategoryRule,
+  type InsertCategoryRule,
   type InsertUser,
   type InsertWorkspace,
   type InsertCategory,
@@ -42,8 +53,6 @@ import {
   type InsertSubscriptionPackage,
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
-  type AppSettings,
-  type InsertAppSettings,
 } from '@shared/schema';
 import {
   type WorkspaceMember,
@@ -165,6 +174,24 @@ export interface IStorage {
   // Settings
   getAppSettings(): Promise<AppSettings>;
   updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
+
+  // Goals
+  getGoalsByWorkspace(workspaceId: number): Promise<Goal[]>;
+  createGoal(goal: InsertGoal): Promise<Goal>;
+  updateGoal(id: number, goal: Partial<InsertGoal>): Promise<Goal>;
+  deleteGoal(id: number): Promise<void>;
+
+  // Recurring Transactions
+  getRecurringTransactionsByWorkspace(workspaceId: number): Promise<RecurringTransaction[]>;
+  createRecurringTransaction(transaction: InsertRecurringTransaction): Promise<RecurringTransaction>;
+  updateRecurringTransaction(id: number, transaction: Partial<InsertRecurringTransaction>): Promise<RecurringTransaction>;
+  deleteRecurringTransaction(id: number): Promise<void>;
+
+  // Category Rules
+  getCategoryRulesByWorkspace(workspaceId: number): Promise<CategoryRule[]>;
+  createCategoryRule(rule: InsertCategoryRule): Promise<CategoryRule>;
+  updateCategoryRule(id: number, rule: Partial<InsertCategoryRule>): Promise<CategoryRule>;
+  deleteCategoryRule(id: number): Promise<void>;
 
   // Public APIs
   getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]>;
@@ -1085,6 +1112,79 @@ export class DatabaseStorage implements IStorage {
     }
     
     return alerts;
+  }
+
+  // Goals methods
+  async getGoalsByWorkspace(workspaceId: number): Promise<Goal[]> {
+    return await db.select().from(goals).where(eq(goals.workspaceId, workspaceId)).orderBy(desc(goals.createdAt));
+  }
+
+  async createGoal(goal: InsertGoal): Promise<Goal> {
+    const [newGoal] = await db.insert(goals).values(goal).returning();
+    return newGoal;
+  }
+
+  async updateGoal(id: number, goal: Partial<InsertGoal>): Promise<Goal> {
+    const [updatedGoal] = await db
+      .update(goals)
+      .set({ ...goal, updatedAt: new Date() })
+      .where(eq(goals.id, id))
+      .returning();
+    return updatedGoal;
+  }
+
+  async deleteGoal(id: number): Promise<void> {
+    await db.delete(goals).where(eq(goals.id, id));
+  }
+
+  // Recurring Transactions methods
+  async getRecurringTransactionsByWorkspace(workspaceId: number): Promise<RecurringTransaction[]> {
+    return await db.select().from(recurringTransactions)
+      .where(eq(recurringTransactions.workspaceId, workspaceId))
+      .orderBy(desc(recurringTransactions.createdAt));
+  }
+
+  async createRecurringTransaction(transaction: InsertRecurringTransaction): Promise<RecurringTransaction> {
+    const [newTransaction] = await db.insert(recurringTransactions).values(transaction).returning();
+    return newTransaction;
+  }
+
+  async updateRecurringTransaction(id: number, transaction: Partial<InsertRecurringTransaction>): Promise<RecurringTransaction> {
+    const [updatedTransaction] = await db
+      .update(recurringTransactions)
+      .set({ ...transaction, updatedAt: new Date() })
+      .where(eq(recurringTransactions.id, id))
+      .returning();
+    return updatedTransaction;
+  }
+
+  async deleteRecurringTransaction(id: number): Promise<void> {
+    await db.delete(recurringTransactions).where(eq(recurringTransactions.id, id));
+  }
+
+  // Category Rules methods
+  async getCategoryRulesByWorkspace(workspaceId: number): Promise<CategoryRule[]> {
+    return await db.select().from(categoryRules)
+      .where(eq(categoryRules.workspaceId, workspaceId))
+      .orderBy(desc(categoryRules.createdAt));
+  }
+
+  async createCategoryRule(rule: InsertCategoryRule): Promise<CategoryRule> {
+    const [newRule] = await db.insert(categoryRules).values(rule).returning();
+    return newRule;
+  }
+
+  async updateCategoryRule(id: number, rule: Partial<InsertCategoryRule>): Promise<CategoryRule> {
+    const [updatedRule] = await db
+      .update(categoryRules)
+      .set(rule)
+      .where(eq(categoryRules.id, id))
+      .returning();
+    return updatedRule;
+  }
+
+  async deleteCategoryRule(id: number): Promise<void> {
+    await db.delete(categoryRules).where(eq(categoryRules.id, id));
   }
 }
 
