@@ -1418,6 +1418,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid goal ID" });
+      }
       const goalDetails = await storage.getGoalWithDetails(id);
       if (!goalDetails) {
         return res.status(404).json({ message: "Goal not found" });
