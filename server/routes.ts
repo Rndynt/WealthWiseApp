@@ -30,8 +30,8 @@ const storage = new DatabaseStorage();
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-// Smart notification triggers
-async function checkTransactionNotifications(workspaceId: number, transaction: any) {
+// Smart notification triggers (excluding repayment processing to avoid double deduction)
+async function checkNonRepaymentNotifications(workspaceId: number, transaction: any) {
   try {
     // Check for unusual transaction amounts
     const amount = parseFloat(transaction.amount);
@@ -54,11 +54,8 @@ async function checkTransactionNotifications(workspaceId: number, transaction: a
       }
     }
     
-    // Check debt payment progress
-    if (transaction.type === 'repayment' && transaction.debtId) {
-      await storage.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
-      console.log(`Debt payment processed: ${transaction.amount}`);
-    }
+    // Note: Debt repayment processing moved to main transaction creation logic
+    // to prevent double deduction issues
   } catch (error) {
     console.error('Smart notification error:', error);
   }
@@ -601,8 +598,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const transaction = await storage.createTransaction(transactionData);
       
-      // Check for smart notifications triggers
-      await checkTransactionNotifications(workspaceId, transaction);
+      // Only process debt repayment if it's a repayment transaction
+      if (transaction.type === 'repayment' && transaction.debtId) {
+        await storage.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
+        console.log(`Debt payment processed: ${transaction.amount} for debt ID: ${transaction.debtId}`);
+      }
+      
+      // Check for other smart notifications triggers (excluding repayment processing)
+      await checkNonRepaymentNotifications(workspaceId, transaction);
       
       res.json(transaction);
     } catch (error) {
