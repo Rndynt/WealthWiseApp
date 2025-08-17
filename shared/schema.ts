@@ -714,5 +714,12 @@ export type InsertRecurringTransaction = z.infer<typeof insertRecurringTransacti
 export type CategoryRule = typeof categoryRules.$inferSelect;
 export type InsertCategoryRule = z.infer<typeof insertCategoryRuleSchema>;
 
-export type WorkspaceInvite = typeof workspaceInvites.$inferSelect;
-export type InsertWorkspaceInvite = z.infer<typeof insertWorkspaceInviteSchema>;
+// Goal-related types
+export type GoalContribution = typeof goalContributions.$inferSelect;
+export type InsertGoalContribution = z.infer<typeof insertGoalContributionSchema>;
+
+export type GoalMilestone = typeof goalMilestones.$inferSelect;
+export type InsertGoalMilestone = z.infer<typeof insertGoalMilestoneSchema>;
+
+export type GoalInsight = typeof goalInsights.$inferSelect;
+export type InsertGoalInsight = z.infer<typeof insertGoalInsightSchema>;

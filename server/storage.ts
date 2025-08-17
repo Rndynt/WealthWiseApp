@@ -187,11 +187,33 @@ export interface IStorage {
   getAppSettings(): Promise<AppSettings>;
   updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
 
-  // Goals
+  // Goals (Enhanced)
   getGoalsByWorkspace(workspaceId: number): Promise<Goal[]>;
+  getGoalWithDetails(goalId: number): Promise<Goal & {
+    linkedAccount?: Account;
+    linkedDebt?: Debt;
+    contributions: GoalContribution[];
+    milestones: GoalMilestone[];
+    insights: GoalInsight[];
+  } | null>;
   createGoal(goal: InsertGoal): Promise<Goal>;
   updateGoal(id: number, goal: Partial<InsertGoal>): Promise<Goal>;
   deleteGoal(id: number): Promise<void>;
+  
+  // Enhanced Goals Features
+  getGoalContributions(goalId: number): Promise<GoalContribution[]>;
+  createGoalContribution(contribution: InsertGoalContribution): Promise<GoalContribution>;
+  getGoalMilestones(goalId: number): Promise<GoalMilestone[]>;
+  createGoalMilestone(milestone: InsertGoalMilestone): Promise<GoalMilestone>;
+  updateGoalMilestone(id: number, milestone: Partial<InsertGoalMilestone>): Promise<GoalMilestone>;
+  getGoalInsights(goalId: number): Promise<GoalInsight[]>;
+  createGoalInsight(insight: InsertGoalInsight): Promise<GoalInsight>;
+  markGoalInsightAsRead(id: number): Promise<void>;
+  
+  // Goal Analytics & AI Features
+  getGoalPerformanceMetrics(workspaceId: number): Promise<any>;
+  getSmartGoalSuggestions(workspaceId: number): Promise<any[]>;
+  getWorkspaceFinancialHealth(workspaceId: number): Promise<any>;
 
   // Recurring Transactions
   getRecurringTransactionsByWorkspace(workspaceId: number): Promise<RecurringTransaction[]>;
@@ -1169,10 +1191,10 @@ export class DatabaseStorage implements IStorage {
             type: recurring.type,
             amount: recurring.amount,
             description: `${recurring.name} - Automated`,
-            date: now.toISOString(),
+            date: now,
           };
 
-          await db.insert(transactions).values(transactionData);
+          await db.insert(transactions).values([transactionData]);
 
           // Update next execution
           let nextExec: Date;
@@ -1187,8 +1209,8 @@ export class DatabaseStorage implements IStorage {
           await db
             .update(recurringTransactions)
             .set({
-              lastExecuted: now.toISOString(),
-              nextExecution: nextExec.toISOString(),
+              lastExecuted: now,
+              nextExecution: nextExec,
             })
             .where(eq(recurringTransactions.id, recurring.id));
         } catch (error) {
@@ -1362,6 +1384,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(goals).where(eq(goals.id, id));
   }
 
+
+
   // Goal Contributions methods
   async getGoalContributions(goalId: number, limit: number = 100): Promise<GoalContribution[]> {
     return await db
@@ -1533,6 +1557,72 @@ export class DatabaseStorage implements IStorage {
     }
 
     return suggestions;
+  }
+
+  // Financial Health Integration
+  async getWorkspaceFinancialHealth(workspaceId: number): Promise<any> {
+    const accounts = await this.getWorkspaceAccounts(workspaceId);
+    const debts = await this.getWorkspaceDebts(workspaceId);
+    const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
+    
+    // Calculate total balance
+    const totalBalance = accounts.reduce((sum, account) => sum + parseFloat(account.balance), 0);
+    
+    // Calculate total debt
+    const totalDebt = debts
+      .filter(d => d.status === 'active')
+      .reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
+    
+    // Calculate monthly income and expenses (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentTransactions = transactions.filter(t => new Date(t.date) >= thirtyDaysAgo);
+    
+    const monthlyIncome = recentTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const monthlyExpenses = recentTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    // Calculate net worth and savings rate
+    const netWorth = totalBalance - totalDebt;
+    const savingsRate = monthlyIncome > 0 ? (monthlyIncome - monthlyExpenses) / monthlyIncome : 0;
+    
+    return {
+      totalBalance,
+      totalDebt,
+      netWorth,
+      monthlyIncome,
+      monthlyExpenses,
+      savingsRate,
+      financialHealthScore: this.calculateFinancialHealthScore(totalBalance, totalDebt, monthlyIncome, monthlyExpenses)
+    };
+  }
+
+  private calculateFinancialHealthScore(balance: number, debt: number, income: number, expenses: number): number {
+    let score = 0;
+    
+    // Emergency fund (30% of score)
+    const emergencyFundRatio = balance / (expenses * 6); // 6 months expenses
+    score += Math.min(emergencyFundRatio, 1) * 30;
+    
+    // Debt-to-income ratio (25% of score)
+    const debtToIncomeRatio = income > 0 ? debt / (income * 12) : 1; // Annual income
+    score += Math.max(0, 1 - debtToIncomeRatio) * 25;
+    
+    // Savings rate (25% of score)
+    const savingsRate = income > 0 ? (income - expenses) / income : 0;
+    score += Math.max(0, savingsRate) * 25;
+    
+    // Net worth (20% of score)
+    const netWorth = balance - debt;
+    const netWorthRatio = income > 0 ? netWorth / (income * 12) : 0;
+    score += Math.min(Math.max(0, netWorthRatio), 1) * 20;
+    
+    return Math.round(score);
   }
 
   // Helper methods
