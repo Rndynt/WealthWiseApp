@@ -54,7 +54,7 @@ app.use((req, res, next) => {
   console.log("Environment:", process.env.NODE_ENV);
   console.log("App env:", app.get("env"));
 
-  // Force static serving to test with built assets
+  // Serve static files for now to get the app working
   serveStatic(app);
 
   // Use port 5000 as configured in .replit file
