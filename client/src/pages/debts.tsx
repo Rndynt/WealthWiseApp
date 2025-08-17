@@ -33,8 +33,18 @@ export default function Debts({ workspaceId }: DebtsProps) {
     queryKey: [`/api/debts/repayments`, Array.from(expandedCards)],
     queryFn: async () => {
       if (expandedCards.size === 0) return {};
+      const token = localStorage.getItem('token');
       const repaymentPromises = Array.from(expandedCards).map(async (debtId) => {
-        const response = await fetch(`/api/debts/${debtId}/repayments`);
+        const response = await fetch(`/api/debts/${debtId}/repayments`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          console.error(`Failed to fetch repayments for debt ${debtId}:`, response.status, response.statusText);
+          return [debtId, []]; // Return empty array on error
+        }
         const data = await response.json();
         return [debtId, data];
       });
