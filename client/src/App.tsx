@@ -116,7 +116,9 @@ function AppRouter() {
               <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
               <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
               <Route path="/analytics" component={() => <Analytics workspaceId={currentWorkspace?.id} />} />
-              <Route path="/goals" component={() => <EnhancedGoals workspaceId={currentWorkspace?.id} />} />
+              <Route path="/goals">
+                {currentWorkspace?.id ? <EnhancedGoals workspaceId={currentWorkspace.id} /> : <div>Please select a workspace</div>}
+              </Route>
               <Route path="/automation" component={() => <Automation workspaceId={currentWorkspace?.id} />} />
               <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
               <Route path="/collaboration" component={() => 

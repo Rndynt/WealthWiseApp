@@ -1,117 +1,170 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Target, TrendingUp, Calendar, DollarSign, Plus, Edit, Trash2, CheckCircle, 
-  AlertTriangle, Lightbulb, Award, BarChart3, PieChart, Zap, Brain, Star,
-  Sparkles, Timer, Users, ArrowRight, TrendingDown, Activity
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { 
+  Target, 
+  TrendingUp, 
+  Calendar, 
+  DollarSign, 
+  Lightbulb, 
+  Award, 
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Plus,
+  PlusCircle,
+  Star,
+  Zap,
+  Brain,
+  BarChart3,
+  Trophy,
+  Eye,
+  Settings
+} from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { PageContainer, CardContainer } from '@/components/ui/page-container';
-import { notificationService } from '@/lib/notification-service';
-import { format, differenceInDays, isAfter, isPast } from 'date-fns';
 
-// Enhanced Goal Schema
-const goalSchema = z.object({
-  name: z.string().min(1, 'Goal name is required'),
+// Enhanced Goal form schema
+const enhancedGoalSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  type: z.enum(['savings', 'debt_payment', 'investment', 'emergency_fund', 'retirement', 'vacation', 'house', 'education']),
-  subType: z.string().optional(),
+  type: z.enum(['savings', 'debt_payment', 'investment', 'emergency_fund', 'vacation', 'house', 'education', 'retirement']),
   targetAmount: z.string().min(1, 'Target amount is required'),
   currentAmount: z.string().default('0'),
   targetDate: z.string().min(1, 'Target date is required'),
-  linkedAccountId: z.string().optional(),
-  linkedDebtId: z.string().optional(),
-  isAutoTracking: z.boolean().default(true),
-  autoContributeAmount: z.string().optional(),
-  riskTolerance: z.enum(['low', 'medium', 'high']).optional(),
-  priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
-  tags: z.array(z.string()).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  isAutoTracking: z.boolean().default(false),
+  linkedAccountId: z.number().optional(),
+  linkedDebtId: z.number().optional(),
   createMilestones: z.boolean().default(true),
 });
 
-type GoalFormData = z.infer<typeof goalSchema>;
+type EnhancedGoalForm = z.infer<typeof enhancedGoalSchema>;
 
-interface EnhancedGoal {
-  id: number;
-  name: string;
-  description?: string;
-  type: string;
-  subType?: string;
-  targetAmount: string;
-  currentAmount: string;
-  targetDate: string;
-  linkedAccountId?: number;
-  linkedDebtId?: number;
-  linkedAccount?: any;
-  linkedDebt?: any;
-  isAutoTracking: boolean;
-  autoContributeAmount?: string;
-  riskTolerance?: string;
-  milestones?: any[];
-  lastProgressUpdate?: string;
-  projectedCompletionDate?: string;
-  completedAt?: string;
-  priority: string;
-  status: string;
-  aiInsights?: any;
-  performanceMetrics?: any;
-  tags?: string[];
-  contributions?: any[];
-  insights?: any[];
-  workspaceId: number;
-  createdAt: string;
-  updatedAt: string;
+interface EnhancedGoalsPageProps {
+  workspaceId?: number;
 }
 
-interface GoalSuggestion {
-  type: string;
-  title: string;
-  description: string;
-  recommendedAmount: number;
-  priority: string;
-  reasoning: string;
-  confidence: number;
-}
-
-interface GoalMetrics {
-  totalGoals: number;
-  activeGoals: number;
-  completedGoals: number;
-  pausedGoals: number;
-  totalTargetAmount: number;
-  totalCurrentAmount: number;
-  averageProgress: number;
-  goalsByType: Record<string, number>;
-  goalsByPriority: Record<string, number>;
-}
-
-interface GoalsProps {
-  workspaceId: number | undefined;
-}
-
-export default function EnhancedGoals({ workspaceId }: GoalsProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<EnhancedGoal | null>(null);
-  const [selectedGoal, setSelectedGoal] = useState<EnhancedGoal | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: EnhancedGoalsPageProps) {
+  const workspaceId = propWorkspaceId || 0;
   const queryClient = useQueryClient();
+  
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const form = useForm<GoalFormData>({
-    resolver: zodResolver(goalSchema),
+  // Fetch goals data
+  const { data: goals = [], isLoading: goalsLoading } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'goals'],
+    enabled: !!workspaceId,
+  });
+
+  // Fetch goal metrics
+  const { data: metrics } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'],
+    enabled: !!workspaceId,
+  });
+
+  // Fetch goal suggestions
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'goals', 'suggestions'],
+    enabled: !!workspaceId,
+  });
+
+  // Fetch insights
+  const { data: insights = [] } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'goals', 'insights'],
+    enabled: !!workspaceId,
+  });
+
+  // Fetch accounts and debts for linking
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'accounts'],
+    enabled: !!workspaceId,
+  });
+
+  const { data: debts = [] } = useQuery({
+    queryKey: ['/api/workspaces', workspaceId, 'debts'],
+    enabled: !!workspaceId,
+  });
+
+  // Create goal mutation
+  const createGoalMutation = useMutation({
+    mutationFn: (data: EnhancedGoalForm) => 
+      apiRequest(`/api/workspaces/${workspaceId}/goals`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
+      setShowCreateDialog(false);
+    },
+  });
+
+  // Update goal mutation
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ goalId, data }: { goalId: number; data: Partial<EnhancedGoalForm> }) =>
+      apiRequest(`/api/workspaces/${workspaceId}/goals/${goalId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
+    },
+  });
+
+  // Create goal from suggestion
+  const createFromSuggestionMutation = useMutation({
+    mutationFn: (suggestion: any) =>
+      apiRequest(`/api/workspaces/${workspaceId}/goals`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: suggestion.title,
+          description: suggestion.description,
+          type: suggestion.type,
+          targetAmount: suggestion.recommendedAmount.toString(),
+          currentAmount: '0',
+          targetDate: getDateFromTimeline(suggestion.timeline),
+          priority: suggestion.priority,
+          isAutoTracking: true,
+          createMilestones: true,
+        }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'suggestions'] });
+    },
+  });
+
+  // Mark insight as read
+  const markInsightReadMutation = useMutation({
+    mutationFn: (insightId: number) =>
+      apiRequest(`/api/workspaces/${workspaceId}/goals/insights/${insightId}/read`, {
+        method: 'PATCH',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'insights'] });
+    },
+  });
+
+  const form = useForm<EnhancedGoalForm>({
+    resolver: zodResolver(enhancedGoalSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -120,741 +173,699 @@ export default function EnhancedGoals({ workspaceId }: GoalsProps) {
       currentAmount: '0',
       targetDate: '',
       priority: 'medium',
-      isAutoTracking: true,
+      isAutoTracking: false,
       createMilestones: true,
-      tags: [],
     },
   });
 
-  // Queries
-  const { data: goals = [], isLoading: goalsLoading } = useQuery<EnhancedGoal[]>({
-    queryKey: [`/api/workspaces/${workspaceId}/goals`],
-    enabled: !!workspaceId,
-  });
+  const onSubmit = (data: EnhancedGoalForm) => {
+    createGoalMutation.mutate(data);
+  };
 
-  const { data: goalMetrics } = useQuery<GoalMetrics>({
-    queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`],
-    enabled: !!workspaceId,
-  });
-
-  const { data: goalSuggestions = [] } = useQuery<GoalSuggestion[]>({
-    queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`],
-    enabled: !!workspaceId,
-  });
-
-  const { data: accounts = [] } = useQuery({
-    queryKey: [`/api/workspaces/${workspaceId}/accounts`],
-    enabled: !!workspaceId,
-  });
-
-  const { data: debts = [] } = useQuery({
-    queryKey: [`/api/workspaces/${workspaceId}/debts`],
-    enabled: !!workspaceId,
-  });
-
-  const { data: goalInsights = [] } = useQuery({
-    queryKey: [`/api/workspaces/${workspaceId}/goals/insights`],
-    enabled: !!workspaceId,
-  });
-
-  // Mutations
-  const createGoalMutation = useMutation({
-    mutationFn: (data: GoalFormData) => 
-      apiRequest('POST', `/api/workspaces/${workspaceId}/goals`, {
-        ...data,
-        targetAmount: parseFloat(data.targetAmount).toString(),
-        currentAmount: parseFloat(data.currentAmount).toString(),
-        linkedAccountId: data.linkedAccountId ? parseInt(data.linkedAccountId) : undefined,
-        linkedDebtId: data.linkedDebtId ? parseInt(data.linkedDebtId) : undefined,
-        autoContributeAmount: data.autoContributeAmount ? parseFloat(data.autoContributeAmount).toString() : undefined,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`] });
-      setIsDialogOpen(false);
-      form.reset();
-      notificationService.success('Goal Created', 'Your financial goal has been created with AI-powered insights!');
-    },
-    onError: (error: any) => {
-      notificationService.error('Error', error.message || 'Failed to create goal');
-    },
-  });
-
-  const updateGoalMutation = useMutation({
-    mutationFn: ({ goalId, data }: { goalId: number; data: Partial<GoalFormData> }) =>
-      apiRequest('PATCH', `/api/workspaces/${workspaceId}/goals/${goalId}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
-      setEditingGoal(null);
-      setIsDialogOpen(false);
-      form.reset();
-      notificationService.success('Goal Updated', 'Your goal has been updated successfully!');
-    },
-  });
-
-  const deleteGoalMutation = useMutation({
-    mutationFn: (goalId: number) =>
-      apiRequest('DELETE', `/api/workspaces/${workspaceId}/goals/${goalId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`] });
-      notificationService.success('Goal Deleted', 'Goal has been removed successfully!');
-    },
-  });
-
-  const generateMilestonesMutation = useMutation({
-    mutationFn: (goalId: number) =>
-      apiRequest('POST', `/api/workspaces/${workspaceId}/goals/${goalId}/milestones/generate`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
-      notificationService.success('Milestones Generated', 'AI has created intelligent milestones for your goal!');
-    },
-  });
-
-  // Helper functions
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(num);
+    }).format(amount);
   };
 
-  const getProgressPercentage = (current: string, target: string) => {
-    const currentNum = parseFloat(current);
-    const targetNum = parseFloat(target);
-    return targetNum > 0 ? Math.min(100, (currentNum / targetNum) * 100) : 0;
-  };
-
-  const getDaysRemaining = (targetDate: string) => {
-    return differenceInDays(new Date(targetDate), new Date());
+  const getGoalTypeIcon = (type: string) => {
+    const icons: Record<string, any> = {
+      savings: DollarSign,
+      debt_payment: TrendingUp,
+      investment: BarChart3,
+      emergency_fund: AlertTriangle,
+      vacation: Star,
+      house: Target,
+      education: Brain,
+      retirement: Trophy,
+    };
+    const Icon = icons[type] || Target;
+    return <Icon className="w-4 h-4" />;
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-blue-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+    const colors: Record<string, string> = {
+      low: 'bg-gray-100 text-gray-800',
+      medium: 'bg-blue-100 text-blue-800',
+      high: 'bg-orange-100 text-orange-800',
+      critical: 'bg-red-100 text-red-800',
+    };
+    return colors[priority] || colors.medium;
+  };
+
+  const getDateFromTimeline = (timeline: string): string => {
+    const today = new Date();
+    if (timeline.includes('month')) {
+      const months = parseInt(timeline.match(/\d+/)?.[0] || '12');
+      today.setMonth(today.getMonth() + months);
+    } else if (timeline.includes('year')) {
+      const years = parseInt(timeline.match(/\d+/)?.[0] || '1');
+      today.setFullYear(today.getFullYear() + years);
     }
+    return today.toISOString().split('T')[0];
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'savings': return Target;
-      case 'debt_payment': return TrendingDown;
-      case 'investment': return TrendingUp;
-      case 'emergency_fund': return AlertTriangle;
-      case 'retirement': return Timer;
-      case 'vacation': return Star;
-      case 'house': return Users;
-      case 'education': return Brain;
-      default: return Target;
-    }
-  };
-
-  const openEditDialog = (goal: EnhancedGoal) => {
-    setEditingGoal(goal);
-    form.reset({
-      name: goal.name,
-      description: goal.description || '',
-      type: goal.type as any,
-      subType: goal.subType || '',
-      targetAmount: goal.targetAmount,
-      currentAmount: goal.currentAmount,
-      targetDate: goal.targetDate,
-      linkedAccountId: goal.linkedAccountId?.toString(),
-      linkedDebtId: goal.linkedDebtId?.toString(),
-      isAutoTracking: goal.isAutoTracking,
-      autoContributeAmount: goal.autoContributeAmount || '',
-      riskTolerance: goal.riskTolerance as any,
-      priority: goal.priority as any,
-      tags: goal.tags || [],
-      createMilestones: false,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const onSubmit = (data: GoalFormData) => {
-    if (editingGoal) {
-      updateGoalMutation.mutate({ goalId: editingGoal.id, data });
-    } else {
-      createGoalMutation.mutate(data);
-    }
-  };
-
-  const handleSuggestionAccept = (suggestion: GoalSuggestion) => {
-    form.reset({
-      name: suggestion.title,
-      description: suggestion.description,
-      type: suggestion.type as any,
-      targetAmount: suggestion.recommendedAmount.toString(),
-      priority: suggestion.priority as any,
-      createMilestones: true,
-      isAutoTracking: true,
-    });
-    setIsDialogOpen(true);
+  const getProgressColor = (progress: number) => {
+    if (progress >= 100) return 'bg-green-500';
+    if (progress >= 75) return 'bg-blue-500';
+    if (progress >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
   };
 
   if (goalsLoading) {
     return (
-      <PageContainer>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      {/* Header with Metrics */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-blue-500" />
-            <h1 className="text-2xl font-bold">Smart Goals</h1>
-            <Badge variant="secondary" className="ml-2">
-              <Brain className="h-3 w-3 mr-1" />
-              AI-Powered
-            </Badge>
-          </div>
-          
-          <Button onClick={() => setIsDialogOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Goal
-          </Button>
+    <div className="container mx-auto p-4 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Target className="w-6 h-6 text-blue-600" />
+            Enhanced Goals
+          </h1>
+          <p className="text-gray-600 text-sm">
+            AI-powered goal management with smart insights and automation
+          </p>
         </div>
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-create-goal">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Goal
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Enhanced Goal</DialogTitle>
+              <DialogDescription>
+                Set up a smart goal with AI-powered insights and automation
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Goal Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-goal-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Goal Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-goal-type">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="savings">Savings</SelectItem>
+                            <SelectItem value="debt_payment">Debt Payment</SelectItem>
+                            <SelectItem value="investment">Investment</SelectItem>
+                            <SelectItem value="emergency_fund">Emergency Fund</SelectItem>
+                            <SelectItem value="vacation">Vacation</SelectItem>
+                            <SelectItem value="house">House</SelectItem>
+                            <SelectItem value="education">Education</SelectItem>
+                            <SelectItem value="retirement">Retirement</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-        {/* Goals Overview Cards */}
-        {goalMetrics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} data-testid="input-goal-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="targetAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Amount (IDR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} data-testid="input-target-amount" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="targetDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} data-testid="input-target-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-goal-priority">
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="critical">Critical</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="linkedAccountId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Linked Account (Optional)</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-linked-account">
+                              <SelectValue placeholder="Select account" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            {accounts.map((account: any) => (
+                              <SelectItem key={account.id} value={account.id.toString()}>
+                                {account.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <FormField
+                    control={form.control}
+                    name="isAutoTracking"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-auto-tracking"
+                          />
+                        </FormControl>
+                        <FormLabel>Enable Auto-Tracking</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="createMilestones"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-create-milestones"
+                          />
+                        </FormControl>
+                        <FormLabel>Auto-Create Milestones</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowCreateDialog(false)}
+                    data-testid="button-cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createGoalMutation.isPending}
+                    data-testid="button-submit"
+                  >
+                    {createGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Metrics Overview */}
+      {metrics && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Goals</p>
-                  <p className="text-2xl font-bold">{goalMetrics.totalGoals}</p>
+                  <p className="text-2xl font-bold" data-testid="metric-total-goals">
+                    {metrics.totalGoals}
+                  </p>
                 </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-green-600">{goalMetrics.activeGoals}</p>
-                </div>
-                <Activity className="h-8 w-8 text-green-500" />
-              </div>
-            </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-blue-600">{goalMetrics.completedGoals}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-blue-500" />
-              </div>
-            </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Avg Progress</p>
-                  <p className="text-2xl font-bold text-purple-600">{goalMetrics.averageProgress.toFixed(1)}%</p>
-                </div>
-                <PieChart className="h-8 w-8 text-purple-500" />
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* AI Suggestions */}
-        {goalSuggestions.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-500" />
-                AI Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {goalSuggestions.slice(0, 3).map((suggestion, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-blue-900">{suggestion.title}</h4>
-                      <p className="text-sm text-blue-700 mb-2">{suggestion.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-blue-600">
-                        <span>Amount: {formatCurrency(suggestion.recommendedAmount)}</span>
-                        <Badge variant="outline" size="sm" className={getPriorityColor(suggestion.priority)}>
-                          {suggestion.priority}
-                        </Badge>
-                        <span>Confidence: {(suggestion.confidence * 100).toFixed(0)}%</span>
-                      </div>
-                    </div>
-                    <Button size="sm" onClick={() => handleSuggestionAccept(suggestion)} className="ml-4">
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Accept
-                    </Button>
-                  </div>
-                ))}
+                <Target className="w-8 h-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active Goals</p>
+                  <p className="text-2xl font-bold text-green-600" data-testid="metric-active-goals">
+                    {metrics.activeGoals}
+                  </p>
+                </div>
+                <Clock className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold text-blue-600" data-testid="metric-completed-goals">
+                    {metrics.completedGoals}
+                  </p>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Avg Progress</p>
+                  <p className="text-2xl font-bold text-orange-600" data-testid="metric-avg-progress">
+                    {metrics.averageProgress.toFixed(0)}%
+                  </p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="insights">
-            AI Insights
-            {goalInsights.filter((i: any) => !i.isRead).length > 0 && (
-              <Badge variant="destructive" className="ml-2 text-xs">
-                {goalInsights.filter((i: any) => !i.isRead).length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+          <TabsTrigger value="suggestions" data-testid="tab-suggestions">AI Suggestions</TabsTrigger>
+          <TabsTrigger value="insights" data-testid="tab-insights">Insights</TabsTrigger>
+          <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          {/* Goals Grid */}
-          <CardContainer>
-            {goals.length === 0 ? (
-              <div className="text-center py-12">
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No goals yet</h3>
-                <p className="text-gray-500 mb-4">Create your first financial goal and let AI help you achieve it!</p>
-                <Button onClick={() => setIsDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Goal
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:gap-6">
-                {goals.map((goal) => {
-                  const progress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
-                  const daysRemaining = getDaysRemaining(goal.targetDate);
-                  const isOverdue = daysRemaining < 0;
-                  const TypeIcon = getTypeIcon(goal.type);
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {goals.map((goal: any) => {
+              const progress = (parseFloat(goal.currentAmount) / parseFloat(goal.targetAmount)) * 100;
+              return (
+                <Card key={goal.id} className="hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => setSelectedGoal(goal)} data-testid={`card-goal-${goal.id}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getGoalTypeIcon(goal.type)}
+                        <CardTitle className="text-lg">{goal.name}</CardTitle>
+                      </div>
+                      <Badge className={getPriorityColor(goal.priority)}>
+                        {goal.priority}
+                      </Badge>
+                    </div>
+                    {goal.description && (
+                      <CardDescription className="text-sm">
+                        {goal.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span className="font-medium">{progress.toFixed(1)}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>{formatCurrency(parseFloat(goal.currentAmount))}</span>
+                        <span>{formatCurrency(parseFloat(goal.targetAmount))}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(goal.targetDate).toLocaleDateString()}</span>
+                      </div>
+                      {goal.isAutoTracking && (
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <Zap className="w-3 h-3" />
+                          <span>Auto</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
 
-                  return (
-                    <Card 
-                      key={goal.id} 
-                      className={`cursor-pointer transition-all hover:shadow-lg ${
-                        goal.status === 'completed' ? 'bg-green-50 border-green-200' : ''
-                      } ${isOverdue && goal.status === 'active' ? 'bg-red-50 border-red-200' : ''}`}
-                      onClick={() => setSelectedGoal(goal)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                              <TypeIcon className="h-5 w-5 text-blue-600" />
+        <TabsContent value="suggestions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5 text-purple-600" />
+                AI-Powered Goal Suggestions
+              </CardTitle>
+              <CardDescription>
+                Personalized recommendations based on your financial data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {suggestions.map((suggestion: any, index: number) => (
+                  <Card key={index} className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            {getGoalTypeIcon(suggestion.type)}
+                            <h3 className="font-semibold">{suggestion.title}</h3>
+                            <Badge className={getPriorityColor(suggestion.priority)}>
+                              {suggestion.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">{suggestion.description}</p>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium">Amount: </span>
+                              {formatCurrency(suggestion.recommendedAmount)}
                             </div>
                             <div>
-                              <h3 className="font-semibold text-lg">{goal.name}</h3>
-                              {goal.description && (
-                                <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
-                              )}
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="outline" size="sm">
-                                  {goal.type.replace('_', ' ')}
-                                </Badge>
-                                <Badge 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className={`${getPriorityColor(goal.priority)} text-white border-0`}
-                                >
-                                  {goal.priority}
-                                </Badge>
-                                {goal.isAutoTracking && (
-                                  <Badge variant="outline" size="sm">
-                                    <Zap className="h-3 w-3 mr-1" />
-                                    Auto
-                                  </Badge>
-                                )}
-                              </div>
+                              <span className="font-medium">Timeline: </span>
+                              {suggestion.timeline}
                             </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(goal);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this goal?')) {
-                                  deleteGoalMutation.mutate(goal.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div className="bg-blue-50 p-3 rounded-md">
+                            <p className="text-sm text-blue-800">
+                              <strong>AI Reasoning:</strong> {suggestion.reasoning}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Star className="w-3 h-3 text-blue-600" />
+                              <span className="text-xs text-blue-600">
+                                Confidence: {(suggestion.confidence * 100).toFixed(0)}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </CardHeader>
+                        <Button 
+                          size="sm" 
+                          onClick={() => createFromSuggestionMutation.mutate(suggestion)}
+                          disabled={createFromSuggestionMutation.isPending}
+                          data-testid={`button-create-suggestion-${index}`}
+                        >
+                          <PlusCircle className="w-4 h-4 mr-1" />
+                          Create Goal
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {suggestions.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No suggestions available at the moment.</p>
+                    <p className="text-sm">Add more financial data to get personalized recommendations.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                      <CardContent>
-                        {/* Progress Section */}
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Progress</span>
-                            <span className="text-sm font-medium">{progress.toFixed(1)}%</span>
-                          </div>
-                          <Progress value={progress} className="h-2" />
-                          
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">
-                              {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
-                            </span>
-                            <span className={`${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
-                              {isOverdue ? `Overdue by ${Math.abs(daysRemaining)} days` : `${daysRemaining} days left`}
-                            </span>
-                          </div>
-
-                          {/* Linked Account/Debt */}
-                          {(goal.linkedAccount || goal.linkedDebt) && (
-                            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                              <ArrowRight className="h-3 w-3" />
-                              {goal.linkedAccount && `Linked to: ${goal.linkedAccount.name}`}
-                              {goal.linkedDebt && `Paying off: ${goal.linkedDebt.name}`}
+        <TabsContent value="insights" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-yellow-600" />
+                Goal Insights & Recommendations
+              </CardTitle>
+              <CardDescription>
+                AI-generated insights to help you achieve your goals faster
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-96">
+                <div className="space-y-3">
+                  {insights.map((insight: any) => (
+                    <Card key={insight.id} className={`border-l-4 ${
+                      insight.severity === 'warning' ? 'border-l-orange-500' :
+                      insight.severity === 'error' ? 'border-l-red-500' :
+                      'border-l-blue-500'
+                    }`}>
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              {insight.severity === 'warning' && <AlertTriangle className="w-4 h-4 text-orange-500" />}
+                              {insight.severity === 'error' && <AlertTriangle className="w-4 h-4 text-red-500" />}
+                              {insight.severity === 'info' && <Lightbulb className="w-4 h-4 text-blue-500" />}
+                              <h4 className="font-medium text-sm">{insight.title}</h4>
+                              <Badge variant="outline" className="text-xs">
+                                {insight.type}
+                              </Badge>
                             </div>
-                          )}
-
-                          {/* Milestones Preview */}
-                          {goal.milestones && goal.milestones.length > 0 && (
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                              <Award className="h-3 w-3" />
-                              <span>{goal.milestones.filter((m: any) => m.isCompleted).length} of {goal.milestones.length} milestones completed</span>
-                            </div>
+                            <p className="text-sm text-gray-600">{insight.message}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(insight.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {!insight.isRead && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => markInsightReadMutation.mutate(insight.id)}
+                              data-testid={`button-mark-read-${insight.id}`}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
                           )}
                         </div>
                       </CardContent>
                     </Card>
-                  );
-                })}
-              </div>
-            )}
-          </CardContainer>
+                  ))}
+                  {insights.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No insights available yet.</p>
+                      <p className="text-sm">Insights will appear as your goals progress.</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="insights">
-          <CardContainer>
-            {goalInsights.length === 0 ? (
-              <div className="text-center py-12">
-                <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No insights yet</h3>
-                <p className="text-gray-500">AI insights will appear here as you progress towards your goals</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {goalInsights.map((insight: any) => (
-                  <Card key={insight.id} className={`${!insight.isRead ? 'bg-blue-50 border-blue-200' : ''}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            insight.severity === 'success' ? 'bg-green-100' :
-                            insight.severity === 'warning' ? 'bg-yellow-100' :
-                            insight.severity === 'error' ? 'bg-red-100' :
-                            'bg-blue-100'
-                          }`}>
-                            {insight.type === 'achievement' ? <Award className="h-5 w-5 text-green-600" /> :
-                             insight.type === 'alert' ? <AlertTriangle className="h-5 w-5 text-yellow-600" /> :
-                             insight.type === 'recommendation' ? <Lightbulb className="h-5 w-5 text-blue-600" /> :
-                             <Brain className="h-5 w-5 text-purple-600" />}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{insight.title}</h3>
-                            <p className="text-sm text-gray-600 mt-1">{insight.message}</p>
-                            <p className="text-xs text-gray-500 mt-2">
-                              {format(new Date(insight.createdAt), 'MMM dd, yyyy • HH:mm')}
-                            </p>
-                          </div>
+        <TabsContent value="analytics" className="space-y-4">
+          {metrics && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Goals by Type</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(metrics.goalsByType).map(([type, count]) => (
+                      <div key={type} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getGoalTypeIcon(type)}
+                          <span className="capitalize">{type.replace('_', ' ')}</span>
                         </div>
-                        {!insight.isRead && (
-                          <Badge variant="secondary" size="sm">New</Badge>
-                        )}
+                        <Badge variant="secondary">{count as number}</Badge>
                       </div>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContainer>
-        </TabsContent>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-        <TabsContent value="analytics">
-          <CardContainer>
-            {goalMetrics ? (
-              <div className="grid gap-6">
-                {/* Goals by Type Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Goals by Type
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(goalMetrics.goalsByType).map(([type, count]) => (
-                        <div key={type} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="capitalize">{type.replace('_', ' ')}</span>
-                          </div>
-                          <span className="font-medium">{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Goals by Priority */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
-                      Goals by Priority
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(goalMetrics.goalsByPriority).map(([priority, count]) => (
-                        <div key={priority} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${getPriorityColor(priority)}`}></div>
-                            <span className="capitalize">{priority}</span>
-                          </div>
-                          <span className="font-medium">{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Financial Overview */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Financial Overview
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <p className="text-sm text-gray-600">Total Target</p>
-                        <p className="text-xl font-bold text-blue-600">
-                          {formatCurrency(goalMetrics.totalTargetAmount)}
-                        </p>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Goals by Priority</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(metrics.goalsByPriority).map(([priority, count]) => (
+                      <div key={priority} className="flex items-center justify-between">
+                        <span className="capitalize">{priority}</span>
+                        <Badge className={getPriorityColor(priority)}>{count as number}</Badge>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Total Progress</p>
-                        <p className="text-xl font-bold text-green-600">
-                          {formatCurrency(goalMetrics.totalCurrentAmount)}
-                        </p>
-                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg">Financial Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Total Target</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        {formatCurrency(metrics.totalTargetAmount)}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No analytics data</h3>
-                <p className="text-gray-500">Create some goals to see analytics</p>
-              </div>
-            )}
-          </CardContainer>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Total Saved</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {formatCurrency(metrics.totalCurrentAmount)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Remaining</p>
+                      <p className="text-lg font-bold text-orange-600">
+                        {formatCurrency(metrics.totalTargetAmount - metrics.totalCurrentAmount)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Overall Progress</p>
+                      <p className="text-lg font-bold text-purple-600">
+                        {((metrics.totalCurrentAmount / metrics.totalTargetAmount) * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
-      {/* Goal Creation/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              {editingGoal ? 'Edit Goal' : 'Create New Goal'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Goal Name *</Label>
-                <Input {...form.register('name')} placeholder="Enter goal name" />
-              </div>
-              <div>
-                <Label htmlFor="type">Goal Type *</Label>
-                <Select onValueChange={(value) => form.setValue('type', value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select goal type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="savings">Savings</SelectItem>
-                    <SelectItem value="debt_payment">Debt Payment</SelectItem>
-                    <SelectItem value="investment">Investment</SelectItem>
-                    <SelectItem value="emergency_fund">Emergency Fund</SelectItem>
-                    <SelectItem value="retirement">Retirement</SelectItem>
-                    <SelectItem value="vacation">Vacation</SelectItem>
-                    <SelectItem value="house">House Purchase</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea {...form.register('description')} placeholder="Describe your goal" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="targetAmount">Target Amount *</Label>
-                <Input 
-                  {...form.register('targetAmount')} 
-                  type="number" 
-                  placeholder="0" 
-                />
-              </div>
-              <div>
-                <Label htmlFor="targetDate">Target Date *</Label>
-                <Input 
-                  {...form.register('targetDate')} 
-                  type="date" 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select onValueChange={(value) => form.setValue('priority', value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="autoContributeAmount">Auto Contribution (Monthly)</Label>
-                <Input 
-                  {...form.register('autoContributeAmount')} 
-                  type="number" 
-                  placeholder="0" 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="linkedAccountId">Linked Account</Label>
-                <Select onValueChange={(value) => form.setValue('linkedAccountId', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account: any) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="linkedDebtId">Linked Debt</Label>
-                <Select onValueChange={(value) => form.setValue('linkedDebtId', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select debt (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {debts.map((debt: any) => (
-                      <SelectItem key={debt.id} value={debt.id.toString()}>
-                        {debt.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isAutoTracking"
-                  checked={form.watch('isAutoTracking')}
-                  onCheckedChange={(checked) => form.setValue('isAutoTracking', checked)}
-                />
-                <Label htmlFor="isAutoTracking" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Auto-track progress from transactions
-                </Label>
-              </div>
-
-              {!editingGoal && (
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="createMilestones"
-                    checked={form.watch('createMilestones')}
-                    onCheckedChange={(checked) => form.setValue('createMilestones', checked)}
+      {/* Goal Detail Modal */}
+      {selectedGoal && (
+        <Dialog open={!!selectedGoal} onOpenChange={() => setSelectedGoal(null)}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {getGoalTypeIcon(selectedGoal.type)}
+                {selectedGoal.name}
+                <Badge className={getPriorityColor(selectedGoal.priority)}>
+                  {selectedGoal.priority}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription>{selectedGoal.description}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Progress Section */}
+              <div className="space-y-3">
+                <h3 className="font-semibold">Progress</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Current Progress</span>
+                    <span className="font-medium">
+                      {((parseFloat(selectedGoal.currentAmount) / parseFloat(selectedGoal.targetAmount)) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(parseFloat(selectedGoal.currentAmount) / parseFloat(selectedGoal.targetAmount)) * 100} 
+                    className="h-3"
                   />
-                  <Label htmlFor="createMilestones" className="flex items-center gap-2">
-                    <Brain className="h-4 w-4" />
-                    Create AI-powered milestones
-                  </Label>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>{formatCurrency(parseFloat(selectedGoal.currentAmount))}</span>
+                    <span>{formatCurrency(parseFloat(selectedGoal.targetAmount))}</span>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createGoalMutation.isPending || updateGoalMutation.isPending}
-                className="flex items-center gap-2"
-              >
-                {createGoalMutation.isPending || updateGoalMutation.isPending ? (
-                  'Saving...'
-                ) : (
-                  <>
-                    {editingGoal ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    {editingGoal ? 'Update Goal' : 'Create Goal'}
-                  </>
-                )}
-              </Button>
+              {/* Details Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Target Date</h4>
+                  <p>{new Date(selectedGoal.targetDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Status</h4>
+                  <p className="capitalize">{selectedGoal.status}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Auto-Tracking</h4>
+                  <p>{selectedGoal.isAutoTracking ? 'Enabled' : 'Disabled'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Created</h4>
+                  <p>{new Date(selectedGoal.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </PageContainer>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 }
