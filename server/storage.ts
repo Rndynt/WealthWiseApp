@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, asc, sql } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
@@ -18,6 +18,9 @@ import {
   userSubscriptions,
   appSettings,
   goals,
+  goalContributions,
+  goalMilestones,
+  goalInsights,
   recurringTransactions,
   categoryRules,
   type User,
@@ -36,7 +39,13 @@ import {
   type AppSettings,
   type InsertAppSettings,
   type Goal,
+  type GoalContribution,
+  type GoalMilestone, 
+  type GoalInsight,
   type InsertGoal,
+  type InsertGoalContribution,
+  type InsertGoalMilestone,
+  type InsertGoalInsight,
   type RecurringTransaction,
   type InsertRecurringTransaction,
   type CategoryRule,
@@ -1256,9 +1265,77 @@ export class DatabaseStorage implements IStorage {
     return alerts;
   }
 
-  // Goals methods
+  // Enhanced Goals methods with AI integration
   async getGoalsByWorkspace(workspaceId: number): Promise<Goal[]> {
-    return await db.select().from(goals).where(eq(goals.workspaceId, workspaceId)).orderBy(desc(goals.createdAt));
+    return await db
+      .select()
+      .from(goals)
+      .where(eq(goals.workspaceId, workspaceId))
+      .orderBy(desc(goals.priority), desc(goals.createdAt));
+  }
+
+  async getGoalWithDetails(goalId: number): Promise<Goal & {
+    linkedAccount?: Account;
+    linkedDebt?: Debt;
+    contributions: GoalContribution[];
+    milestones: GoalMilestone[];
+    insights: GoalInsight[];
+  } | null> {
+    const [goal] = await db
+      .select()
+      .from(goals)
+      .where(eq(goals.id, goalId));
+
+    if (!goal) return null;
+
+    // Get linked account if exists
+    let linkedAccount = null;
+    if (goal.linkedAccountId) {
+      [linkedAccount] = await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, goal.linkedAccountId));
+    }
+
+    // Get linked debt if exists
+    let linkedDebt = null;
+    if (goal.linkedDebtId) {
+      [linkedDebt] = await db
+        .select()
+        .from(debts)
+        .where(eq(debts.id, goal.linkedDebtId));
+    }
+
+    // Get contributions
+    const contributions = await db
+      .select()
+      .from(goalContributions)
+      .where(eq(goalContributions.goalId, goalId))
+      .orderBy(desc(goalContributions.date));
+
+    // Get milestones
+    const milestones = await db
+      .select()
+      .from(goalMilestones)
+      .where(eq(goalMilestones.goalId, goalId))
+      .orderBy(asc(goalMilestones.order));
+
+    // Get insights
+    const insights = await db
+      .select()
+      .from(goalInsights)
+      .where(eq(goalInsights.goalId, goalId))
+      .orderBy(desc(goalInsights.createdAt))
+      .limit(10);
+
+    return {
+      ...goal,
+      linkedAccount: linkedAccount || undefined,
+      linkedDebt: linkedDebt || undefined,
+      contributions,
+      milestones,
+      insights
+    };
   }
 
   async createGoal(goal: InsertGoal): Promise<Goal> {
@@ -1276,7 +1353,195 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteGoal(id: number): Promise<void> {
+    // Delete related records first
+    await db.delete(goalContributions).where(eq(goalContributions.goalId, id));
+    await db.delete(goalMilestones).where(eq(goalMilestones.goalId, id));
+    await db.delete(goalInsights).where(eq(goalInsights.goalId, id));
+    
+    // Delete the goal
     await db.delete(goals).where(eq(goals.id, id));
+  }
+
+  // Goal Contributions methods
+  async getGoalContributions(goalId: number, limit: number = 100): Promise<GoalContribution[]> {
+    return await db
+      .select()
+      .from(goalContributions)
+      .where(eq(goalContributions.goalId, goalId))
+      .orderBy(desc(goalContributions.date))
+      .limit(limit);
+  }
+
+  async createGoalContribution(contribution: InsertGoalContribution): Promise<GoalContribution> {
+    const [newContribution] = await db.insert(goalContributions).values(contribution).returning();
+    return newContribution;
+  }
+
+  // Goal Milestones methods
+  async getGoalMilestones(goalId: number): Promise<GoalMilestone[]> {
+    return await db
+      .select()
+      .from(goalMilestones)
+      .where(eq(goalMilestones.goalId, goalId))
+      .orderBy(asc(goalMilestones.order));
+  }
+
+  async createGoalMilestone(milestone: InsertGoalMilestone): Promise<GoalMilestone> {
+    const [newMilestone] = await db.insert(goalMilestones).values(milestone).returning();
+    return newMilestone;
+  }
+
+  async updateGoalMilestone(id: number, milestone: Partial<InsertGoalMilestone>): Promise<GoalMilestone> {
+    const [updatedMilestone] = await db
+      .update(goalMilestones)
+      .set(milestone)
+      .where(eq(goalMilestones.id, id))
+      .returning();
+    return updatedMilestone;
+  }
+
+  async deleteGoalMilestone(id: number): Promise<void> {
+    await db.delete(goalMilestones).where(eq(goalMilestones.id, id));
+  }
+
+  // Goal Insights methods
+  async getGoalInsights(goalId: number): Promise<GoalInsight[]> {
+    return await db
+      .select()
+      .from(goalInsights)
+      .where(eq(goalInsights.goalId, goalId))
+      .orderBy(desc(goalInsights.createdAt));
+  }
+
+  async getWorkspaceGoalInsights(workspaceId: number, limit: number = 50): Promise<GoalInsight[]> {
+    return await db
+      .select()
+      .from(goalInsights)
+      .where(eq(goalInsights.workspaceId, workspaceId))
+      .orderBy(desc(goalInsights.createdAt))
+      .limit(limit);
+  }
+
+  async createGoalInsight(insight: InsertGoalInsight): Promise<GoalInsight> {
+    const [newInsight] = await db.insert(goalInsights).values(insight).returning();
+    return newInsight;
+  }
+
+  async markGoalInsightAsRead(id: number): Promise<GoalInsight> {
+    const [updatedInsight] = await db
+      .update(goalInsights)
+      .set({ isRead: true })
+      .where(eq(goalInsights.id, id))
+      .returning();
+    return updatedInsight;
+  }
+
+  // Advanced Goals Analytics
+  async getGoalPerformanceMetrics(workspaceId: number): Promise<any> {
+    const workspaceGoals = await db
+      .select()
+      .from(goals)
+      .where(eq(goals.workspaceId, workspaceId));
+
+    const metrics = {
+      totalGoals: workspaceGoals.length,
+      activeGoals: workspaceGoals.filter(g => g.status === 'active').length,
+      completedGoals: workspaceGoals.filter(g => g.status === 'completed').length,
+      pausedGoals: workspaceGoals.filter(g => g.status === 'paused').length,
+      
+      totalTargetAmount: workspaceGoals.reduce((sum, g) => sum + parseFloat(g.targetAmount), 0),
+      totalCurrentAmount: workspaceGoals.reduce((sum, g) => sum + parseFloat(g.currentAmount), 0),
+      
+      averageProgress: workspaceGoals.length > 0 
+        ? workspaceGoals.reduce((sum, g) => {
+            const progress = parseFloat(g.currentAmount) / parseFloat(g.targetAmount);
+            return sum + (progress * 100);
+          }, 0) / workspaceGoals.length
+        : 0,
+        
+      goalsByType: {
+        savings: workspaceGoals.filter(g => g.type === 'savings').length,
+        debt_payment: workspaceGoals.filter(g => g.type === 'debt_payment').length,
+        investment: workspaceGoals.filter(g => g.type === 'investment').length,
+        emergency_fund: workspaceGoals.filter(g => g.type === 'emergency_fund').length,
+        retirement: workspaceGoals.filter(g => g.type === 'retirement').length,
+      },
+      
+      goalsByPriority: {
+        critical: workspaceGoals.filter(g => g.priority === 'critical').length,
+        high: workspaceGoals.filter(g => g.priority === 'high').length,
+        medium: workspaceGoals.filter(g => g.priority === 'medium').length,
+        low: workspaceGoals.filter(g => g.priority === 'low').length,
+      }
+    };
+
+    return metrics;
+  }
+
+  // Smart Goal Recommendations
+  async getSmartGoalSuggestions(workspaceId: number): Promise<any[]> {
+    const financialHealth = await this.getWorkspaceFinancialHealth(workspaceId);
+    const existingGoals = await this.getGoalsByWorkspace(workspaceId);
+    const suggestions = [];
+
+    // Emergency Fund Check
+    const hasEmergencyFund = existingGoals.some(g => g.type === 'emergency_fund' && g.status === 'active');
+    if (!hasEmergencyFund && financialHealth.totalBalance < financialHealth.monthlyExpenses * 6) {
+      suggestions.push({
+        type: 'emergency_fund',
+        title: 'Build Emergency Fund',
+        description: 'Create a safety net for unexpected expenses',
+        recommendedAmount: financialHealth.monthlyExpenses * 6,
+        priority: 'critical',
+        reasoning: 'You currently don\'t have sufficient emergency savings. Experts recommend 6 months of expenses.',
+        confidence: 0.95
+      });
+    }
+
+    // Debt Payoff Strategy
+    const hasDebtGoal = existingGoals.some(g => g.type === 'debt_payment' && g.status === 'active');
+    if (!hasDebtGoal && financialHealth.totalDebt > 0) {
+      const monthlyCapacity = financialHealth.monthlyIncome - financialHealth.monthlyExpenses;
+      if (monthlyCapacity > 0) {
+        suggestions.push({
+          type: 'debt_payment',
+          title: 'Debt Freedom Plan',
+          description: 'Eliminate all debts systematically',
+          recommendedAmount: financialHealth.totalDebt,
+          priority: 'high',
+          reasoning: `With ${this.formatCurrency(monthlyCapacity)} monthly capacity, you can be debt-free in ${Math.ceil(financialHealth.totalDebt / monthlyCapacity)} months.`,
+          confidence: 0.88
+        });
+      }
+    }
+
+    // Investment Goals for good savers
+    if (financialHealth.savingsRate > 0.2 && financialHealth.totalDebt === 0) {
+      const hasInvestmentGoal = existingGoals.some(g => g.type === 'investment' && g.status === 'active');
+      if (!hasInvestmentGoal) {
+        const annualInvestmentCapacity = (financialHealth.monthlyIncome - financialHealth.monthlyExpenses) * 12;
+        suggestions.push({
+          type: 'investment',
+          title: 'Wealth Building Goal',
+          description: 'Start investing for long-term wealth',
+          recommendedAmount: annualInvestmentCapacity,
+          priority: 'medium',
+          reasoning: 'Your excellent savings rate indicates readiness for investment goals.',
+          confidence: 0.78
+        });
+      }
+    }
+
+    return suggestions;
+  }
+
+  // Helper methods
+  private formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
   }
 
   // Recurring Transactions methods

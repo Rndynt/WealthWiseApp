@@ -184,20 +184,88 @@ export const debts = pgTable("debts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Goals table
+// Enhanced Goals table with AI integration features
 export const goals = pgTable("goals", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  type: text("type").notNull(), // 'savings' | 'debt_payment' | 'investment' | 'emergency_fund' | 'retirement'
+  type: text("type").notNull(), // 'savings' | 'debt_payment' | 'investment' | 'emergency_fund' | 'retirement' | 'vacation' | 'house' | 'education'
+  subType: text("sub_type"), // For more specific categorization
   targetAmount: decimal("target_amount", { precision: 15, scale: 2 }).notNull(),
   currentAmount: decimal("current_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   targetDate: date("target_date").notNull(),
-  priority: text("priority").notNull().default("medium"), // 'low' | 'medium' | 'high'
-  status: text("status").notNull().default("active"), // 'active' | 'completed' | 'paused'
+  
+  // Enhanced tracking fields
+  linkedAccountId: integer("linked_account_id").references(() => accounts.id), // Primary account for this goal
+  linkedDebtId: integer("linked_debt_id").references(() => debts.id), // For debt payment goals
+  linkedBudgetIds: text("linked_budget_ids").array(), // Array of budget category IDs that contribute
+  
+  // Smart features
+  isAutoTracking: boolean("is_auto_tracking").notNull().default(true), // Auto-update from transactions
+  autoContributeAmount: decimal("auto_contribute_amount", { precision: 15, scale: 2 }), // Monthly auto-contribution
+  riskTolerance: text("risk_tolerance").default("medium"), // 'low' | 'medium' | 'high' for investment goals
+  
+  // Milestone & Progress tracking
+  milestones: json("milestones"), // JSON array of milestone objects
+  lastProgressUpdate: timestamp("last_progress_update"),
+  projectedCompletionDate: date("projected_completion_date"), // AI-calculated completion date
+  completedAt: timestamp("completed_at"),
+  
+  // Priority & Status
+  priority: text("priority").notNull().default("medium"), // 'low' | 'medium' | 'high' | 'critical'
+  status: text("status").notNull().default("active"), // 'active' | 'completed' | 'paused' | 'archived' | 'failed'
+  
+  // AI & Analytics
+  aiInsights: json("ai_insights"), // AI-generated insights and recommendations
+  performanceMetrics: json("performance_metrics"), // Track success rate, velocity, etc.
+  tags: text("tags").array(), // User-defined tags for better organization
+  
+  // Metadata
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Goal Contributions table - track individual contributions to goals
+export const goalContributions = pgTable("goal_contributions", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  transactionId: integer("transaction_id").references(() => transactions.id),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  contributionType: text("contribution_type").notNull(), // 'transaction' | 'manual' | 'auto_transfer' | 'interest'
+  source: text("source"), // Description of contribution source
+  date: timestamp("date").notNull(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Goal Milestones table - detailed milestone tracking
+export const goalMilestones = pgTable("goal_milestones", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  name: text("name").notNull(),
+  targetAmount: decimal("target_amount", { precision: 15, scale: 2 }).notNull(),
+  targetDate: date("target_date").notNull(),
+  completedAt: timestamp("completed_at"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  order: integer("order").notNull(), // Sequence order
+  reward: text("reward"), // Optional reward description
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Goal Insights table - AI-generated insights and recommendations
+export const goalInsights = pgTable("goal_insights", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  type: text("type").notNull(), // 'recommendation' | 'alert' | 'prediction' | 'achievement'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  severity: text("severity").notNull().default("info"), // 'info' | 'warning' | 'success' | 'error'
+  actionRequired: boolean("action_required").notNull().default(false),
+  data: json("data"), // Additional structured data
+  isRead: boolean("is_read").notNull().default(false),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Recurring transactions table
@@ -376,9 +444,53 @@ export const debtsRelations = relations(debts, ({ one, many }) => ({
   repaymentTransactions: many(transactions),
 }));
 
-export const goalsRelations = relations(goals, ({ one }) => ({
+export const goalsRelations = relations(goals, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [goals.workspaceId],
+    references: [workspaces.id],
+  }),
+  linkedAccount: one(accounts, {
+    fields: [goals.linkedAccountId],
+    references: [accounts.id],
+  }),
+  linkedDebt: one(debts, {
+    fields: [goals.linkedDebtId],
+    references: [debts.id],
+  }),
+  contributions: many(goalContributions),
+  milestones: many(goalMilestones),
+  insights: many(goalInsights),
+}));
+
+export const goalContributionsRelations = relations(goalContributions, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalContributions.goalId],
+    references: [goals.id],
+  }),
+  transaction: one(transactions, {
+    fields: [goalContributions.transactionId],
+    references: [transactions.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [goalContributions.workspaceId],
+    references: [workspaces.id],
+  }),
+}));
+
+export const goalMilestonesRelations = relations(goalMilestones, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalMilestones.goalId],
+    references: [goals.id],
+  }),
+}));
+
+export const goalInsightsRelations = relations(goalInsights, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalInsights.goalId],
+    references: [goals.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [goalInsights.workspaceId],
     references: [workspaces.id],
   }),
 }));
@@ -490,6 +602,24 @@ export const insertGoalSchema = createInsertSchema(goals).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  lastProgressUpdate: true,
+  completedAt: true,
+});
+
+export const insertGoalContributionSchema = createInsertSchema(goalContributions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGoalMilestoneSchema = createInsertSchema(goalMilestones).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export const insertGoalInsightSchema = createInsertSchema(goalInsights).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions).omit({

@@ -14,7 +14,7 @@ import Transactions from "@/pages/transactions";
 import Budget from "@/pages/budget";
 import Reports from "@/pages/reports";
 import Analytics from "@/pages/analytics";
-import Goals from "@/pages/goals";
+import EnhancedGoals from "@/pages/enhanced-goals";
 import Automation from "@/pages/automation";
 import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
@@ -116,7 +116,7 @@ function AppRouter() {
               <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
               <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
               <Route path="/analytics" component={() => <Analytics workspaceId={currentWorkspace?.id} />} />
-              <Route path="/goals" component={() => <Goals workspaceId={currentWorkspace?.id} />} />
+              <Route path="/goals" component={() => <EnhancedGoals workspaceId={currentWorkspace?.id} />} />
               <Route path="/automation" component={() => <Automation workspaceId={currentWorkspace?.id} />} />
               <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
               <Route path="/collaboration" component={() => 
