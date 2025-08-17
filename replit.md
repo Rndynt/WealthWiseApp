@@ -53,6 +53,7 @@ Development approach: Mobile-first UI/UX with ultra-compact designs for optimal 
 - **Mobile UI Optimization**: Implemented dramatic size reductions for mobile view including ultra-compact transaction cards, notification tabs, and profile sidebar
 - **Date Filter Enhancement**: Fixed timezone handling and synchronization for accurate transaction filtering
 - **Repayment Bug Fixes**: Fixed critical double deduction bug in debt repayment calculations by consolidating repayment processing logic and preventing duplicate debt balance updates
+- **Repayment History Display Fix**: Resolved authentication issue in debt repayment history display by adding proper JWT token authentication to frontend API calls
 
 ## External Dependencies
 
