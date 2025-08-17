@@ -14,6 +14,7 @@ import {
   permissions,
   rolePermissions,
   subscriptionPackages,
+  notifications,
   userSubscriptions,
   appSettings,
   goals,
@@ -53,6 +54,8 @@ import {
   type InsertSubscriptionPackage,
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
+  type Notification,
+  type InsertNotification,
 } from '@shared/schema';
 import {
   type WorkspaceMember,
@@ -802,11 +805,10 @@ export class DatabaseStorage implements IStorage {
     const current = currentAccounts.length;
 
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxAccounts;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
       const limit = 2; // Basic package max accounts
@@ -825,16 +827,14 @@ export class DatabaseStorage implements IStorage {
 
     if (userSubResult) {
       // Check package limit (null means unlimited)
-      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
-      const packageName = "basic";
       const limit = 3; // Basic package max categories
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
 
@@ -847,17 +847,15 @@ export class DatabaseStorage implements IStorage {
     const current = currentBudgets.length;
 
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       // Check package limit (null means unlimited)
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
       // Default basic package limits for users without subscription
-      const packageName = "basic";
       const limit = 2; // Basic package max budgets per period
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
 
@@ -1118,6 +1116,79 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Notification methods
+  // Notifications methods  
+  async getNotificationsByWorkspace(workspaceId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.workspaceId, workspaceId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    await db.update(notifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(eq(notifications.id, id));
+  }
+
+  async executeRecurringTransactions(): Promise<void> {
+    const now = new Date();
+    
+    // Get all active recurring transactions that are due
+    const dueTransactions = await db
+      .select()
+      .from(recurringTransactions)
+      .where(
+        and(
+          eq(recurringTransactions.isActive, true)
+        )
+      );
+
+    for (const recurring of dueTransactions) {
+      // Check if it's time to execute
+      const nextExecution = new Date(recurring.nextExecution || now);
+      if (nextExecution <= now) {
+        try {
+          // Create the transaction
+          const transactionData = {
+            workspaceId: recurring.workspaceId,
+            accountId: recurring.accountId,
+            categoryId: recurring.categoryId,
+            type: recurring.type,
+            amount: recurring.amount,
+            description: `${recurring.name} - Automated`,
+            date: now.toISOString(),
+          };
+
+          await db.insert(transactions).values(transactionData);
+
+          // Update next execution
+          let nextExec: Date;
+          switch (recurring.frequency) {
+            case 'daily': nextExec = new Date(now.getTime() + 24 * 60 * 60 * 1000); break;
+            case 'weekly': nextExec = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); break;
+            case 'monthly': nextExec = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); break;
+            case 'yearly': nextExec = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); break;
+            default: nextExec = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          }
+
+          await db
+            .update(recurringTransactions)
+            .set({
+              lastExecuted: now.toISOString(),
+              nextExecution: nextExec.toISOString(),
+            })
+            .where(eq(recurringTransactions.id, recurring.id));
+        } catch (error) {
+          console.error(`Failed to execute recurring transaction ${recurring.id}:`, error);
+        }
+      }
+    }
+  }
+
   async checkDebtReminders(workspaceId: number): Promise<any[]> {
     const debts = await this.getWorkspaceDebts(workspaceId);
     const reminders = [];
@@ -1215,7 +1286,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(recurringTransactions.createdAt));
   }
 
-  async createRecurringTransaction(transaction: InsertRecurringTransaction): Promise<RecurringTransaction> {
+  async createRecurringTransaction(transaction: any): Promise<RecurringTransaction> {
     const [newTransaction] = await db.insert(recurringTransactions).values(transaction).returning();
     return newTransaction;
   }

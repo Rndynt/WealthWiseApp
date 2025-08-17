@@ -7,6 +7,7 @@ import { University, Plus, MoreVertical, Edit, Trash2, CreditCard } from 'lucide
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Account, Transaction } from '@/types';
 import AddAccountModal from '@/components/modals/add-account-modal';
+import EditAccountModal from '@/components/modals/edit-account-modal';
 
 interface AccountsProps {
   workspaceId: number | undefined;
@@ -14,6 +15,7 @@ interface AccountsProps {
 
 export default function Accounts({ workspaceId }: AccountsProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const { data: accounts, isLoading } = useQuery<Account[]>({
     queryKey: [`/api/workspaces/${workspaceId}/accounts`],
@@ -127,11 +129,11 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditingAccount(account)}>
                           <Edit size={16} className="mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem className="text-red-600" onClick={() => setEditingAccount(account)}>
                           <Trash2 size={16} className="mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -246,11 +248,19 @@ export default function Accounts({ workspaceId }: AccountsProps) {
 
       {/* Add Account Modal */}
       {workspaceId && (
-        <AddAccountModal 
-          open={showAddModal} 
-          onOpenChange={setShowAddModal}
-          workspaceId={workspaceId}
-        />
+        <>
+          <AddAccountModal 
+            open={showAddModal} 
+            onOpenChange={setShowAddModal}
+            workspaceId={workspaceId}
+          />
+          <EditAccountModal 
+            account={editingAccount}
+            isOpen={!!editingAccount} 
+            onClose={() => setEditingAccount(null)} 
+            workspaceId={workspaceId}
+          />
+        </>
       )}
     </div>
   );

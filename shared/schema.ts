@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -506,6 +506,29 @@ export const insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
   timesUsed: true,
 });
 
+// Notifications table for persistent notifications
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'info', 'success', 'warning', 'error'
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  category: text('category'), // 'budget', 'debt', 'goal', 'transaction', 'system'
+  isRead: boolean('is_read').default(false),
+  data: json('data'), // Additional context data
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  readAt: timestamp('read_at'),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
 // Types
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -560,3 +583,6 @@ export type InsertRecurringTransaction = z.infer<typeof insertRecurringTransacti
 
 export type CategoryRule = typeof categoryRules.$inferSelect;
 export type InsertCategoryRule = z.infer<typeof insertCategoryRuleSchema>;
+
+export type WorkspaceInvite = typeof workspaceInvites.$inferSelect;
+export type InsertWorkspaceInvite = z.infer<typeof insertWorkspaceInviteSchema>;

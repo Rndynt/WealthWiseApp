@@ -1,0 +1,14 @@
+1. Bagaimana cara kerja automation auto-categorization, tolong beri penjelasan. Auto categorization ada bug kecil saat setelah di input, kemudian di klik edit kembali, select kategori nya dalam kondisi unselected, padahal sebelumnya saat membuat data tersebut sudah select categorynya. Tolong lakukan analisis mendalam terkait fitur auto categorization, bagaimana cara kerja dan cara di gunakannya.
+2. Pada fitur automation reccurring transaction, apakah bakal tereksekusi otomatis sesuai tanggal nya ? Apakah sudah berjalan sesuai alur dan otomatis.
+3. Fitur goals, bakal tercapai saat apa ? Kenapa add progress itu manual ? Kenapa kita tidak membuat otomatis dari data transactions (transfer/savings) ? Tolong kamu analisa mendalam terkait fitur goals ini, saya mau fitur tersebut sesuai dengan tujuan nya dan otomatis. Tolong berikan penjelasan dan analisa mendalam terkait fitur ini secara keseluruhan aplikasi.
+4. Apakah fitur smart notification dan reminder tidak di simpan kedalam database ? Apakah secara kebutuhan tidak memerlukan data disimpan ? Berikan analisa mendalam dan tujuan yang jelas.
+5. Pada fitur report, apalah sudah di kalkulasi dengan semua fitur debts ? Apakah semua matrik sudah masuk kedalam fitur report dan di kalkulasikan secara lengkap terkait keuangan ? Tolong analisa dan berikan insight anda.
+6. Pada fitur account, data tidak bisa di edit ataupun hapus, tolong perbaiki dan analisa secara mendalam terkait ini, dan lakukan perbaikan secara baik dan terstruktur.
+7. Pada fitur budget, data tidak bisa di edit ataupun hapus, tolong perbaiki dan analisa secara mendalam terkait ini, dan lakukan perbaikan secara baik dan terstruktur.
+8. Pada fitur kategory, data tidak bisa di edit ataupun hapus, tolong perbaiki dan analisa secara mendalam terkait ini, dan lakukan perbaikan secara baik dan terstruktur.
+9. Lakukan improvement dan perbaikan pada fitur dashboard, semua matrik dalam aplikasi di tambahkan didalam dashboard, termasuk debt, goals dan lainnya yang menurut anda harus di tambahkan dalam dashboard, atau anda punya insight yang bagus dalam fitur dashboard ini.
+
+Pastikan anda mengimplementasikan secara struktur yang baik semua poin poin di atas, dan berjalan tanpa error, dan testing yang baik. Saya berharap anda mempelajari alur lengkap aplikasi, supaya tidak ada redundant dan waste dalam pembuatan code dan fungsi yang bisa di reusable (jika diperlukan).
+Dan pastikan anda memberi checklist perubahan yang sudah berjalan dengan baik
+
+Dan tolong analisa keseluruhan aplikasi, apakah ada saran peningkatan lainnya/fitur lainnya yang bisa kita implementasikan, tolong berikan penjelasan dan saran tersebut.
