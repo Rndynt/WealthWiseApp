@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -184,6 +184,54 @@ export const debts = pgTable("debts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Goals table
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'savings' | 'debt_payment' | 'investment' | 'emergency_fund' | 'retirement'
+  targetAmount: decimal("target_amount", { precision: 15, scale: 2 }).notNull(),
+  currentAmount: decimal("current_amount", { precision: 15, scale: 2 }).notNull().default("0"),
+  targetDate: date("target_date").notNull(),
+  priority: text("priority").notNull().default("medium"), // 'low' | 'medium' | 'high'
+  status: text("status").notNull().default("active"), // 'active' | 'completed' | 'paused'
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Recurring transactions table
+export const recurringTransactions = pgTable("recurring_transactions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'income' | 'expense' | 'transfer'
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  frequency: text("frequency").notNull(), // 'daily' | 'weekly' | 'monthly' | 'yearly'
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  nextExecution: timestamp("next_execution").notNull(),
+  lastExecuted: timestamp("last_executed"),
+  isActive: boolean("is_active").notNull().default(true),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Category rules table for auto-categorization
+export const categoryRules = pgTable("category_rules", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  pattern: text("pattern").notNull(), // Comma-separated keywords
+  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  timesUsed: integer("times_used").notNull().default(0),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const rolesRelations = relations(roles, ({ many }) => ({
   users: many(users),
@@ -256,6 +304,9 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
   debts: many(debts),
+  goals: many(goals),
+  recurringTransactions: many(recurringTransactions),
+  categoryRules: many(categoryRules),
 }));
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
@@ -323,6 +374,39 @@ export const debtsRelations = relations(debts, ({ one, many }) => ({
     references: [workspaces.id],
   }),
   repaymentTransactions: many(transactions),
+}));
+
+export const goalsRelations = relations(goals, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [goals.workspaceId],
+    references: [workspaces.id],
+  }),
+}));
+
+export const recurringTransactionsRelations = relations(recurringTransactions, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [recurringTransactions.workspaceId],
+    references: [workspaces.id],
+  }),
+  category: one(categories, {
+    fields: [recurringTransactions.categoryId],
+    references: [categories.id],
+  }),
+  account: one(accounts, {
+    fields: [recurringTransactions.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const categoryRulesRelations = relations(categoryRules, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [categoryRules.workspaceId],
+    references: [workspaces.id],
+  }),
+  category: one(categories, {
+    fields: [categoryRules.categoryId],
+    references: [categories.id],
+  }),
 }));
 
 // Insert schemas
@@ -402,6 +486,26 @@ export const insertDebtSchema = createInsertSchema(debts).omit({
   createdAt: true,
 });
 
+export const insertGoalSchema = createInsertSchema(goals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  nextExecution: true,
+  lastExecuted: true,
+});
+
+export const insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
+  id: true,
+  createdAt: true,
+  timesUsed: true,
+});
+
 // Types
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -447,3 +551,12 @@ export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 
 export type Debt = typeof debts.$inferSelect;
 export type InsertDebt = z.infer<typeof insertDebtSchema>;
+
+export type Goal = typeof goals.$inferSelect;
+export type InsertGoal = z.infer<typeof insertGoalSchema>;
+
+export type RecurringTransaction = typeof recurringTransactions.$inferSelect;
+export type InsertRecurringTransaction = z.infer<typeof insertRecurringTransactionSchema>;
+
+export type CategoryRule = typeof categoryRules.$inferSelect;
+export type InsertCategoryRule = z.infer<typeof insertCategoryRuleSchema>;

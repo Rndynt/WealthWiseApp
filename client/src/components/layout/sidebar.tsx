@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, Tags, Calculator,
   BarChart3, CreditCard, Users, ChartLine, Settings, LogOut,
-  Crown, Plus, Shield, UserCog, Package, User, Star, Zap
+  Crown, Plus, Shield, UserCog, Package, User, Star, Zap,
+  FileText, Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,8 +55,11 @@ const navigationItems = [
   { path: '/transactions', label: 'Transactions', icon: ArrowLeftRight, pagePermission: ENHANCED_PERMISSIONS.USER_TRANSACTIONS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_TRANSACTIONS_ACCESS },
   { path: '/categories', label: 'Categories', icon: Tags, pagePermission: ENHANCED_PERMISSIONS.USER_CATEGORIES_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_CATEGORIES_ACCESS },
   { path: '/budget', label: 'Budget', icon: Calculator, pagePermission: ENHANCED_PERMISSIONS.USER_BUDGETS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_BUDGETS_ACCESS },
-  { path: '/reports', label: 'Reports', icon: BarChart3, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
+  { path: '/reports', label: 'Reports', icon: FileText, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
   { path: '/debts', label: 'Debts', icon: CreditCard, pagePermission: ENHANCED_PERMISSIONS.USER_DEBTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_DEBTS_ACCESS },
+  { path: '/goals', label: 'Goals', icon: Target, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
+  { path: '/automation', label: 'Automation', icon: Zap, pagePermission: ENHANCED_PERMISSIONS.USER_REPORTS_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_REPORTS_ACCESS },
   { path: '/collaboration', label: 'Collaboration', icon: Users, pagePermission: ENHANCED_PERMISSIONS.USER_COLLABORATION_PAGES, accessPermission: ENHANCED_PERMISSIONS.USER_COLLABORATION_ACCESS },
 ];
 

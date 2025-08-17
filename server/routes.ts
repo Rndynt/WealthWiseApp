@@ -7,7 +7,8 @@ import {
   insertUserSchema, insertWorkspaceSchema, insertCategorySchema, 
   insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema,
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
-  insertSubscriptionPackageSchema, insertUserSubscriptionSchema
+  insertSubscriptionPackageSchema, insertUserSubscriptionSchema,
+  insertGoalSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
@@ -1297,6 +1298,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Payment processing error:", error);
       res.status(400).json({ message: "Payment processing failed" });
+    }
+  });
+
+  // Goals API endpoints
+  app.get("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const goals = await storage.getGoalsByWorkspace(workspaceId);
+      res.json(goals);
+    } catch (error) {
+      console.error("Failed to get goals:", error);
+      res.status(500).json({ message: "Failed to get goals" });
+    }
+  });
+
+  app.post("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const goalData = insertGoalSchema.parse({
+        ...req.body,
+        workspaceId,
+        targetDate: new Date(req.body.targetDate),
+      });
+      const goal = await storage.createGoal(goalData);
+      res.json(goal);
+    } catch (error) {
+      console.error("Failed to create goal:", error);
+      res.status(400).json({ message: "Failed to create goal" });
+    }
+  });
+
+  app.patch("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const workspaceId = parseInt(req.params.workspaceId);
+      const updates = req.body;
+      if (updates.targetDate) {
+        updates.targetDate = new Date(updates.targetDate);
+      }
+      const goal = await storage.updateGoal(id, updates);
+      res.json(goal);
+    } catch (error) {
+      console.error("Failed to update goal:", error);
+      res.status(400).json({ message: "Failed to update goal" });
+    }
+  });
+
+  app.delete("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteGoal(id);
+      res.json({ message: "Goal deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      res.status(400).json({ message: "Failed to delete goal" });
+    }
+  });
+
+  // Recurring Transactions API endpoints
+  app.get("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const transactions = await storage.getRecurringTransactionsByWorkspace(workspaceId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Failed to get recurring transactions:", error);
+      res.status(500).json({ message: "Failed to get recurring transactions" });
+    }
+  });
+
+  app.post("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      
+      // Calculate next execution date based on frequency and start date
+      const startDate = new Date(req.body.startDate);
+      let nextExecution = new Date(startDate);
+      
+      const transactionData = insertRecurringTransactionSchema.parse({
+        ...req.body,
+        workspaceId,
+        startDate,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+        nextExecution,
+      });
+      
+      const transaction = await storage.createRecurringTransaction(transactionData);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Failed to create recurring transaction:", error);
+      res.status(400).json({ message: "Failed to create recurring transaction" });
+    }
+  });
+
+  app.patch("/api/workspaces/:workspaceId/recurring-transactions/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.startDate) {
+        updates.startDate = new Date(updates.startDate);
+      }
+      if (updates.endDate) {
+        updates.endDate = new Date(updates.endDate);
+      }
+      const transaction = await storage.updateRecurringTransaction(id, updates);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Failed to update recurring transaction:", error);
+      res.status(400).json({ message: "Failed to update recurring transaction" });
+    }
+  });
+
+  app.delete("/api/workspaces/:workspaceId/recurring-transactions/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteRecurringTransaction(id);
+      res.json({ message: "Recurring transaction deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete recurring transaction:", error);
+      res.status(400).json({ message: "Failed to delete recurring transaction" });
+    }
+  });
+
+  // Category Rules API endpoints
+  app.get("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const rules = await storage.getCategoryRulesByWorkspace(workspaceId);
+      res.json(rules);
+    } catch (error) {
+      console.error("Failed to get category rules:", error);
+      res.status(500).json({ message: "Failed to get category rules" });
+    }
+  });
+
+  app.post("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req: any, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const ruleData = insertCategoryRuleSchema.parse({
+        ...req.body,
+        workspaceId,
+      });
+      const rule = await storage.createCategoryRule(ruleData);
+      res.json(rule);
+    } catch (error) {
+      console.error("Failed to create category rule:", error);
+      res.status(400).json({ message: "Failed to create category rule" });
+    }
+  });
+
+  app.patch("/api/workspaces/:workspaceId/category-rules/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const rule = await storage.updateCategoryRule(id, updates);
+      res.json(rule);
+    } catch (error) {
+      console.error("Failed to update category rule:", error);
+      res.status(400).json({ message: "Failed to update category rule" });
+    }
+  });
+
+  app.delete("/api/workspaces/:workspaceId/category-rules/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCategoryRule(id);
+      res.json({ message: "Category rule deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete category rule:", error);
+      res.status(400).json({ message: "Failed to delete category rule" });
     }
   });
 
