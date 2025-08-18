@@ -8,6 +8,7 @@ import { EnhancedPermissionsProvider } from "./lib/enhanced-permissions";
 import Login from "@/pages/login";
 import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import ComprehensiveDashboard from "@/pages/comprehensive-dashboard";
 import Accounts from "@/pages/accounts";
 import Categories from "@/pages/categories";
 import Transactions from "@/pages/transactions";
@@ -108,8 +109,8 @@ function AppRouter() {
         <EnhancedPullToRefresh onRefresh={() => window.location.reload()}>
           <main className="p-4 sm:p-6">
             <Switch>
-              <Route path="/" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
-              <Route path="/dashboard" component={() => <Dashboard workspaceId={currentWorkspace?.id} />} />
+              <Route path="/" component={() => <ComprehensiveDashboard workspaceId={currentWorkspace?.id} />} />
+              <Route path="/dashboard" component={() => <ComprehensiveDashboard workspaceId={currentWorkspace?.id} />} />
               <Route path="/accounts" component={() => <Accounts workspaceId={currentWorkspace?.id} />} />
               <Route path="/categories" component={() => <Categories workspaceId={currentWorkspace?.id} />} />
               <Route path="/transactions" component={() => <Transactions workspaceId={currentWorkspace?.id} dateRange={dateRange} />} />
