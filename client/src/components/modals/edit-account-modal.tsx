@@ -21,7 +21,7 @@ import { notificationService } from '@/lib/notification-service';
 
 const editAccountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
-  type: z.enum(['checking', 'savings', 'credit', 'investment', 'cash']),
+  type: z.enum(['transaction', 'asset']),
   balance: z.string().min(1, 'Balance is required'),
 });
 
@@ -48,7 +48,7 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
     resolver: zodResolver(editAccountSchema),
     defaultValues: {
       name: account?.name || '',
-      type: (account?.type as any) || 'checking',
+      type: (account?.type as any) || 'transaction',
       balance: account?.balance || '0',
     },
   });
@@ -134,11 +134,8 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="checking">Checking</SelectItem>
-                <SelectItem value="savings">Savings</SelectItem>
-                <SelectItem value="credit">Credit Card</SelectItem>
-                <SelectItem value="investment">Investment</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="transaction">Transaction</SelectItem>
+                <SelectItem value="asset">Asset</SelectItem>
               </SelectContent>
             </Select>
             {errors.type && (
@@ -147,7 +144,7 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
           </div>
 
           <div>
-            <Label htmlFor="balance">Balance (IDR)</Label>
+            <Label htmlFor="balance">Balance ({account?.currency || 'IDR'})</Label>
             <Input
               id="balance"
               type="number"
