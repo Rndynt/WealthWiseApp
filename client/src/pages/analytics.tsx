@@ -225,22 +225,22 @@ export default function Analytics({ workspaceId }: AnalyticsProps) {
 
         {/* Tabs for Different Analytics */}
         <Tabs defaultValue="spending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
-            <TabsTrigger value="spending" className="text-[10px] sm:text-sm px-2 py-1">
-              <span className="hidden sm:inline">Spending Trends</span>
-              <span className="sm:hidden">Spending</span>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-0.5 p-1">
+            <TabsTrigger value="spending" className="text-xs md:text-sm px-1 md:px-3 py-2 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <span className="hidden md:inline">Spending Trends</span>
+              <span className="md:hidden text-center leading-tight">Spending</span>
             </TabsTrigger>
-            <TabsTrigger value="categories" className="text-[10px] sm:text-sm px-2 py-1">
-              <span className="hidden sm:inline">Categories</span>
-              <span className="sm:hidden">Categories</span>
+            <TabsTrigger value="categories" className="text-xs md:text-sm px-1 md:px-3 py-2 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <span className="hidden md:inline">Categories</span>
+              <span className="md:hidden text-center leading-tight">Categories</span>
             </TabsTrigger>
-            <TabsTrigger value="forecast" className="text-[10px] sm:text-sm px-2 py-1">
-              <span className="hidden sm:inline">Cash Flow</span>
-              <span className="sm:hidden">Flow</span>
+            <TabsTrigger value="forecast" className="text-xs md:text-sm px-1 md:px-3 py-2 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <span className="hidden md:inline">Cash Flow</span>
+              <span className="md:hidden text-center leading-tight">Flow</span>
             </TabsTrigger>
-            <TabsTrigger value="budget" className="text-[10px] sm:text-sm px-2 py-1">
-              <span className="hidden sm:inline">Budget Analysis</span>
-              <span className="sm:hidden">Budget</span>
+            <TabsTrigger value="budget" className="text-xs md:text-sm px-1 md:px-3 py-2 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <span className="hidden md:inline">Budget Analysis</span>
+              <span className="md:hidden text-center leading-tight">Budget</span>
             </TabsTrigger>
           </TabsList>
 
