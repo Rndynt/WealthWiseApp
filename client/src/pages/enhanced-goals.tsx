@@ -60,7 +60,7 @@ interface EnhancedGoalsPageProps {
 }
 
 export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: EnhancedGoalsPageProps) {
-  const workspaceId = propWorkspaceId || 0;
+  const workspaceId = propWorkspaceId;
   const queryClient = useQueryClient();
   
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
@@ -68,10 +68,14 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch goals data
-  const { data: goals = [], isLoading: goalsLoading } = useQuery({
+  const { data: goals = [], isLoading: goalsLoading, error: goalsError } = useQuery({
     queryKey: [`/api/workspaces/${workspaceId}/goals`],
     enabled: !!workspaceId,
   });
+
+  if (goalsError) {
+    console.error('Error loading goals:', goalsError);
+  }
 
   // Fetch goal metrics
   const { data: metrics } = useQuery({
@@ -222,6 +226,16 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
     if (progress >= 50) return 'bg-yellow-500';
     return 'bg-red-500';
   };
+
+  if (!workspaceId) {
+    return (
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view goals</p>
+        </div>
+      </div>
+    );
+  }
 
   if (goalsLoading) {
     return (

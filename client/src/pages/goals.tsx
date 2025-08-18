@@ -46,7 +46,7 @@ interface Goal {
 }
 
 interface GoalsProps {
-  workspaceId: number | undefined;
+  workspaceId?: number;
 }
 
 export default function Goals({ workspaceId }: GoalsProps) {
@@ -67,10 +67,14 @@ export default function Goals({ workspaceId }: GoalsProps) {
     },
   });
 
-  const { data: goals, isLoading } = useQuery<Goal[]>({
+  const { data: goals, isLoading, error } = useQuery<Goal[]>({
     queryKey: [`/api/workspaces/${workspaceId}/goals`],
     enabled: !!workspaceId,
   });
+
+  if (error) {
+    console.error('Error loading goals:', error);
+  }
 
   const createGoalMutation = useMutation({
     mutationFn: (data: GoalFormData) => 
@@ -187,6 +191,22 @@ export default function Goals({ workspaceId }: GoalsProps) {
       <PageContainer>
         <div className="text-center py-8">
           <p className="text-gray-500 dark:text-gray-400">Please select a workspace to view goals</p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading goals: {error.message}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Reload Page
+          </button>
         </div>
       </PageContainer>
     );

@@ -15,7 +15,7 @@ import Transactions from "@/pages/transactions";
 import Budget from "@/pages/budget";
 import Reports from "@/pages/reports";
 import Analytics from "@/pages/analytics";
-import EnhancedGoals from "@/pages/enhanced-goals";
+import EnhancedGoalsPage from './pages/enhanced-goals'; // Added import for EnhancedGoalsPage
 import Automation from "@/pages/automation";
 import Debts from "@/pages/debts";
 import Collaboration from "@/pages/collaboration";
@@ -117,8 +117,13 @@ function AppRouter() {
               <Route path="/budget" component={() => <Budget workspaceId={currentWorkspace?.id} />} />
               <Route path="/reports" component={() => <Reports workspaceId={currentWorkspace?.id} />} />
               <Route path="/analytics" component={() => <Analytics workspaceId={currentWorkspace?.id} />} />
+              {/* The original route for goals */}
               <Route path="/goals">
-                {currentWorkspace?.id ? <EnhancedGoals workspaceId={currentWorkspace.id} /> : <div>Please select a workspace</div>}
+                {currentWorkspace?.id ? <EnhancedGoalsPage workspaceId={currentWorkspace.id} /> : <div>Please select a workspace</div>}
+              </Route>
+              {/* New route for enhanced goals */}
+              <Route path="/enhanced-goals">
+                {currentWorkspace?.id ? <EnhancedGoalsPage workspaceId={currentWorkspace.id} /> : <div>Please select a workspace</div>}
               </Route>
               <Route path="/automation" component={() => <Automation workspaceId={currentWorkspace?.id} />} />
               <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
