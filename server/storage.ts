@@ -1119,21 +1119,38 @@ export class DatabaseStorage implements IStorage {
     const savingsRate = monthlyIncome > 0 ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome) : 0;
     
     // Calculate financial health score (0-100)
-    let score = 100;
-    if (debtToIncomeRatio > 0.4) score -= 30;
-    else if (debtToIncomeRatio > 0.3) score -= 20;
-    else if (debtToIncomeRatio > 0.2) score -= 10;
+    let score = 0;
     
-    if (savingsRate < 0.1) score -= 25;
-    else if (savingsRate < 0.2) score -= 15;
-    
-    if (totalBalance < monthlyExpenses * 3) score -= 20; // Emergency fund
+    // For fresh accounts with no transactions, start with base score
+    if (transactions.length === 0) {
+      score = 50; // Base score for new accounts
+    } else {
+      // Start with base score and add points for good financial health
+      score = 30; // Base score for active accounts
+      
+      // Add points for good debt-to-income ratio
+      if (debtToIncomeRatio === 0) score += 25;
+      else if (debtToIncomeRatio < 0.2) score += 20;
+      else if (debtToIncomeRatio < 0.3) score += 10;
+      else if (debtToIncomeRatio > 0.4) score -= 10;
+      
+      // Add points for good savings rate
+      if (savingsRate >= 0.2) score += 25;
+      else if (savingsRate >= 0.1) score += 15;
+      else if (savingsRate < 0) score -= 15;
+      
+      // Add points for emergency fund
+      if (totalBalance >= monthlyExpenses * 6) score += 20;
+      else if (totalBalance >= monthlyExpenses * 3) score += 15;
+      else if (totalBalance >= monthlyExpenses * 1) score += 10;
+      else if (monthlyExpenses > 0 && totalBalance < monthlyExpenses * 0.5) score -= 10;
+    }
     
     return {
       score: Math.max(0, Math.min(100, score)),
       debtToIncomeRatio,
       savingsRate,
-      budgetCompliance: 0.82, // Mock for now
+      budgetCompliance: transactions.length > 0 ? 0.82 : 0, // Only show compliance if there are transactions
       totalBalance,
       totalDebt,
       monthlyIncome,
