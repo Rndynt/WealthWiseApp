@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, ArrowUpDown, Filter, Search, ArrowRight, Edit, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, ArrowUpDown, Filter, Search, ArrowRight, Edit, Trash2, X, Calendar, CreditCard, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Transaction, Account, Category } from '@/types';
 import AddTransactionModal from '@/components/modals/add-transaction-modal';
 import { format } from 'date-fns';
 import { PageContainer, TableContainer } from '@/components/ui/page-container';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface TransactionsProps {
   workspaceId: number | undefined;
@@ -44,6 +49,9 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
 
   if (!workspaceId) {
     return (
@@ -203,8 +211,11 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
-              <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group border-l-4 border-l-blue-500">
-                <CardContent className="p-2">
+              <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group border-l-4 border-l-blue-500 cursor-pointer">
+                <CardContent 
+                  className="p-2"
+                  onClick={() => setSelectedTransaction(transaction)}
+                >
                   <div className="flex items-start gap-2">
                     {/* Category Icon - Very Small */}
                     <div className="flex-shrink-0 mt-0.5">
@@ -243,9 +254,29 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
                               <span>•</span>
                               <span>{format(new Date(transaction.date), 'dd MMM')}</span>
                             </div>
-                            <Badge className={`${getTransactionTypeColor(transaction.type)} text-[8px] px-1 py-0 h-4`}>
-                              {transaction.type}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge className={`${getTransactionTypeColor(transaction.type)} text-[8px] px-1 py-0 h-4`}>
+                                {transaction.type}
+                              </Badge>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTransaction(transaction);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
+                              >
+                                <Edit className="h-3 w-3 text-gray-500" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingTransaction(transaction);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -284,6 +315,476 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
         onOpenChange={setShowTransactionModal}
         workspaceId={workspaceId}
       />
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal 
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
+        accounts={accounts || []}
+        categories={categories || []}
+        onEdit={(transaction) => {
+          setSelectedTransaction(null);
+          setEditingTransaction(transaction);
+        }}
+        onDelete={(transaction) => {
+          setSelectedTransaction(null);
+          setDeletingTransaction(transaction);
+        }}
+      />
+
+      {/* Edit Transaction Modal */}
+      <EditTransactionModal 
+        transaction={editingTransaction}
+        onClose={() => setEditingTransaction(null)}
+        workspaceId={workspaceId}
+        accounts={accounts || []}
+        categories={categories || []}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteTransactionModal 
+        transaction={deletingTransaction}
+        onClose={() => setDeletingTransaction(null)}
+        workspaceId={workspaceId}
+      />
     </PageContainer>
+  );
+}
+
+// Transaction Detail Modal Component
+function TransactionDetailModal({ 
+  transaction, 
+  onClose, 
+  accounts, 
+  categories, 
+  onEdit, 
+  onDelete 
+}: {
+  transaction: Transaction | null;
+  onClose: () => void;
+  accounts: Account[];
+  categories: Category[];
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transaction: Transaction) => void;
+}) {
+  if (!transaction) return null;
+
+  const account = accounts.find(a => a.id === transaction.accountId);
+  const toAccount = transaction.toAccountId ? accounts.find(a => a.id === transaction.toAccountId) : null;
+  const category = transaction.categoryId ? categories.find(c => c.id === transaction.categoryId) : null;
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'income': return '💰';
+      case 'expense': return '💸';
+      case 'transfer': return '🔄';
+      case 'debt': return '🏦';
+      case 'repayment': return '✅';
+      case 'saving': return '🐷';
+      default: return '📝';
+    }
+  };
+
+  const getTransactionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'income': return 'Pemasukan';
+      case 'expense': return 'Pengeluaran';
+      case 'transfer': return 'Transfer';
+      case 'debt': return 'Utang';
+      case 'repayment': return 'Pembayaran Utang';
+      case 'saving': return 'Tabungan';
+      default: return type;
+    }
+  };
+
+  return (
+    <Dialog open={!!transaction} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="text-2xl">{getTransactionIcon(transaction.type)}</span>
+            Detail Transaksi
+          </DialogTitle>
+          <DialogDescription>
+            Informasi lengkap tentang transaksi ini
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Main Info */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-1">{transaction.description}</h3>
+            <p className={`text-2xl font-bold ${
+              transaction.type === 'income' || transaction.type === 'debt' 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {(transaction.type === 'income' || transaction.type === 'debt') ? '+' : '-'}Rp {parseFloat(transaction.amount).toLocaleString('id-ID')}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary">
+                {getTransactionTypeLabel(transaction.type)}
+              </Badge>
+              <span className="text-sm text-gray-500">
+                {format(new Date(transaction.date), 'dd MMMM yyyy, HH:mm')}
+              </span>
+            </div>
+          </div>
+
+          {/* Account Details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Akun</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <CreditCard className="h-4 w-4 text-gray-400" />
+                <span className="font-medium">{account?.name || 'Unknown'}</span>
+              </div>
+            </div>
+            
+            {toAccount && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Transfer ke</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">{toAccount.name}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Category */}
+          {category && (
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Kategori</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-lg">{category.icon}</span>
+                <span className="font-medium">{category.name}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Additional Info */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>ID Transaksi</span>
+              <span className="font-mono">#{transaction.id}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-gray-500 mt-1">
+              <span>Dibuat</span>
+              <span>{format(new Date(transaction.createdAt), 'dd MMM yyyy, HH:mm')}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => onEdit(transaction)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="flex-1"
+              onClick={() => onDelete(transaction)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Edit Transaction Modal Component
+function EditTransactionModal({ 
+  transaction, 
+  onClose, 
+  workspaceId, 
+  accounts, 
+  categories 
+}: {
+  transaction: Transaction | null;
+  onClose: () => void;
+  workspaceId: number;
+  accounts: Account[];
+  categories: Category[];
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    type: '',
+    amount: '',
+    description: '',
+    date: new Date(),
+    accountId: '',
+    categoryId: '',
+    toAccountId: '',
+    debtId: ''
+  });
+
+  // Update form when transaction changes
+  useState(() => {
+    if (transaction) {
+      setForm({
+        type: transaction.type,
+        amount: transaction.amount,
+        description: transaction.description,
+        date: new Date(transaction.date),
+        accountId: transaction.accountId.toString(),
+        categoryId: transaction.categoryId?.toString() || '',
+        toAccountId: transaction.toAccountId?.toString() || '',
+        debtId: transaction.debtId?.toString() || ''
+      });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      return apiRequest(`/api/transactions/${transaction!.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
+      toast({
+        title: "Transaksi berhasil diupdate",
+        description: "Perubahan telah disimpan",
+      });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal mengupdate transaksi",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    updateMutation.mutate({
+      type: form.type,
+      amount: parseFloat(form.amount),
+      description: form.description,
+      date: form.date,
+      accountId: parseInt(form.accountId),
+      categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+      toAccountId: form.toAccountId ? parseInt(form.toAccountId) : null,
+      debtId: form.debtId ? parseInt(form.debtId) : null,
+    });
+  };
+
+  if (!transaction) return null;
+
+  return (
+    <Dialog open={!!transaction} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Transaksi</DialogTitle>
+          <DialogDescription>
+            Ubah detail transaksi
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label>Jenis Transaksi</Label>
+            <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Pemasukan</SelectItem>
+                <SelectItem value="expense">Pengeluaran</SelectItem>
+                <SelectItem value="transfer">Transfer</SelectItem>
+                <SelectItem value="saving">Tabungan</SelectItem>
+                <SelectItem value="debt">Utang</SelectItem>
+                <SelectItem value="repayment">Pembayaran Utang</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Jumlah</Label>
+            <Input
+              type="number"
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Deskripsi</Label>
+            <Input
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Deskripsi transaksi"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Akun</Label>
+            <Select value={form.accountId} onValueChange={(value) => setForm({ ...form, accountId: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id.toString()}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {form.type !== 'transfer' && (
+            <div>
+              <Label>Kategori</Label>
+              <Select value={form.categoryId} onValueChange={(value) => setForm({ ...form, categoryId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.icon} {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {form.type === 'transfer' && (
+            <div>
+              <Label>Transfer ke Akun</Label>
+              <Select value={form.toAccountId} onValueChange={(value) => setForm({ ...form, toAccountId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih akun tujuan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.filter(acc => acc.id.toString() !== form.accountId).map((account) => (
+                    <SelectItem key={account.id} value={account.id.toString()}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending} className="flex-1">
+              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Delete Transaction Modal Component
+function DeleteTransactionModal({ 
+  transaction, 
+  onClose, 
+  workspaceId 
+}: {
+  transaction: Transaction | null;
+  onClose: () => void;
+  workspaceId: number;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/transactions/${transaction!.id}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
+      toast({
+        title: "Transaksi berhasil dihapus",
+        description: "Transaksi telah dihapus dari sistem",
+      });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal menghapus transaksi",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    }
+  });
+
+  if (!transaction) return null;
+
+  return (
+    <Dialog open={!!transaction} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Hapus Transaksi
+          </DialogTitle>
+          <DialogDescription>
+            Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <h4 className="font-medium">{transaction.description}</h4>
+          <p className="text-lg font-semibold text-red-600">
+            Rp {parseFloat(transaction.amount).toLocaleString('id-ID')}
+          </p>
+          <p className="text-sm text-gray-500">
+            {format(new Date(transaction.date), 'dd MMMM yyyy')}
+          </p>
+        </div>
+
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Menghapus transaksi akan mempengaruhi saldo akun dan laporan keuangan Anda.
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            Batal
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+            className="flex-1"
+          >
+            {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

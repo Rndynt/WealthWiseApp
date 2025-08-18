@@ -179,6 +179,12 @@ export const debts = pgTable("debts", {
   remainingAmount: decimal("remaining_amount", { precision: 15, scale: 2 }).notNull(),
   interestRate: decimal("interest_rate", { precision: 5, scale: 2 }),
   dueDate: timestamp("due_date"),
+  // Enhanced payment tracking
+  monthlyPaymentAmount: decimal("monthly_payment_amount", { precision: 15, scale: 2 }),
+  monthlyPaymentDate: integer("monthly_payment_date"), // Day of month (1-31)
+  nextPaymentDate: timestamp("next_payment_date"),
+  minimumPaymentAmount: decimal("minimum_payment_amount", { precision: 15, scale: 2 }),
+  paymentReminder: boolean("payment_reminder").notNull().default(true),
   status: text("status").notNull(), // 'active' | 'paid' | 'overdue'
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
