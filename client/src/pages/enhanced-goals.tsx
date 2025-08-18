@@ -418,14 +418,14 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Linked Account (Optional)</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                        <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}>
                           <FormControl>
                             <SelectTrigger data-testid="select-linked-account">
                               <SelectValue placeholder="Select account" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
                             {accounts.map((account: any) => (
                               <SelectItem key={account.id} value={account.id.toString()}>
                                 {account.name}

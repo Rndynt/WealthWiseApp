@@ -476,24 +476,51 @@ export default function ComprehensiveDashboard({ workspaceId }: ComprehensiveDas
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {debts?.filter((d: any) => d.type === 'debt').slice(0, 3).map((debt: any) => (
-                  <div key={debt.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{debt.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Jatuh tempo: {new Date(debt.dueDate).toLocaleDateString('id-ID')}
-                      </p>
+                {debts?.filter((d: any) => d.type === 'debt').slice(0, 3).map((debt: any) => {
+                  const nextPayment = debt.nextPaymentDate ? new Date(debt.nextPaymentDate) : null;
+                  const monthlyDate = debt.monthlyPaymentDate;
+                  const progress = ((parseFloat(debt.totalAmount) - parseFloat(debt.remainingAmount)) / parseFloat(debt.totalAmount)) * 100;
+                  
+                  return (
+                    <div key={debt.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{debt.name}</p>
+                          <div className="flex flex-col text-xs text-gray-500">
+                            <span>Jatuh tempo akhir: {new Date(debt.dueDate).toLocaleDateString('id-ID')}</span>
+                            {monthlyDate && (
+                              <span>Pembayaran bulanan: tanggal {monthlyDate}</span>
+                            )}
+                            {nextPayment && (
+                              <span className="text-orange-600 font-medium">
+                                Pembayaran berikutnya: {nextPayment.toLocaleDateString('id-ID')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-red-600">
+                            {formatCurrency(debt.remainingAmount)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            dari {formatCurrency(debt.totalAmount)}
+                          </p>
+                          {debt.monthlyPaymentAmount && (
+                            <p className="text-xs text-blue-600">
+                              {formatCurrency(debt.monthlyPaymentAmount)}/bulan
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                        <div 
+                          className="bg-red-600 h-2 rounded-full" 
+                          style={{ width: `${Math.min(progress, 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-red-600">
-                        {formatCurrency(debt.remainingAmount)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        dari {formatCurrency(debt.totalAmount)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {totalDebt === 0 && (
                   <div className="text-center py-4 text-green-600">
@@ -516,39 +543,81 @@ export default function ComprehensiveDashboard({ workspaceId }: ComprehensiveDas
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {((dashboardData as any)?.recentTransactions || []).slice(0, 5).map((transaction: any) => (
-                <div key={transaction.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      transaction.type === 'income' 
-                        ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
-                        : transaction.type === 'expense'
-                        ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
-                        : 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
+              {((dashboardData as any)?.recentTransactions || []).slice(0, 5).map((transaction: any) => {
+                // Enhanced transaction information
+                const getTransactionDetails = (tx: any) => {
+                  const account = (accounts || []).find((a: any) => a.id === tx.accountId);
+                  const toAccount = tx.toAccountId ? (accounts || []).find((a: any) => a.id === tx.toAccountId) : null;
+                  const category = (categories || []).find((c: any) => c.id === tx.categoryId);
+                  const debt = tx.debtId ? (debts || []).find((d: any) => d.id === tx.debtId) : null;
+                  
+                  let details = '';
+                  let icon = <CreditCard size={16} />;
+                  let colorClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400';
+                  
+                  switch (tx.type) {
+                    case 'income':
+                      details = `Masuk ke ${account?.name || 'Unknown'} • ${category?.name || 'Income'}`;
+                      icon = <TrendingUp size={16} />;
+                      colorClass = 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400';
+                      break;
+                    case 'expense':
+                      details = `Dari ${account?.name || 'Unknown'} • ${category?.name || 'Expense'}`;
+                      icon = <TrendingDown size={16} />;
+                      colorClass = 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400';
+                      break;
+                    case 'transfer':
+                      details = `Transfer ${account?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`;
+                      icon = <CreditCard size={16} />;
+                      colorClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400';
+                      break;
+                    case 'debt':
+                      details = `Utang baru • ${debt?.name || 'Unknown Debt'} • ${account?.name || 'Unknown'}`;
+                      icon = <AlertTriangle size={16} />;
+                      colorClass = 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400';
+                      break;
+                    case 'repayment':
+                      details = `Bayar utang • ${debt?.name || 'Unknown Debt'} • ${account?.name || 'Unknown'}`;
+                      icon = <CheckCircle size={16} />;
+                      colorClass = 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400';
+                      break;
+                    case 'saving':
+                      details = `Tabungan • ${account?.name || 'Unknown'} • ${category?.name || 'Saving'}`;
+                      icon = <TrendingUp size={16} />;
+                      colorClass = 'bg-teal-100 text-teal-600 dark:bg-teal-900 dark:text-teal-400';
+                      break;
+                    default:
+                      details = `${account?.name || 'Unknown'} • ${category?.name || 'Uncategorized'}`;
+                  }
+                  
+                  return { details, icon, colorClass };
+                };
+                
+                const { details, icon, colorClass } = getTransactionDetails(transaction);
+                
+                return (
+                  <div key={transaction.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorClass}`}>
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{transaction.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(transaction.date).toLocaleDateString('id-ID')} • {details}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`font-semibold text-sm ${
+                      transaction.type === 'income' || transaction.type === 'debt' 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
                     }`}>
-                      {transaction.type === 'income' ? (
-                        <TrendingUp size={16} />
-                      ) : transaction.type === 'expense' ? (
-                        <TrendingDown size={16} />
-                      ) : (
-                        <CreditCard size={16} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{transaction.description}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(transaction.date).toLocaleDateString('id-ID')} •{' '}
-                        {(categories || []).find((c: any) => c.id === transaction.categoryId)?.name || 'Uncategorized'}
-                      </p>
-                    </div>
+                      {(transaction.type === 'income' || transaction.type === 'debt') ? '+' : '-'}{formatCurrency(transaction.amount)}
+                    </span>
                   </div>
-                  <span className={`font-semibold text-sm ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
 
               {(!(dashboardData as any)?.recentTransactions || (dashboardData as any).recentTransactions.length === 0) && (
                 <div className="text-center py-8 text-gray-500">
