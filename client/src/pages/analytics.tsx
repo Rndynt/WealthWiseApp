@@ -144,13 +144,13 @@ export default function Analytics({ workspaceId }: AnalyticsProps) {
     <PageContainer>
       <div className="space-y-6">
         {/* Header with Time Filter */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Financial Analytics</h1>
-            <p className="text-gray-600">Comprehensive insights into your financial health</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Financial Analytics</h1>
+            <p className="text-gray-600 text-sm sm:text-base">Comprehensive insights into your financial health</p>
           </div>
           <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -225,11 +225,23 @@ export default function Analytics({ workspaceId }: AnalyticsProps) {
 
         {/* Tabs for Different Analytics */}
         <Tabs defaultValue="spending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="spending">Spending Trends</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="forecast">Cash Flow</TabsTrigger>
-            <TabsTrigger value="budget">Budget Analysis</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
+            <TabsTrigger value="spending" className="text-[10px] sm:text-sm px-2 py-1">
+              <span className="hidden sm:inline">Spending Trends</span>
+              <span className="sm:hidden">Spending</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="text-[10px] sm:text-sm px-2 py-1">
+              <span className="hidden sm:inline">Categories</span>
+              <span className="sm:hidden">Categories</span>
+            </TabsTrigger>
+            <TabsTrigger value="forecast" className="text-[10px] sm:text-sm px-2 py-1">
+              <span className="hidden sm:inline">Cash Flow</span>
+              <span className="sm:hidden">Flow</span>
+            </TabsTrigger>
+            <TabsTrigger value="budget" className="text-[10px] sm:text-sm px-2 py-1">
+              <span className="hidden sm:inline">Budget Analysis</span>
+              <span className="sm:hidden">Budget</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Spending Trends */}
