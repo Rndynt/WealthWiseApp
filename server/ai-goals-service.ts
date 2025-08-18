@@ -164,7 +164,7 @@ FINANCIAL DATA:
 - Monthly Expenses: Rp ${data.monthlyExpenses.toLocaleString('id-ID')}
 
 GOAL PROGRESS:
-${goalProgress.map(g => `- ${g.name}: ${g.progress.toFixed(1)}% complete (Rp ${parseFloat(g.currentAmount || '0').toLocaleString('id-ID')} / Rp ${parseFloat(g.targetAmount || '0').toLocaleString('id-ID')})`).join('\n')}
+${goalProgress.map((g: any) => `- ${g.name}: ${g.progress.toFixed(1)}% complete (Rp ${parseFloat(g.currentAmount || '0').toLocaleString('id-ID')} / Rp ${parseFloat(g.targetAmount || '0').toLocaleString('id-ID')})`).join('\n')}
 
 REQUIREMENTS:
 - Provide insights as JSON array
