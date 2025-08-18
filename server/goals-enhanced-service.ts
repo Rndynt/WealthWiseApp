@@ -128,13 +128,13 @@ export class GoalsEnhancedService {
   }
 
   // Smart transaction recognition and contribution tracking
-  async processTransactionForGoals(transactionId: number, workspaceId: number): Promise<void> {
+  async processTransactionForGoals(transactionId: number, workspaceId: number): Promise<{ tracked: number; goals: string[] }> {
     const transaction = await db.select()
       .from(transactions)
       .where(eq(transactions.id, transactionId))
       .limit(1);
 
-    if (!transaction[0]) return;
+    if (!transaction[0]) return { tracked: 0, goals: [] };
 
     // Find goals that might be affected by this transaction
     const relevantGoals = await db.select()
@@ -145,19 +145,25 @@ export class GoalsEnhancedService {
         eq(goals.status, 'active')
       ));
 
+    const trackedGoals: string[] = [];
+    let trackedCount = 0;
+
     for (const goal of relevantGoals) {
       let shouldTrack = false;
       let contributionType = 'transaction';
+      let matchingReason = '';
 
-      // Check if transaction affects this goal
+      // Check if transaction affects this goal - Account linking
       if (goal.linkedAccountId === transaction[0].accountId) {
         shouldTrack = true;
+        matchingReason = `Account: ${goal.linkedAccountId}`;
       }
 
-      // Check for debt payment goals
+      // Check for debt payment goals - Debt linking
       if (goal.type === 'debt_payment' && goal.linkedDebtId === transaction[0].debtId) {
         shouldTrack = true;
         contributionType = 'debt_payment';
+        matchingReason = `Debt: ${goal.linkedDebtId}`;
       }
 
       // Smart categorization based on goal type and transaction description
@@ -166,28 +172,74 @@ export class GoalsEnhancedService {
         const goalType = goal.type;
         
         const keywordMatches = this.getGoalKeywords(goalType);
-        if (keywordMatches.some(keyword => description.includes(keyword))) {
+        const matchedKeywords = keywordMatches.filter(keyword => description.includes(keyword));
+        
+        if (matchedKeywords.length > 0) {
           shouldTrack = true;
           contributionType = 'auto_categorized';
+          matchingReason = `Keywords: ${matchedKeywords.join(', ')}`;
         }
       }
 
-      if (shouldTrack && transaction[0].type === 'expense' && parseFloat(transaction[0].amount) > 0) {
-        // Create goal contribution record
-        await db.insert(goalContributions).values({
-          goalId: goal.id,
-          transactionId: transaction[0].id,
-          amount: transaction[0].amount,
-          contributionType,
-          source: `Auto-tracked from ${transaction[0].description}`,
-          date: transaction[0].date,
-          workspaceId,
-        });
+      // Process tracking for relevant transaction types
+      const shouldProcessTransaction = (
+        (transaction[0].type === 'expense' || transaction[0].type === 'transfer') && 
+        parseFloat(transaction[0].amount) > 0
+      ) || (
+        transaction[0].type === 'income' && goal.type === 'savings'
+      );
 
-        // Update goal progress
-        await this.updateGoalProgress(goal.id, workspaceId);
+      if (shouldTrack && shouldProcessTransaction) {
+        try {
+          // Check for duplicate contributions
+          const existingContribution = await db.select()
+            .from(goalContributions)
+            .where(and(
+              eq(goalContributions.goalId, goal.id),
+              eq(goalContributions.transactionId, transaction[0].id)
+            ))
+            .limit(1);
+
+          if (existingContribution.length === 0) {
+            // Create goal contribution record
+            await db.insert(goalContributions).values({
+              goalId: goal.id,
+              transactionId: transaction[0].id,
+              amount: transaction[0].amount,
+              contributionType,
+              source: `Auto-tracked from ${transaction[0].description} (${matchingReason})`,
+              date: transaction[0].date,
+              workspaceId,
+            });
+
+            // Update goal progress
+            await this.updateGoalProgress(goal.id, workspaceId);
+            
+            trackedGoals.push(`${goal.name} (${matchingReason})`);
+            trackedCount++;
+
+            // Create notification for successful auto-tracking
+            await db.insert(notifications).values({
+              workspaceId,
+              userId: null, // Workspace-level notification
+              type: 'goal_progress',
+              title: 'Goal Auto-Tracked',
+              message: `Transaction "${transaction[0].description}" (${transaction[0].amount}) was automatically linked to goal "${goal.name}"`,
+              isRead: false,
+              createdAt: new Date()
+            });
+
+            console.log(`✅ Auto-tracked: ${goal.name} <- ${transaction[0].description} (${matchingReason})`);
+          } else {
+            console.log(`⚠️  Duplicate avoided: ${goal.name} <- ${transaction[0].description}`);
+          }
+        } catch (error) {
+          console.error(`❌ Auto-tracking failed for goal ${goal.name}:`, error);
+        }
       }
     }
+
+    return { tracked: trackedCount, goals: trackedGoals };
   }
 
   // AI-powered goal suggestions
@@ -200,8 +252,14 @@ export class GoalsEnhancedService {
     const existingGoals = await db.select().from(goals)
       .where(eq(goals.workspaceId, workspaceId));
 
-    // Emergency Fund Suggestion
-    if (!existingGoals.some(g => g.type === 'emergency_fund')) {
+    // Emergency Fund Suggestion - More comprehensive check
+    const emergencyGoals = existingGoals.filter(g => 
+      g.type === 'emergency_fund' || 
+      g.name.toLowerCase().includes('emergency') ||
+      g.description?.toLowerCase().includes('emergency fund')
+    );
+    
+    if (emergencyGoals.length === 0) {
       const monthlyExpenses = spendingAnalysis.averageMonthlyExpenses;
       const emergencyFundTarget = monthlyExpenses * 6; // 6 months of expenses
 
@@ -225,7 +283,16 @@ export class GoalsEnhancedService {
       ));
 
     for (const debt of activeDebts) {
-      if (!existingGoals.some(g => g.linkedDebtId === debt.id)) {
+      // More comprehensive check for existing debt payment goals
+      const hasDebtGoal = existingGoals.some(g => 
+        g.linkedDebtId === debt.id || 
+        g.type === 'debt_payment' && (
+          g.name.toLowerCase().includes(debt.name.toLowerCase()) ||
+          g.description?.toLowerCase().includes(debt.name.toLowerCase())
+        )
+      );
+      
+      if (!hasDebtGoal) {
         suggestions.push({
           type: 'debt_payment',
           title: `Pay Off ${debt.name}`,
@@ -242,9 +309,17 @@ export class GoalsEnhancedService {
     // Savings Goals based on spending patterns
     const categorySpending = spendingAnalysis.categoryBreakdown;
     
-    // Vacation fund suggestion
+    // Vacation fund suggestion - Enhanced checking
     const entertainmentSpending = categorySpending['entertainment'] || 0;
-    if (entertainmentSpending > 200 && !existingGoals.some(g => g.type === 'vacation')) {
+    const hasVacationGoal = existingGoals.some(g => 
+      g.type === 'vacation' || 
+      g.name.toLowerCase().includes('vacation') ||
+      g.name.toLowerCase().includes('holiday') ||
+      g.name.toLowerCase().includes('travel') ||
+      g.description?.toLowerCase().includes('vacation')
+    );
+    
+    if (entertainmentSpending > 200 && !hasVacationGoal) {
       suggestions.push({
         type: 'vacation',
         title: 'Vacation Fund',
@@ -275,6 +350,22 @@ export class GoalsEnhancedService {
     }
 
     return suggestions.slice(0, 5); // Return top 5 suggestions
+  }
+
+  // Enhanced keyword matching for auto-categorization
+  private getGoalKeywords(goalType: string): string[] {
+    const keywordMap: Record<string, string[]> = {
+      'emergency_fund': ['emergency', 'urgent', 'backup', 'reserve', 'safety', 'fund'],
+      'vacation': ['vacation', 'holiday', 'travel', 'trip', 'flight', 'hotel', 'tour'],
+      'house': ['house', 'home', 'property', 'mortgage', 'down payment', 'real estate'],
+      'debt_payment': ['debt', 'payment', 'loan', 'credit', 'installment', 'payoff'],
+      'investment': ['invest', 'portfolio', 'stock', 'bond', 'mutual fund', 'trading'],
+      'education': ['education', 'school', 'course', 'training', 'certification', 'tuition'],
+      'retirement': ['retirement', 'pension', 'ira', '401k', 'senior', 'elderly'],
+      'savings': ['saving', 'save', 'deposit', 'accumulate', 'reserve']
+    };
+
+    return keywordMap[goalType] || [];
   }
 
   // Smart milestone creation

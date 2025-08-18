@@ -621,6 +621,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Debt payment processed: ${transaction.amount} for debt ID: ${transaction.debtId}`);
       }
       
+      // Process Goals Auto-Tracking for all transactions
+      try {
+        await goalsEnhancedService.processTransactionForGoals(transaction.id, workspaceId);
+        console.log(`Goals auto-tracking processed for transaction ID: ${transaction.id}`);
+      } catch (error) {
+        console.error('Goals auto-tracking failed:', error);
+        // Don't fail the transaction creation if goals tracking fails
+      }
+      
       // Check for other smart notifications triggers (excluding repayment processing)
       await checkNonRepaymentNotifications(workspaceId, transaction);
       

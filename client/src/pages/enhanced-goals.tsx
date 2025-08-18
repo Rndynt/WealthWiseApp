@@ -55,6 +55,72 @@ const enhancedGoalSchema = z.object({
 
 type EnhancedGoalForm = z.infer<typeof enhancedGoalSchema>;
 
+interface GoalMetrics {
+  totalGoals: number;
+  activeGoals: number;
+  completedGoals: number;
+  pausedGoals: number;
+  totalTargetAmount: number;
+  totalCurrentAmount: number;
+  averageProgress: number;
+  goalsByType: Record<string, number>;
+  goalsByPriority: Record<string, number>;
+}
+
+interface Goal {
+  id: number;
+  name: string;
+  description?: string;
+  type: string;
+  targetAmount: string;
+  currentAmount: string;
+  targetDate: string;
+  priority: string;
+  status: string;
+  isAutoTracking: boolean;
+  linkedAccountId?: number;
+  linkedDebtId?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GoalSuggestion {
+  type: string;
+  title: string;
+  description: string;
+  recommendedAmount: number;
+  priority: string;
+  reasoning: string;
+  confidence: number;
+  timeline: string;
+}
+
+interface GoalInsight {
+  id: number;
+  goalId: number;
+  type: string;
+  title: string;
+  message: string;
+  severity: string;
+  actionRequired: boolean;
+  isRead: boolean;
+  createdAt: string;
+}
+
+interface Account {
+  id: number;
+  name: string;
+  type: string;
+  balance: string;
+}
+
+interface Debt {
+  id: number;
+  name: string;
+  totalAmount: string;
+  remainingAmount: string;
+}
+
 interface EnhancedGoalsPageProps {
   workspaceId?: number;
 }
@@ -68,7 +134,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch goals data
-  const { data: goals = [], isLoading: goalsLoading, error: goalsError } = useQuery({
+  const { data: goals = [], isLoading: goalsLoading, error: goalsError } = useQuery<Goal[]>({
     queryKey: [`/api/workspaces/${workspaceId}/goals`],
     enabled: !!workspaceId,
   });
@@ -77,80 +143,72 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
     console.error('Error loading goals:', goalsError);
   }
 
-  // Fetch goal metrics
-  const { data: metrics = {} } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'],
+  // Fetch goal metrics - using proper backend API
+  const { data: metrics, isLoading: metricsLoading } = useQuery<GoalMetrics>({
+    queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`],
     enabled: !!workspaceId,
-    queryFn: () => Promise.resolve({ 
-      totalGoals: goals.length,
-      activeGoals: goals.filter((g: any) => g.status === 'active').length,
-      completedGoals: goals.filter((g: any) => g.status === 'completed').length,
-      averageProgress: goals.length > 0 ? goals.reduce((acc: number, g: any) => {
-        const progress = (parseFloat(g.currentAmount || '0') / parseFloat(g.targetAmount || '1')) * 100;
-        return acc + Math.min(progress, 100);
-      }, 0) / goals.length : 0,
-      goalsByType: goals.reduce((acc: any, g: any) => {
-        acc[g.type] = (acc[g.type] || 0) + 1;
-        return acc;
-      }, {}),
-      goalsByPriority: goals.reduce((acc: any, g: any) => {
-        acc[g.priority] = (acc[g.priority] || 0) + 1;
-        return acc;
-      }, {}),
-      totalTargetAmount: goals.reduce((sum: number, g: any) => sum + parseFloat(g.targetAmount || '0'), 0),
-      totalCurrentAmount: goals.reduce((sum: number, g: any) => sum + parseFloat(g.currentAmount || '0'), 0)
-    })
   });
 
   // Fetch AI-powered goal suggestions
-  const { data: suggestions = [], isLoading: suggestionsLoading } = useQuery({
+  const { data: suggestions = [], isLoading: suggestionsLoading } = useQuery<GoalSuggestion[]>({
     queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`],
     enabled: !!workspaceId,
-    staleTime: 5 * 60 * 1000, // 5 minutes - AI suggestions don't change that often
+    staleTime: 1 * 60 * 1000, // Reduced to 1 minute for better responsiveness
   });
 
   // Fetch AI-powered insights
-  const { data: insights = [], isLoading: insightsLoading } = useQuery({
+  const { data: insights = [], isLoading: insightsLoading } = useQuery<GoalInsight[]>({
     queryKey: [`/api/workspaces/${workspaceId}/goals/insights`],
     enabled: !!workspaceId,
-    staleTime: 3 * 60 * 1000, // 3 minutes - insights can be more frequent
+    staleTime: 2 * 60 * 1000, // Reduced to 2 minutes for better responsiveness
   });
 
   // Fetch accounts and debts for linking
-  const { data: accounts = [] } = useQuery({
+  const { data: accounts = [] } = useQuery<Account[]>({
     queryKey: [`/api/workspaces/${workspaceId}/accounts`],
     enabled: !!workspaceId,
   });
 
-  const { data: debts = [] } = useQuery({
+  const { data: debts = [] } = useQuery<Debt[]>({
     queryKey: [`/api/workspaces/${workspaceId}/debts`],
     enabled: !!workspaceId,
   });
 
-  // Create goal mutation
+  // Create goal mutation with comprehensive cache invalidation
   const createGoalMutation = useMutation({
     mutationFn: (data: EnhancedGoalForm) => 
       apiRequest('POST', `/api/workspaces/${workspaceId}/goals`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
+      // Invalidate all goal-related queries immediately
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/insights`] });
       setShowCreateDialog(false);
+      
+      // Show success feedback
+      console.log('Goal created successfully! Refreshing data...');
     },
   });
 
-  // Update goal mutation
+  // Update goal mutation with comprehensive cache invalidation
   const updateGoalMutation = useMutation({
     mutationFn: ({ goalId, data }: { goalId: number; data: Partial<EnhancedGoalForm> }) =>
       apiRequest('PATCH', `/api/workspaces/${workspaceId}/goals/${goalId}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
+      // Invalidate all goal-related queries immediately
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/insights`] });
+      
+      console.log('Goal updated successfully! Refreshing data...');
     },
   });
 
-  // Create goal from suggestion
+  // Create goal from suggestion with immediate cache refresh
   const createFromSuggestionMutation = useMutation({
-    mutationFn: (suggestion: any) =>
+    mutationFn: (suggestion: GoalSuggestion) =>
       apiRequest('POST', `/api/workspaces/${workspaceId}/goals`, {
         name: suggestion.title,
         description: suggestion.description,
@@ -163,8 +221,16 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
         createMilestones: true,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'suggestions'] });
+      // Force immediate refresh of all related data
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/metrics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/insights`] });
+      
+      // Also refetch suggestions immediately to reflect the new goal creation
+      queryClient.refetchQueries({ queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`] });
+      
+      console.log('Goal created from suggestion! Refreshing all data...');
     },
   });
 
