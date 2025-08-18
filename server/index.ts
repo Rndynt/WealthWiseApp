@@ -54,13 +54,13 @@ app.use((req, res, next) => {
   console.log("Environment:", process.env.NODE_ENV);
   console.log("App env:", app.get("env"));
 
-  // Serve static files for now to get the app working
-  serveStatic(app);
-
-  // Use port 5000 as configured in .replit file
+  // Use port 5000 as configured for Replit workflows
   // this serves both the API and the client.
   const port = 5000;
-  server.listen(port, "0.0.0.0", () => {
+  const httpServer = server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
+
+  // For now use static serving until Vite configuration is fixed
+  serveStatic(app);
 })();
