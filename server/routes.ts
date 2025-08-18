@@ -527,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workspaceId = parseInt(req.params.workspaceId);
 
       // Check category limits untuk basic package users
-      const accountLimit = await storage.checkAccountLimit(workspaceId, req.user.userId);
+      const accountLimit = await storage.checkAccountLimit(workspaceId, req.user!.userId);
       if (!accountLimit.canCreate) {
         return res.status(403).json({
           message: `Anda telah mencapai batas maksimal account untuk paket basic (${accountLimit.current}/${accountLimit.limit}). Upgrade ke paket premium untuk account lebih banyak.`,

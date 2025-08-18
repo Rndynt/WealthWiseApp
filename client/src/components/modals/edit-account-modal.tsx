@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -40,10 +40,21 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
     resolver: zodResolver(editAccountSchema),
     defaultValues: {
       name: account?.name || '',
-      type: account?.type || 'checking',
+      type: (account?.type as any) || 'checking',
       balance: account?.balance || '0',
     },
   });
+
+  // Reset form when account changes
+  React.useEffect(() => {
+    if (account) {
+      form.reset({
+        name: account.name,
+        type: account.type as any,
+        balance: account.balance,
+      });
+    }
+  }, [account, form]);
 
   const updateMutation = useMutation({
     mutationFn: (data: EditAccountFormData) =>
