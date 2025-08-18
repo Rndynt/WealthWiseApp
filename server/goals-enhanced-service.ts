@@ -656,19 +656,7 @@ export class GoalsEnhancedService {
     }
   }
 
-  // Helper methods
-  private getGoalKeywords(goalType: string): string[] {
-    const keywordMap: Record<string, string[]> = {
-      emergency_fund: ['emergency', 'safety', 'reserve'],
-      vacation: ['vacation', 'travel', 'trip', 'holiday'],
-      house: ['house', 'home', 'property', 'mortgage', 'down payment'],
-      education: ['education', 'course', 'learning', 'school', 'training'],
-      investment: ['investment', 'stock', 'bond', 'portfolio'],
-      retirement: ['retirement', 'pension', '401k', 'ira'],
-    };
-
-    return keywordMap[goalType] || [];
-  }
+  // Helper methods (duplicate removed)
 
   private generateMilestoneReward(order: number, total: number, goalType: string): string {
     const rewardSuggestions: Record<string, string[]> = {
