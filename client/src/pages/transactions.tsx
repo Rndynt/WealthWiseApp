@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { PageContainer, TableContainer } from '@/components/ui/page-container';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransactionsProps {
   workspaceId: number | undefined;
@@ -52,6 +53,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const isMobile = useIsMobile();
 
   if (!workspaceId) {
     return (
@@ -206,78 +208,77 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
         </Select>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-3">
         {filteredTransactions.length > 0 ? (
           filteredTransactions.map((transaction) => {
             const amount = getAmountDisplay(transaction);
             return (
               <Card key={transaction.id} className="hover:shadow-sm transition-all duration-200 group border-l-4 border-l-blue-500 cursor-pointer">
                 <CardContent 
-                  className="p-2"
+                  className="p-4"
                   onClick={() => setSelectedTransaction(transaction)}
                 >
-                  <div className="flex items-start gap-2">
-                    {/* Category Icon - Very Small */}
-                    <div className="flex-shrink-0 mt-0.5">
+                  <div className="flex items-start gap-3">
+                    {/* Category Icon */}
+                    <div className="flex-shrink-0 mt-1">
                       {transaction.categoryId ? (
-                        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px]">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm">
                           {(() => {
                             const category = categories?.find(cat => cat.id === transaction.categoryId);
                             return category ? (iconMap[category.icon] || category.icon) : '📝';
                           })()}
                         </div>
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                          <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ArrowUpDown className="h-4 w-4 text-gray-500" />
                         </div>
                       )}
                     </div>
 
-                    {/* Transaction Content - Very Compact */}
+                    {/* Transaction Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          {/* Title and Amount on same line for mobile */}
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-medium text-gray-900 dark:text-white text-xs truncate flex-1">
-                              {transaction.description}
-                            </h3>
-                            <p className={`font-semibold text-xs ${amount.color} flex-shrink-0`}>
-                              {amount.text}
-                            </p>
-                          </div>
-                          
-                          {/* Meta info and badge on second line */}
-                          <div className="flex items-center justify-between gap-1 mt-1">
-                            <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                              <span className="truncate max-w-[80px]">{getAccountName(transaction.accountId)}</span>
-                              <span>•</span>
-                              <span>{format(new Date(transaction.date), 'dd MMM')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Badge className={`${getTransactionTypeColor(transaction.type)} text-[8px] px-1 py-0 h-4`}>
-                                {transaction.type}
-                              </Badge>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTransaction(transaction);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
-                              >
-                                <Edit className="h-3 w-3 text-gray-500" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeletingTransaction(transaction);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded"
-                              >
-                                <Trash2 className="h-3 w-3 text-red-500" />
-                              </button>
-                            </div>
-                          </div>
+                      {/* Title and Amount */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate flex-1">
+                          {transaction.description}
+                        </h3>
+                        <p className={`font-semibold text-sm ${amount.color} flex-shrink-0`}>
+                          {amount.text}
+                        </p>
+                      </div>
+                      
+                      {/* Meta info and Actions */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 text-xs text-gray-500 flex-1 min-w-0">
+                          <span className="truncate">{getAccountName(transaction.accountId)}</span>
+                          <span>•</span>
+                          <span className="flex-shrink-0">{format(new Date(transaction.date), 'dd MMM')}</span>
+                          <span>•</span>
+                          <Badge className={`${getTransactionTypeColor(transaction.type)} text-[10px] px-1.5 py-0.5 h-5 ml-1`}>
+                            {transaction.type}
+                          </Badge>
+                        </div>
+                        
+                        {/* Action Buttons - Always visible on mobile, hover on desktop */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTransaction(transaction);
+                            }}
+                            className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          >
+                            <Edit className="h-3.5 w-3.5 text-gray-500" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingTransaction(transaction);
+                            }}
+                            className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-100 dark:hover:bg-red-900 rounded"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -725,6 +726,10 @@ function DeleteTransactionModal({
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
       const response = await fetch(`/api/transactions/${transaction!.id}`, {
         method: 'DELETE',
         headers: {
@@ -732,8 +737,19 @@ function DeleteTransactionModal({
           'Content-Type': 'application/json'
         }
       });
-      if (!response.ok) throw new Error('Failed to delete transaction');
-      return response.json();
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Delete error response:', errorData);
+        throw new Error(`Failed to delete transaction: ${response.status} ${response.statusText}`);
+      }
+      
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      }
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });

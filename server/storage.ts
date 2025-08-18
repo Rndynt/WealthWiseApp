@@ -486,6 +486,15 @@ export class DatabaseStorage implements IStorage {
     return updatedTransaction;
   }
 
+  async getTransaction(id: number): Promise<any> {
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .limit(1);
+    return transaction;
+  }
+
   async deleteTransaction(id: number): Promise<void> {
     await db.delete(transactions).where(eq(transactions.id, id));
   }
