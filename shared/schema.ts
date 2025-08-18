@@ -245,6 +245,21 @@ export const goalContributions = pgTable("goal_contributions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Goal match audit table - tracks auto-tracking decisions
+export const goalMatchAudits = pgTable("goal_match_audits", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id").references(() => transactions.id).notNull(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  selectedGoalId: integer("selected_goal_id").references(() => goals.id),
+  matchedGoalsData: json("matched_goals_data").notNull(), // All scored goals and criteria
+  decision: text("decision").notNull(), // 'matched' | 'no_match' | 'multiple_ties'
+  reasoning: text("reasoning").notNull(),
+  confidence: decimal("confidence", { precision: 3, scale: 2 }), // 0.00-1.00
+  totalScore: decimal("total_score", { precision: 5, scale: 2 }),
+  wasTracked: boolean("was_tracked").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Goal Milestones table - detailed milestone tracking
 export const goalMilestones = pgTable("goal_milestones", {
   id: serial("id").primaryKey(),
@@ -628,6 +643,11 @@ export const insertGoalInsightSchema = createInsertSchema(goalInsights).omit({
   createdAt: true,
 });
 
+export const insertGoalMatchAuditSchema = createInsertSchema(goalMatchAudits).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions).omit({
   id: true,
   createdAt: true,
@@ -729,3 +749,6 @@ export type InsertGoalMilestone = z.infer<typeof insertGoalMilestoneSchema>;
 
 export type GoalInsight = typeof goalInsights.$inferSelect;
 export type InsertGoalInsight = z.infer<typeof insertGoalInsightSchema>;
+
+export type GoalMatchAudit = typeof goalMatchAudits.$inferSelect;
+export type InsertGoalMatchAudit = z.infer<typeof insertGoalMatchAuditSchema>;
