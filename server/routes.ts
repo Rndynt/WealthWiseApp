@@ -28,6 +28,7 @@ declare global {
 
 const storage = new DatabaseStorage();
 import { goalsService } from './goals-service';
+import { aiGoalsService } from './ai-goals-service';
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -1426,27 +1427,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Smart Goal Suggestions - MUST BE BEFORE /:id routes
+  // AI-Powered Goal Suggestions - MUST BE BEFORE /:id routes
   app.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      const suggestions = await storage.getSmartGoalSuggestions(workspaceId);
+      
+      // Gather financial data for AI analysis
+      const [transactions, accounts, budgets, goals, debts] = await Promise.all([
+        storage.getWorkspaceTransactions(workspaceId, 100), // Recent 100 transactions
+        storage.getWorkspaceAccounts(workspaceId),
+        storage.getWorkspaceBudgets(workspaceId),
+        storage.getGoalsByWorkspace(workspaceId),
+        storage.getWorkspaceDebts(workspaceId)
+      ]);
+
+      // Calculate financial metrics
+      const recentTransactions = transactions.slice(-30); // Last 30 transactions
+      const monthlyIncome = recentTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const monthlyExpenses = recentTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const financialData = {
+        transactions: recentTransactions,
+        accounts,
+        budgets,
+        goals,
+        debts,
+        monthlyIncome,
+        monthlyExpenses
+      };
+
+      const suggestions = await aiGoalsService.generateGoalSuggestions(financialData);
       res.json(suggestions);
     } catch (error) {
-      console.error("Failed to get goal suggestions:", error);
+      console.error("Failed to get AI goal suggestions:", error);
       res.status(500).json({ message: "Failed to get goal suggestions" });
     }
   });
 
-  // Goal Insights API - MUST BE BEFORE /:id routes
+  // AI-Powered Goal Insights API - MUST BE BEFORE /:id routes
   app.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      const limit = parseInt(req.query.limit as string) || 50;
-      const insights = await storage.getWorkspaceGoalInsights(workspaceId, limit);
+      
+      // Gather financial data for AI analysis
+      const [transactions, goals, budgets] = await Promise.all([
+        storage.getWorkspaceTransactions(workspaceId, 50), // Recent 50 transactions
+        storage.getGoalsByWorkspace(workspaceId),
+        storage.getWorkspaceBudgets(workspaceId)
+      ]);
+
+      // Calculate financial metrics
+      const recentTransactions = transactions.slice(-30);
+      const monthlyIncome = recentTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const monthlyExpenses = recentTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const financialData = {
+        transactions: recentTransactions,
+        goals,
+        budgets,
+        monthlyIncome,
+        monthlyExpenses
+      };
+
+      const insights = await aiGoalsService.generateGoalInsights(financialData);
       res.json(insights);
     } catch (error) {
-      console.error("Failed to get goal insights:", error);
+      console.error("Failed to get AI goal insights:", error);
       res.status(500).json({ message: "Failed to get goal insights" });
     }
   });
