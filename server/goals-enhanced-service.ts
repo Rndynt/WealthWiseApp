@@ -181,12 +181,12 @@ export class GoalsEnhancedService {
         }
       }
 
-      // Process tracking for relevant transaction types
-      const shouldProcessTransaction = (
-        (transaction[0].type === 'expense' || transaction[0].type === 'transfer') && 
-        parseFloat(transaction[0].amount) > 0
-      ) || (
-        transaction[0].type === 'income' && goal.type === 'savings'
+      // Enhanced logic: Process tracking based on goal type and transaction type relevance
+      const shouldProcessTransaction = this.shouldTrackTransactionForGoal(
+        transaction[0].type,
+        goal.type,
+        parseFloat(transaction[0].amount),
+        matchingReason
       );
 
       if (shouldTrack && shouldProcessTransaction) {
@@ -366,6 +366,61 @@ export class GoalsEnhancedService {
     };
 
     return keywordMap[goalType] || [];
+  }
+
+  // Enhanced transaction relevance logic for goal tracking
+  private shouldTrackTransactionForGoal(
+    transactionType: string,
+    goalType: string,
+    amount: number,
+    matchingReason: string
+  ): boolean {
+    if (amount <= 0) return false;
+
+    // Account/Debt linking always takes priority (regardless of transaction type)
+    if (matchingReason.includes('Account:') || matchingReason.includes('Debt:')) {
+      return this.isTransactionRelevantForLinkedGoal(transactionType, goalType);
+    }
+
+    // Smart categorization based on goal type and transaction type
+    const relevanceMatrix: Record<string, string[]> = {
+      // Savings-related goals: Income contributions, savings transactions, transfers to savings accounts
+      'savings': ['income', 'saving', 'transfer'],
+      'emergency_fund': ['income', 'saving', 'transfer'],
+      'retirement': ['income', 'saving', 'transfer'],
+      
+      // Investment goals: Income for investment, savings for investment
+      'investment': ['income', 'saving', 'transfer'],
+      
+      // Expense-based goals: Expenses that contribute to the goal
+      'vacation': ['expense', 'saving'], // Vacation spending + savings for vacation
+      'house': ['income', 'saving', 'expense'], // Income/savings + house-related expenses
+      'education': ['expense', 'saving'], // Education expenses + savings for education
+      
+      // Debt payment goals: Repayments, debt payments, transfers to pay debt
+      'debt_payment': ['repayment', 'debt', 'transfer', 'expense']
+    };
+
+    const relevantTypes = relevanceMatrix[goalType] || [];
+    return relevantTypes.includes(transactionType);
+  }
+
+  // Check transaction relevance for linked accounts/debts
+  private isTransactionRelevantForLinkedGoal(transactionType: string, goalType: string): boolean {
+    // For account-linked goals
+    if (goalType === 'savings' || goalType === 'emergency_fund' || goalType === 'retirement') {
+      // Track income, savings, and inbound transfers to savings accounts
+      return ['income', 'saving', 'transfer'].includes(transactionType);
+    }
+
+    // For debt-linked goals
+    if (goalType === 'debt_payment') {
+      // Track repayments, debt payments, and transfers for debt payment
+      return ['repayment', 'debt', 'transfer', 'expense'].includes(transactionType);
+    }
+
+    // For other goal types with linked accounts
+    return ['income', 'saving', 'expense', 'transfer'].includes(transactionType);
   }
 
   // Smart milestone creation
