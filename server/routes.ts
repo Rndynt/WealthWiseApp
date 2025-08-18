@@ -669,11 +669,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/transactions/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid transaction ID" });
+      }
+
+      // Check if transaction exists and belongs to user's workspace
+      const transaction = await storage.getTransaction(id);
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
       await storage.deleteTransaction(id);
-      res.json({ message: "Transaction deleted successfully" });
+      res.json({ message: "Transaction deleted successfully", success: true });
     } catch (error) {
       console.error("Transaction delete error:", error);
-      res.status(400).json({ message: "Failed to delete transaction" });
+      res.status(500).json({ 
+        message: "Failed to delete transaction", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
