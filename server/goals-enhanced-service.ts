@@ -68,24 +68,20 @@ export class GoalsEnhancedService {
 
     if (!goal[0] || !goal[0].isAutoTracking) return;
 
-    const linkedAccountId = goal[0].linkedAccountId;
     const linkedDebtId = goal[0].linkedDebtId;
+    let newAmount = 0;
 
-    let newAmount = parseFloat(goal[0].currentAmount);
+    // ✅ FIXED: Always calculate from contributions for accuracy
+    const contributions = await db.select()
+      .from(goalContributions)
+      .where(and(
+        eq(goalContributions.goalId, goalId),
+        eq(goalContributions.workspaceId, workspaceId)
+      ));
 
-    // Update from linked account balance
-    if (linkedAccountId) {
-      const account = await db.select().from(accounts)
-        .where(eq(accounts.id, linkedAccountId))
-        .limit(1);
-      
-      if (account[0]) {
-        newAmount = parseFloat(account[0].balance);
-      }
-    }
-
-    // Update from debt payment progress (for debt payment goals)
-    if (linkedDebtId && goal[0].type === 'debt_payment') {
+    // Calculate total contributions based on goal type logic
+    if (goal[0].type === 'debt_payment' && linkedDebtId) {
+      // For debt payment goals: use debt payment progress
       const debt = await db.select().from(debts)
         .where(eq(debts.id, linkedDebtId))
         .limit(1);
@@ -94,19 +90,29 @@ export class GoalsEnhancedService {
         const paidAmount = parseFloat(debt[0].totalAmount) - parseFloat(debt[0].remainingAmount);
         newAmount = paidAmount;
       }
+    } else {
+      // For all other goals: calculate from actual contributions
+      newAmount = contributions.reduce((sum, contrib) => {
+        const contributionAmount = parseFloat(contrib.amount);
+        
+        // Apply proper contribution logic based on goal type and transaction type
+        if (goal[0].type === 'vacation' || goal[0].type === 'house') {
+          // For vacation/house: positive contributions from savings, negative from expenses
+          const transaction = contrib.contributionType === 'transaction' || contrib.contributionType === 'auto_categorized';
+          const description = contrib.source?.toLowerCase() || '';
+          
+          // If it's an expense (not savings), it reduces the goal amount
+          if (description.includes('expense') || description.includes('flight') || description.includes('consultation')) {
+            return sum; // Don't add expenses to goal progress for vacation/house
+          }
+        }
+        
+        return sum + contributionAmount;
+      }, 0);
     }
 
-    // Calculate from related transactions if no linked account
-    if (!linkedAccountId && !linkedDebtId) {
-      const contributions = await db.select()
-        .from(goalContributions)
-        .where(and(
-          eq(goalContributions.goalId, goalId),
-          eq(goalContributions.workspaceId, workspaceId)
-        ));
-
-      newAmount = contributions.reduce((sum, contrib) => sum + parseFloat(contrib.amount), 0);
-    }
+    // Ensure newAmount is not negative
+    newAmount = Math.max(0, newAmount);
 
     // Update goal progress
     await db.update(goals)
