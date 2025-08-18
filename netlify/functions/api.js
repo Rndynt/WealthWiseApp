@@ -51,7 +51,7 @@ var require_depd = __commonJS({
       }
       return false;
     }
-    function convertDataDescriptorToAccessor(obj, prop, message) {
+    function convertDataDescriptorToAccessor(obj, prop, message2) {
       var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
       var value = descriptor.value;
       descriptor.get = function getter() {
@@ -91,8 +91,8 @@ var require_depd = __commonJS({
       var stack = getStack();
       var site = callSiteLocation(stack[1]);
       var file = site[0];
-      function deprecate(message) {
-        log.call(deprecate, message);
+      function deprecate(message2) {
+        log.call(deprecate, message2);
       }
       deprecate._file = file;
       deprecate._ignored = isignored(namespace);
@@ -121,7 +121,7 @@ var require_depd = __commonJS({
       var str = process.env.TRACE_DEPRECATION || "";
       return containsNamespace(str, namespace);
     }
-    function log(message, site) {
+    function log(message2, site) {
       var haslisteners = eehaslisteners(process, "deprecation");
       if (!haslisteners && this._ignored) {
         return;
@@ -160,7 +160,7 @@ var require_depd = __commonJS({
         return;
       }
       this._warned[key] = true;
-      var msg = message;
+      var msg = message2;
       if (!msg) {
         msg = callSite === depSite || !callSite.name ? defaultMessage(depSite) : defaultMessage(callSite);
       }
@@ -169,8 +169,8 @@ var require_depd = __commonJS({
         process.emit("deprecation", err);
         return;
       }
-      var format = process.stderr.isTTY ? formatColor : formatPlain;
-      var output = format.call(this, msg, caller, stack.slice(i));
+      var format2 = process.stderr.isTTY ? formatColor : formatPlain;
+      var output = format2.call(this, msg, caller, stack.slice(i));
       process.stderr.write(output + "\n", "utf8");
     }
     function callSiteLocation(callSite) {
@@ -246,7 +246,7 @@ var require_depd = __commonJS({
     function prepareObjectStackTrace(obj, stack) {
       return stack;
     }
-    function wrapfunction(fn, message) {
+    function wrapfunction(fn, message2) {
       if (typeof fn !== "function") {
         throw new TypeError("argument fn must be a function");
       }
@@ -261,10 +261,10 @@ var require_depd = __commonJS({
         "message",
         "site",
         '"use strict"\nreturn function (' + args + ") {log.call(deprecate, message, site)\nreturn fn.apply(this, arguments)\n}"
-      )(fn, log, this, message, site);
+      )(fn, log, this, message2, site);
       return deprecatedfn;
     }
-    function wrapproperty(obj, prop, message) {
+    function wrapproperty(obj, prop, message2) {
       if (!obj || typeof obj !== "object" && typeof obj !== "function") {
         throw new TypeError("argument obj must be object");
       }
@@ -280,25 +280,25 @@ var require_depd = __commonJS({
       var site = callSiteLocation(stack[1]);
       site.name = prop;
       if ("value" in descriptor) {
-        descriptor = convertDataDescriptorToAccessor(obj, prop, message);
+        descriptor = convertDataDescriptorToAccessor(obj, prop, message2);
       }
       var get = descriptor.get;
       var set = descriptor.set;
       if (typeof get === "function") {
         descriptor.get = function getter() {
-          log.call(deprecate, message, site);
+          log.call(deprecate, message2, site);
           return get.apply(this, arguments);
         };
       }
       if (typeof set === "function") {
         descriptor.set = function setter() {
-          log.call(deprecate, message, site);
+          log.call(deprecate, message2, site);
           return set.apply(this, arguments);
         };
       }
       Object.defineProperty(obj, prop, descriptor);
     }
-    function DeprecationError(namespace, message, stack) {
+    function DeprecationError(namespace, message2, stack) {
       var error = new Error();
       var stackString;
       Object.defineProperty(error, "constructor", {
@@ -307,7 +307,7 @@ var require_depd = __commonJS({
       Object.defineProperty(error, "message", {
         configurable: true,
         enumerable: false,
-        value: message,
+        value: message2,
         writable: true
       });
       Object.defineProperty(error, "name", {
@@ -345,7 +345,7 @@ var require_bytes = __commonJS({
   "node_modules/bytes/index.js"(exports, module) {
     "use strict";
     module.exports = bytes;
-    module.exports.format = format;
+    module.exports.format = format2;
     module.exports.parse = parse;
     var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g;
     var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/;
@@ -363,11 +363,11 @@ var require_bytes = __commonJS({
         return parse(value);
       }
       if (typeof value === "number") {
-        return format(value, options);
+        return format2(value, options);
       }
       return null;
     }
-    function format(value, options) {
+    function format2(value, options) {
       if (!Number.isFinite(value)) {
         return null;
       }
@@ -439,9 +439,9 @@ var require_content_type = __commonJS({
     var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
     var QUOTE_REGEXP = /([\\"])/g;
     var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    exports.format = format;
+    exports.format = format2;
     exports.parse = parse;
-    function format(obj) {
+    function format2(obj) {
       if (!obj || typeof obj !== "object") {
         throw new TypeError("argument obj is required");
       }
@@ -480,16 +480,16 @@ var require_content_type = __commonJS({
       var obj = new ContentType(type.toLowerCase());
       if (index !== -1) {
         var key;
-        var match;
+        var match2;
         var value;
         PARAM_REGEXP.lastIndex = index;
-        while (match = PARAM_REGEXP.exec(header)) {
-          if (match.index !== index) {
+        while (match2 = PARAM_REGEXP.exec(header)) {
+          if (match2.index !== index) {
             throw new TypeError("invalid parameter format");
           }
-          index += match[0].length;
-          key = match[1].toLowerCase();
-          value = match[2];
+          index += match2[0].length;
+          key = match2[1].toLowerCase();
+          value = match2[2];
           if (value.charCodeAt(0) === 34) {
             value = value.slice(1, -1);
             if (value.indexOf("\\") !== -1) {
@@ -655,9 +655,9 @@ var require_statuses = __commonJS({
     function createMessageToStatusCodeMap(codes2) {
       var map = {};
       Object.keys(codes2).forEach(function forEachCode(code) {
-        var message = codes2[code];
+        var message2 = codes2[code];
         var status2 = Number(code);
-        map[message.toLowerCase()] = status2;
+        map[message2.toLowerCase()] = status2;
       });
       return map;
     }
@@ -666,10 +666,10 @@ var require_statuses = __commonJS({
         return Number(code);
       });
     }
-    function getStatusCode(message) {
-      var msg = message.toLowerCase();
+    function getStatusCode(message2) {
+      var msg = message2.toLowerCase();
       if (!Object.prototype.hasOwnProperty.call(status.code, msg)) {
-        throw new Error('invalid status message: "' + message + '"');
+        throw new Error('invalid status message: "' + message2 + '"');
       }
       return status.code[msg];
     }
@@ -822,8 +822,8 @@ var require_http_errors = __commonJS({
     }
     function createClientErrorConstructor(HttpError, name, code) {
       var className = toClassName(name);
-      function ClientError(message) {
-        var msg = message != null ? message : statuses.message[code];
+      function ClientError(message2) {
+        var msg = message2 != null ? message2 : statuses.message[code];
         var err = new Error(msg);
         Error.captureStackTrace(err, ClientError);
         setPrototypeOf(err, ClientError.prototype);
@@ -861,8 +861,8 @@ var require_http_errors = __commonJS({
     }
     function createServerErrorConstructor(HttpError, name, code) {
       var className = toClassName(name);
-      function ServerError(message) {
-        var msg = message != null ? message : statuses.message[code];
+      function ServerError(message2) {
+        var msg = message2 != null ? message2 : statuses.message[code];
         var err = new Error(msg);
         Error.captureStackTrace(err, ServerError);
         setPrototypeOf(err, ServerError.prototype);
@@ -943,14 +943,14 @@ var require_ms = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -1060,17 +1060,17 @@ var require_debug = __commonJS({
           args.unshift("%O");
         }
         var index = 0;
-        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-          if (match === "%%") return match;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format2) {
+          if (match2 === "%%") return match2;
           index++;
-          var formatter = exports.formatters[format];
+          var formatter = exports.formatters[format2];
           if ("function" === typeof formatter) {
             var val = args[index];
-            match = formatter.call(self, val);
+            match2 = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
-          return match;
+          return match2;
         });
         exports.formatArgs.call(self, args);
         var logFn = debug.log || exports.log || console.log.bind(console);
@@ -1168,10 +1168,10 @@ var require_browser = __commonJS({
       args.splice(1, 0, c, "color: inherit");
       var index = 0;
       var lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, function(match) {
-        if ("%%" === match) return;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
         index++;
-        if ("%c" === match) {
+        if ("%c" === match2) {
           lastC = index;
         }
       });
@@ -5382,9 +5382,9 @@ var require_media_typer = __commonJS({
     var subtypeNameRegExp = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.-]{0,126}$/;
     var typeNameRegExp = /^[A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126}$/;
     var typeRegExp = /^ *([A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126})\/([A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}) *$/;
-    exports.format = format;
+    exports.format = format2;
     exports.parse = parse;
-    function format(obj) {
+    function format2(obj) {
       if (!obj || typeof obj !== "object") {
         throw new TypeError("argument obj is required");
       }
@@ -5431,18 +5431,18 @@ var require_media_typer = __commonJS({
       var index = string.indexOf(";");
       var type = index !== -1 ? string.substr(0, index) : string;
       var key;
-      var match;
+      var match2;
       var obj = splitType(type);
       var params = {};
       var value;
       paramRegExp.lastIndex = index;
-      while (match = paramRegExp.exec(string)) {
-        if (match.index !== index) {
+      while (match2 = paramRegExp.exec(string)) {
+        if (match2.index !== index) {
           throw new TypeError("invalid parameter format");
         }
-        index += match[0].length;
-        key = match[1].toLowerCase();
-        value = match[2];
+        index += match2[0].length;
+        key = match2[1].toLowerCase();
+        value = match2[2];
         if (value[0] === '"') {
           value = value.substr(1, value.length - 2).replace(qescRegExp, "$1");
         }
@@ -5473,12 +5473,12 @@ var require_media_typer = __commonJS({
       return '"' + str.replace(quoteRegExp, "\\$1") + '"';
     }
     function splitType(string) {
-      var match = typeRegExp.exec(string.toLowerCase());
-      if (!match) {
+      var match2 = typeRegExp.exec(string.toLowerCase());
+      if (!match2) {
         throw new TypeError("invalid media type");
       }
-      var type = match[1];
-      var subtype = match[2];
+      var type = match2[1];
+      var subtype = match2[2];
       var suffix;
       var index = subtype.lastIndexOf("+");
       if (index !== -1) {
@@ -14047,12 +14047,12 @@ var require_mime_types = __commonJS({
       if (!type || typeof type !== "string") {
         return false;
       }
-      var match = EXTRACT_TYPE_REGEXP.exec(type);
-      var mime = match && db2[match[1].toLowerCase()];
+      var match2 = EXTRACT_TYPE_REGEXP.exec(type);
+      var mime = match2 && db2[match2[1].toLowerCase()];
       if (mime && mime.charset) {
         return mime.charset;
       }
-      if (match && TEXT_TYPE_REGEXP.test(match[1])) {
+      if (match2 && TEXT_TYPE_REGEXP.test(match2[1])) {
         return "UTF-8";
       }
       return false;
@@ -14075,8 +14075,8 @@ var require_mime_types = __commonJS({
       if (!type || typeof type !== "string") {
         return false;
       }
-      var match = EXTRACT_TYPE_REGEXP.exec(type);
-      var exts = match && exports.extensions[match[1].toLowerCase()];
+      var match2 = EXTRACT_TYPE_REGEXP.exec(type);
+      var exts = match2 && exports.extensions[match2[1].toLowerCase()];
       if (!exts || !exts.length) {
         return false;
       }
@@ -14326,8 +14326,8 @@ var require_json = __commonJS({
       }
     }
     function firstchar(str) {
-      var match = FIRST_CHAR_REGEXP.exec(str);
-      return match ? match[1] : void 0;
+      var match2 = FIRST_CHAR_REGEXP.exec(str);
+      return match2 ? match2[1] : void 0;
     }
     function getCharset(req) {
       try {
@@ -14725,7 +14725,7 @@ var require_object_inspect = __commonJS({
       if (typeof globalThis !== "undefined" && obj === globalThis || typeof global !== "undefined" && obj === global) {
         return "{ [object globalThis] }";
       }
-      if (!isDate(obj) && !isRegExp(obj)) {
+      if (!isDate2(obj) && !isRegExp(obj)) {
         var ys = arrObjKeys(obj, inspect);
         var isPlainObject = gPO ? gPO(obj) === Object.prototype : obj instanceof Object || obj.constructor === Object;
         var protoTag = obj instanceof Object ? "" : "null prototype";
@@ -14756,7 +14756,7 @@ var require_object_inspect = __commonJS({
     function isArray(obj) {
       return toStr(obj) === "[object Array]" && canTrustToString(obj);
     }
-    function isDate(obj) {
+    function isDate2(obj) {
       return toStr(obj) === "[object Date]" && canTrustToString(obj);
     }
     function isRegExp(obj) {
@@ -15821,8 +15821,8 @@ var require_get_intrinsic = __commonJS({
         throw new $SyntaxError("invalid intrinsic syntax, expected opening `%`");
       }
       var result = [];
-      $replace(string, rePropName, function(match, number, quote, subString) {
-        result[result.length] = quote ? $replace(subString, reEscapeChar, "$1") : number || match;
+      $replace(string, rePropName, function(match2, number, quote, subString) {
+        result[result.length] = quote ? $replace(subString, reEscapeChar, "$1") : number || match2;
       });
       return result;
     };
@@ -16234,7 +16234,7 @@ var require_utils = __commonJS({
       }
     };
     var limit = 1024;
-    var encode = function encode2(str, defaultEncoder, charset, kind, format) {
+    var encode = function encode2(str, defaultEncoder, charset, kind, format2) {
       if (str.length === 0) {
         return str;
       }
@@ -16255,7 +16255,7 @@ var require_utils = __commonJS({
         var arr = [];
         for (var i = 0; i < segment.length; ++i) {
           var c = segment.charCodeAt(i);
-          if (c === 45 || c === 46 || c === 95 || c === 126 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || format === formats.RFC1738 && (c === 40 || c === 41)) {
+          if (c === 45 || c === 46 || c === 95 || c === 126 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || format2 === formats.RFC1738 && (c === 40 || c === 41)) {
             arr[arr.length] = segment.charAt(i);
             continue;
           }
@@ -16388,7 +16388,7 @@ var require_stringify = __commonJS({
       return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
     };
     var sentinel = {};
-    var stringify = function stringify2(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+    var stringify = function stringify2(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format2, formatter, encodeValuesOnly, charset, sideChannel) {
       var obj = object;
       var tmpSc = sideChannel;
       var step = 0;
@@ -16421,14 +16421,14 @@ var require_stringify = __commonJS({
       }
       if (obj === null) {
         if (strictNullHandling) {
-          return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix;
+          return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format2) : prefix;
         }
         obj = "";
       }
       if (isNonNullishPrimitive(obj) || utils.isBuffer(obj)) {
         if (encoder) {
-          var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, "key", format);
-          return [formatter(keyValue) + "=" + formatter(encoder(obj, defaults.encoder, charset, "value", format))];
+          var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, "key", format2);
+          return [formatter(keyValue) + "=" + formatter(encoder(obj, defaults.encoder, charset, "value", format2))];
         }
         return [formatter(prefix) + "=" + formatter(String(obj))];
       }
@@ -16478,7 +16478,7 @@ var require_stringify = __commonJS({
           sort,
           allowDots,
           serializeDate,
-          format,
+          format2,
           formatter,
           encodeValuesOnly,
           charset,
@@ -16504,14 +16504,14 @@ var require_stringify = __commonJS({
       if (typeof opts.charset !== "undefined" && opts.charset !== "utf-8" && opts.charset !== "iso-8859-1") {
         throw new TypeError("The charset option must be either utf-8, iso-8859-1, or undefined");
       }
-      var format = formats["default"];
+      var format2 = formats["default"];
       if (typeof opts.format !== "undefined") {
         if (!has.call(formats.formatters, opts.format)) {
           throw new TypeError("Unknown format option provided.");
         }
-        format = opts.format;
+        format2 = opts.format;
       }
-      var formatter = formats.formatters[format];
+      var formatter = formats.formatters[format2];
       var filter = defaults.filter;
       if (typeof opts.filter === "function" || isArray(opts.filter)) {
         filter = opts.filter;
@@ -16542,7 +16542,7 @@ var require_stringify = __commonJS({
         encoder: typeof opts.encoder === "function" ? opts.encoder : defaults.encoder,
         encodeValuesOnly: typeof opts.encodeValuesOnly === "boolean" ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
         filter,
-        format,
+        format: format2,
         formatter,
         serializeDate: typeof opts.serializeDate === "function" ? opts.serializeDate : defaults.serializeDate,
         skipNulls: typeof opts.skipNulls === "boolean" ? opts.skipNulls : defaults.skipNulls,
@@ -17162,14 +17162,14 @@ var require_ms2 = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -17279,17 +17279,17 @@ var require_debug2 = __commonJS({
           args.unshift("%O");
         }
         var index = 0;
-        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-          if (match === "%%") return match;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format2) {
+          if (match2 === "%%") return match2;
           index++;
-          var formatter = exports.formatters[format];
+          var formatter = exports.formatters[format2];
           if ("function" === typeof formatter) {
             var val = args[index];
-            match = formatter.call(self, val);
+            match2 = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
-          return match;
+          return match2;
         });
         exports.formatArgs.call(self, args);
         var logFn = debug.log || exports.log || console.log.bind(console);
@@ -17387,10 +17387,10 @@ var require_browser2 = __commonJS({
       args.splice(1, 0, c, "color: inherit");
       var index = 0;
       var lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, function(match) {
-        if ("%%" === match) return;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
         index++;
-        if ("%c" === match) {
+        if ("%c" === match2) {
           lastC = index;
         }
       });
@@ -17583,15 +17583,15 @@ var require_escape_html = __commonJS({
     module.exports = escapeHtml;
     function escapeHtml(string) {
       var str = "" + string;
-      var match = matchHtmlRegExp.exec(str);
-      if (!match) {
+      var match2 = matchHtmlRegExp.exec(str);
+      if (!match2) {
         return str;
       }
       var escape2;
       var html = "";
       var index = 0;
       var lastIndex = 0;
-      for (index = match.index; index < str.length; index++) {
+      for (index = match2.index; index < str.length; index++) {
         switch (str.charCodeAt(index)) {
           case 34:
             escape2 = "&quot;";
@@ -17723,8 +17723,8 @@ var require_finalhandler = __commonJS({
       process.nextTick(fn.bind.apply(fn, arguments));
     };
     var isFinished = onFinished.isFinished;
-    function createHtmlDocument(message) {
-      var body = escapeHtml(message).replace(NEWLINE_REGEXP, "<br>").replace(DOUBLE_SPACE_REGEXP, " &nbsp;");
+    function createHtmlDocument(message2) {
+      var body = escapeHtml(message2).replace(NEWLINE_REGEXP, "<br>").replace(DOUBLE_SPACE_REGEXP, " &nbsp;");
       return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>' + body + "</pre>\n</body>\n</html>\n";
     }
     module.exports = finalhandler;
@@ -17814,9 +17814,9 @@ var require_finalhandler = __commonJS({
     function headersSent(res) {
       return typeof res.headersSent !== "boolean" ? Boolean(res._header) : res.headersSent;
     }
-    function send(req, res, status, headers, message) {
+    function send(req, res, status, headers, message2) {
       function write() {
-        var body = createHtmlDocument(message);
+        var body = createHtmlDocument(message2);
         res.statusCode = status;
         if (req.httpVersionMajor < 2) {
           res.statusMessage = statuses.message[status];
@@ -17881,14 +17881,14 @@ var require_ms3 = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -17998,17 +17998,17 @@ var require_debug3 = __commonJS({
           args.unshift("%O");
         }
         var index = 0;
-        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-          if (match === "%%") return match;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format2) {
+          if (match2 === "%%") return match2;
           index++;
-          var formatter = exports.formatters[format];
+          var formatter = exports.formatters[format2];
           if ("function" === typeof formatter) {
             var val = args[index];
-            match = formatter.call(self, val);
+            match2 = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
-          return match;
+          return match2;
         });
         exports.formatArgs.call(self, args);
         var logFn = debug.log || exports.log || console.log.bind(console);
@@ -18106,10 +18106,10 @@ var require_browser3 = __commonJS({
       args.splice(1, 0, c, "color: inherit");
       var index = 0;
       var lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, function(match) {
-        if ("%%" === match) return;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
         index++;
-        if ("%c" === match) {
+        if ("%c" === match2) {
           lastC = index;
         }
       });
@@ -18357,46 +18357,46 @@ var require_path_to_regexp = __commonJS({
       }
       path2 = path2.replace(
         /\\.|(\/)?(\.)?:(\w+)(\(.*?\))?(\*)?(\?)?|[.*]|\/\(/g,
-        function(match, slash, format, key, capture, star, optional, offset) {
-          if (match[0] === "\\") {
-            backtrack += match;
+        function(match2, slash, format2, key, capture, star, optional, offset) {
+          if (match2[0] === "\\") {
+            backtrack += match2;
             pos += 2;
-            return match;
+            return match2;
           }
-          if (match === ".") {
+          if (match2 === ".") {
             backtrack += "\\.";
             extraOffset += 1;
             pos += 1;
             return "\\.";
           }
-          if (slash || format) {
+          if (slash || format2) {
             backtrack = "";
           } else {
             backtrack += path2.slice(pos, offset);
           }
-          pos = offset + match.length;
-          if (match === "*") {
+          pos = offset + match2.length;
+          if (match2 === "*") {
             extraOffset += 3;
             return "(.*)";
           }
-          if (match === "/(") {
+          if (match2 === "/(") {
             backtrack += "/";
             extraOffset += 2;
             return "/(?:";
           }
           slash = slash || "";
-          format = format ? "\\." : "";
+          format2 = format2 ? "\\." : "";
           optional = optional || "";
           capture = capture ? capture.replace(/\\.|\*/, function(m2) {
             return m2 === "*" ? "(.*)" : m2;
-          }) : backtrack ? "((?:(?!/|" + backtrack + ").)+?)" : "([^/" + format + "]+?)";
+          }) : backtrack ? "((?:(?!/|" + backtrack + ").)+?)" : "([^/" + format2 + "]+?)";
           keys.push({
             name: key,
             optional: !!optional,
             offset: offset + extraOffset
           });
-          var result = "(?:" + format + slash + capture + (star ? "((?:[/" + format + "].+?)?)" : "") + ")" + optional;
-          extraOffset += result.length - match.length;
+          var result = "(?:" + format2 + slash + capture + (star ? "((?:[/" + format2 + "].+?)?)" : "") + ")" + optional;
+          extraOffset += result.length - match2.length;
           return result;
         }
       );
@@ -18467,8 +18467,8 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path2) {
-      var match2;
+    Layer.prototype.match = function match2(path2) {
+      var match3;
       if (path2 != null) {
         if (this.regexp.fast_slash) {
           this.params = {};
@@ -18480,21 +18480,21 @@ var require_layer = __commonJS({
           this.path = path2;
           return true;
         }
-        match2 = this.regexp.exec(path2);
+        match3 = this.regexp.exec(path2);
       }
-      if (!match2) {
+      if (!match3) {
         this.params = void 0;
         this.path = void 0;
         return false;
       }
       this.params = {};
-      this.path = match2[0];
+      this.path = match3[0];
       var keys = this.keys;
       var params = this.params;
-      for (var i = 1; i < match2.length; i++) {
+      for (var i = 1; i < match3.length; i++) {
         var key = keys[i - 1];
         var prop = key.name;
-        var val = decode_param(match2[i]);
+        var val = decode_param(match3[i]);
         if (val !== void 0 || !hasOwnProperty.call(params, prop)) {
           params[prop] = val;
         }
@@ -18793,23 +18793,23 @@ var require_router = __commonJS({
           return done(layerError);
         }
         var layer;
-        var match;
+        var match2;
         var route;
-        while (match !== true && idx < stack.length) {
+        while (match2 !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path2);
+          match2 = matchLayer(layer, path2);
           route = layer.route;
-          if (typeof match !== "boolean") {
-            layerError = layerError || match;
+          if (typeof match2 !== "boolean") {
+            layerError = layerError || match2;
           }
-          if (match !== true) {
+          if (match2 !== true) {
             continue;
           }
           if (!route) {
             continue;
           }
           if (layerError) {
-            match = false;
+            match2 = false;
             continue;
           }
           var method = req.method;
@@ -18818,10 +18818,10 @@ var require_router = __commonJS({
             appendMethods(options, route._options());
           }
           if (!has_method && method !== "HEAD") {
-            match = false;
+            match2 = false;
           }
         }
-        if (match !== true) {
+        if (match2 !== true) {
           return done(layerError);
         }
         if (route) {
@@ -19280,7 +19280,7 @@ var require_content_disposition = __commonJS({
       var opts = options || {};
       var type = opts.type || "attachment";
       var params = createparams(filename, opts.fallback);
-      return format(new ContentDisposition(type, params));
+      return format2(new ContentDisposition(type, params));
     }
     function createparams(filename, fallback) {
       if (filename === void 0) {
@@ -19311,7 +19311,7 @@ var require_content_disposition = __commonJS({
       }
       return params;
     }
-    function format(obj) {
+    function format2(obj) {
       var parameters = obj.parameters;
       var type = obj.type;
       if (!type || typeof type !== "string" || !TOKEN_REGEXP.test(type)) {
@@ -19330,12 +19330,12 @@ var require_content_disposition = __commonJS({
       return string;
     }
     function decodefield(str) {
-      var match = EXT_VALUE_REGEXP.exec(str);
-      if (!match) {
+      var match2 = EXT_VALUE_REGEXP.exec(str);
+      if (!match2) {
         throw new TypeError("invalid extended field value");
       }
-      var charset = match[1].toLowerCase();
-      var encoded = match[2];
+      var charset = match2[1].toLowerCase();
+      var encoded = match2[2];
       var value;
       var binary = encoded.replace(HEX_ESCAPE_REPLACE_REGEXP, pdecode);
       switch (charset) {
@@ -19357,24 +19357,24 @@ var require_content_disposition = __commonJS({
       if (!string || typeof string !== "string") {
         throw new TypeError("argument string is required");
       }
-      var match = DISPOSITION_TYPE_REGEXP.exec(string);
-      if (!match) {
+      var match2 = DISPOSITION_TYPE_REGEXP.exec(string);
+      if (!match2) {
         throw new TypeError("invalid type format");
       }
-      var index = match[0].length;
-      var type = match[1].toLowerCase();
+      var index = match2[0].length;
+      var type = match2[1].toLowerCase();
       var key;
       var names = [];
       var params = {};
       var value;
-      index = PARAM_REGEXP.lastIndex = match[0].substr(-1) === ";" ? index - 1 : index;
-      while (match = PARAM_REGEXP.exec(string)) {
-        if (match.index !== index) {
+      index = PARAM_REGEXP.lastIndex = match2[0].substr(-1) === ";" ? index - 1 : index;
+      while (match2 = PARAM_REGEXP.exec(string)) {
+        if (match2.index !== index) {
           throw new TypeError("invalid parameter format");
         }
-        index += match[0].length;
-        key = match[1].toLowerCase();
-        value = match[2];
+        index += match2[0].length;
+        key = match2[1].toLowerCase();
+        value = match2[2];
         if (names.indexOf(key) !== -1) {
           throw new TypeError("invalid duplicate parameter");
         }
@@ -19445,14 +19445,14 @@ var require_ms4 = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -19562,17 +19562,17 @@ var require_debug4 = __commonJS({
           args.unshift("%O");
         }
         var index = 0;
-        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-          if (match === "%%") return match;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format2) {
+          if (match2 === "%%") return match2;
           index++;
-          var formatter = exports.formatters[format];
+          var formatter = exports.formatters[format2];
           if ("function" === typeof formatter) {
             var val = args[index];
-            match = formatter.call(self, val);
+            match2 = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
-          return match;
+          return match2;
         });
         exports.formatArgs.call(self, args);
         var logFn = debug.log || exports.log || console.log.bind(console);
@@ -19670,10 +19670,10 @@ var require_browser4 = __commonJS({
       args.splice(1, 0, c, "color: inherit");
       var index = 0;
       var lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, function(match) {
-        if ("%%" === match) return;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
         index++;
-        if ("%c" === match) {
+        if ("%c" === match2) {
           lastC = index;
         }
       });
@@ -19924,8 +19924,8 @@ var require_fresh = __commonJS({
         var etagStale = true;
         var matches = parseTokenList(noneMatch);
         for (var i = 0; i < matches.length; i++) {
-          var match = matches[i];
-          if (match === etag || match === "W/" + etag || "W/" + match === etag) {
+          var match2 = matches[i];
+          if (match2 === etag || match2 === "W/" + etag || "W/" + match2 === etag) {
             etagStale = false;
             break;
           }
@@ -20060,14 +20060,14 @@ var require_ms5 = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
+      var match2 = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -20361,11 +20361,11 @@ var require_send = __commonJS({
     SendStream.prototype.isPreconditionFailure = function isPreconditionFailure() {
       var req = this.req;
       var res = this.res;
-      var match = req.headers["if-match"];
-      if (match) {
+      var match2 = req.headers["if-match"];
+      if (match2) {
         var etag2 = res.getHeader("ETag");
-        return !etag2 || match !== "*" && parseTokenList(match).every(function(match2) {
-          return match2 !== etag2 && match2 !== "W/" + etag2 && "W/" + match2 !== etag2;
+        return !etag2 || match2 !== "*" && parseTokenList(match2).every(function(match3) {
+          return match3 !== etag2 && match3 !== "W/" + etag2 && "W/" + match3 !== etag2;
         });
       }
       var unmodifiedSince = parseHttpDate(req.headers["if-unmodified-since"]);
@@ -20967,7 +20967,7 @@ var require_ipaddr = __commonJS({
         longValue: new RegExp("^" + ipv4Part + "$", "i")
       };
       ipaddr.IPv4.parser = function(string) {
-        var match, parseIntAuto, part, shift, value;
+        var match2, parseIntAuto, part, shift, value;
         parseIntAuto = function(string2) {
           if (string2[0] === "0" && string2[1] !== "x") {
             return parseInt(string2, 8);
@@ -20975,10 +20975,10 @@ var require_ipaddr = __commonJS({
             return parseInt(string2);
           }
         };
-        if (match = string.match(ipv4Regexes.fourOctet)) {
+        if (match2 = string.match(ipv4Regexes.fourOctet)) {
           return (function() {
             var k, len, ref, results;
-            ref = match.slice(1, 6);
+            ref = match2.slice(1, 6);
             results = [];
             for (k = 0, len = ref.length; k < len; k++) {
               part = ref[k];
@@ -20986,8 +20986,8 @@ var require_ipaddr = __commonJS({
             }
             return results;
           })();
-        } else if (match = string.match(ipv4Regexes.longValue)) {
-          value = parseIntAuto(match[1]);
+        } else if (match2 = string.match(ipv4Regexes.longValue)) {
+          value = parseIntAuto(match2[1]);
           if (value > 4294967295 || value < 0) {
             throw new Error("ipaddr: address outside defined range");
           }
@@ -21034,15 +21034,15 @@ var require_ipaddr = __commonJS({
           return this.toNormalizedString().replace(/((^|:)(0(:|$))+)/, "::");
         };
         IPv6.prototype.toRFC5952String = function() {
-          var bestMatchIndex, bestMatchLength, match, regex, string;
+          var bestMatchIndex, bestMatchLength, match2, regex, string;
           regex = /((^|:)(0(:|$)){2,})/g;
           string = this.toNormalizedString();
           bestMatchIndex = 0;
           bestMatchLength = -1;
-          while (match = regex.exec(string)) {
-            if (match[0].length > bestMatchLength) {
-              bestMatchIndex = match.index;
-              bestMatchLength = match[0].length;
+          while (match2 = regex.exec(string)) {
+            if (match2[0].length > bestMatchLength) {
+              bestMatchIndex = match2.index;
+              bestMatchLength = match2[0].length;
             }
           }
           if (bestMatchLength < 0) {
@@ -21235,14 +21235,14 @@ var require_ipaddr = __commonJS({
         };
       };
       ipaddr.IPv6.parser = function(string) {
-        var addr, k, len, match, octet, octets, zoneId;
+        var addr, k, len, match2, octet, octets, zoneId;
         if (ipv6Regexes["native"].test(string)) {
           return expandIPv6(string, 8);
-        } else if (match = string.match(ipv6Regexes["transitional"])) {
-          zoneId = match[6] || "";
-          addr = expandIPv6(match[1].slice(0, -1) + zoneId, 6);
+        } else if (match2 = string.match(ipv6Regexes["transitional"])) {
+          zoneId = match2[6] || "";
+          addr = expandIPv6(match2[1].slice(0, -1) + zoneId, 6);
           if (addr.parts) {
-            octets = [parseInt(match[2]), parseInt(match[3]), parseInt(match[4]), parseInt(match[5])];
+            octets = [parseInt(match2[2]), parseInt(match2[3]), parseInt(match2[4]), parseInt(match2[5])];
             for (k = 0, len = octets.length; k < len; k++) {
               octet = octets[k];
               if (!(0 <= octet && octet <= 255)) {
@@ -21310,11 +21310,11 @@ var require_ipaddr = __commonJS({
         return new this(addr.parts, addr.zoneId);
       };
       ipaddr.IPv4.parseCIDR = function(string) {
-        var maskLength, match, parsed;
-        if (match = string.match(/^(.+)\/(\d+)$/)) {
-          maskLength = parseInt(match[2]);
+        var maskLength, match2, parsed;
+        if (match2 = string.match(/^(.+)\/(\d+)$/)) {
+          maskLength = parseInt(match2[2]);
           if (maskLength >= 0 && maskLength <= 32) {
-            parsed = [this.parse(match[1]), maskLength];
+            parsed = [this.parse(match2[1]), maskLength];
             Object.defineProperty(parsed, "toString", {
               value: function() {
                 return this.join("/");
@@ -21380,11 +21380,11 @@ var require_ipaddr = __commonJS({
         }
       };
       ipaddr.IPv6.parseCIDR = function(string) {
-        var maskLength, match, parsed;
-        if (match = string.match(/^(.+)\/(\d+)$/)) {
-          maskLength = parseInt(match[2]);
+        var maskLength, match2, parsed;
+        if (match2 = string.match(/^(.+)\/(\d+)$/)) {
+          maskLength = parseInt(match2[2]);
           if (maskLength >= 0 && maskLength <= 128) {
-            parsed = [this.parse(match[1]), maskLength];
+            parsed = [this.parse(match2[1]), maskLength];
             Object.defineProperty(parsed, "toString", {
               value: function() {
                 return this.join("/");
@@ -22036,12 +22036,12 @@ var require_charset = __commonJS({
       return accepts;
     }
     function parseCharset(str, i) {
-      var match = simpleCharsetRegExp.exec(str);
-      if (!match) return null;
-      var charset = match[1];
+      var match2 = simpleCharsetRegExp.exec(str);
+      if (!match2) return null;
+      var charset = match2[1];
       var q = 1;
-      if (match[2]) {
-        var params = match[2].split(";");
+      if (match2[2]) {
+        var params = match2[2].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].trim().split("=");
           if (p[0] === "q") {
@@ -22134,12 +22134,12 @@ var require_encoding = __commonJS({
       return accepts;
     }
     function parseEncoding(str, i) {
-      var match = simpleEncodingRegExp.exec(str);
-      if (!match) return null;
-      var encoding = match[1];
+      var match2 = simpleEncodingRegExp.exec(str);
+      if (!match2) return null;
+      var encoding = match2[1];
       var q = 1;
-      if (match[2]) {
-        var params = match[2].split(";");
+      if (match2[2]) {
+        var params = match2[2].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].trim().split("=");
           if (p[0] === "q") {
@@ -22221,15 +22221,15 @@ var require_language = __commonJS({
       return accepts;
     }
     function parseLanguage(str, i) {
-      var match = simpleLanguageRegExp.exec(str);
-      if (!match) return null;
-      var prefix = match[1];
-      var suffix = match[2];
+      var match2 = simpleLanguageRegExp.exec(str);
+      if (!match2) return null;
+      var prefix = match2[1];
+      var suffix = match2[2];
       var full = prefix;
       if (suffix) full += "-" + suffix;
       var q = 1;
-      if (match[3]) {
-        var params = match[3].split(";");
+      if (match2[3]) {
+        var params = match2[3].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].split("=");
           if (p[0] === "q") q = parseFloat(p[1]);
@@ -22316,14 +22316,14 @@ var require_mediaType = __commonJS({
       return accepts;
     }
     function parseMediaType(str, i) {
-      var match = simpleMediaTypeRegExp.exec(str);
-      if (!match) return null;
+      var match2 = simpleMediaTypeRegExp.exec(str);
+      if (!match2) return null;
       var params = /* @__PURE__ */ Object.create(null);
       var q = 1;
-      var subtype = match[2];
-      var type = match[1];
-      if (match[3]) {
-        var kvps = splitParameters(match[3]).map(splitKeyValuePair);
+      var subtype = match2[2];
+      var type = match2[1];
+      if (match2[3]) {
+        var kvps = splitParameters(match2[3]).map(splitKeyValuePair);
         for (var j = 0; j < kvps.length; j++) {
           var pair = kvps[j];
           var key = pair[0].toLowerCase();
@@ -22878,7 +22878,7 @@ var require_cookie = __commonJS({
       }
       if (opt.expires) {
         var expires = opt.expires;
-        if (!isDate(expires) || isNaN(expires.valueOf())) {
+        if (!isDate2(expires) || isNaN(expires.valueOf())) {
           throw new TypeError("option expires is invalid");
         }
         str += "; Expires=" + expires.toUTCString();
@@ -22932,7 +22932,7 @@ var require_cookie = __commonJS({
     function decode(str) {
       return str.indexOf("%") !== -1 ? decodeURIComponent(str) : str;
     }
-    function isDate(val) {
+    function isDate2(val) {
       return __toString.call(val) === "[object Date]";
     }
     function tryDecode(str, decode2) {
@@ -24498,11 +24498,11 @@ var require_serverless_http = __commonJS({
     var finish = require_finish();
     var getFramework = require_get_framework();
     var getProvider = require_get_provider();
-    var defaultOptions = {
+    var defaultOptions2 = {
       requestId: "x-request-id"
     };
     module.exports = function(app2, opts) {
-      const options = Object.assign({}, defaultOptions, opts);
+      const options = Object.assign({}, defaultOptions2, opts);
       const framework = getFramework(app2);
       const provider = getProvider(options);
       return provider(async (request, ...context) => {
@@ -24614,7 +24614,7 @@ var require_cookie2 = __commonJS({
       }
       if (opt.expires) {
         var expires = opt.expires;
-        if (!isDate(expires) || isNaN(expires.valueOf())) {
+        if (!isDate2(expires) || isNaN(expires.valueOf())) {
           throw new TypeError("option expires is invalid");
         }
         str += "; Expires=" + expires.toUTCString();
@@ -24668,7 +24668,7 @@ var require_cookie2 = __commonJS({
     function decode(str) {
       return str.indexOf("%") !== -1 ? decodeURIComponent(str) : str;
     }
-    function isDate(val) {
+    function isDate2(val) {
       return __toString.call(val) === "[object Date]";
     }
     function tryDecode(str, decode2) {
@@ -24706,14 +24706,14 @@ var require_ms6 = __commonJS({
       if (str.length > 100) {
         return;
       }
-      var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -24823,17 +24823,17 @@ var require_debug5 = __commonJS({
           args.unshift("%O");
         }
         var index = 0;
-        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-          if (match === "%%") return match;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format2) {
+          if (match2 === "%%") return match2;
           index++;
-          var formatter = exports.formatters[format];
+          var formatter = exports.formatters[format2];
           if ("function" === typeof formatter) {
             var val = args[index];
-            match = formatter.call(self, val);
+            match2 = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
-          return match;
+          return match2;
         });
         exports.formatArgs.call(self, args);
         var logFn = debug.log || exports.log || console.log.bind(console);
@@ -24931,10 +24931,10 @@ var require_browser5 = __commonJS({
       args.splice(1, 0, c, "color: inherit");
       var index = 0;
       var lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, function(match) {
-        if ("%%" === match) return;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
         index++;
-        if ("%c" === match) {
+        if ("%c" === match2) {
           lastC = index;
         }
       });
@@ -27527,11 +27527,11 @@ var require_receiver = __commonJS({
        * @return {(Error|RangeError)} The error
        * @private
        */
-      createError(ErrorCtor, message, prefix, statusCode, errorCode) {
+      createError(ErrorCtor, message2, prefix, statusCode, errorCode) {
         this._loop = false;
         this._errored = true;
         const err = new ErrorCtor(
-          prefix ? `Invalid WebSocket frame: ${message}` : message
+          prefix ? `Invalid WebSocket frame: ${message2}` : message2
         );
         Error.captureStackTrace(err, this.createError);
         err.code = errorCode;
@@ -28192,10 +28192,10 @@ var require_event_target = __commonJS({
             callListener(handler2, this, event);
           };
         } else if (type === "close") {
-          wrapper = function onClose(code, message) {
+          wrapper = function onClose(code, message2) {
             const event = new CloseEvent("close", {
               code,
-              reason: message.toString(),
+              reason: message2.toString(),
               wasClean: this._closeFrameReceived && this._closeFrameSent
             });
             event[kTarget] = this;
@@ -28394,7 +28394,7 @@ var require_extension = __commonJS({
       }
       return offers;
     }
-    function format(extensions) {
+    function format2(extensions) {
       return Object.keys(extensions).map((extension) => {
         let configurations = extensions[extension];
         if (!Array.isArray(configurations)) configurations = [configurations];
@@ -28409,7 +28409,7 @@ var require_extension = __commonJS({
         }).join(", ");
       }).join(", ");
     }
-    module.exports = { format, parse };
+    module.exports = { format: format2, parse };
   }
 });
 
@@ -28442,7 +28442,7 @@ var require_websocket = __commonJS({
     var {
       EventTarget: { addEventListener, removeEventListener }
     } = require_event_target();
-    var { format, parse } = require_extension();
+    var { format: format2, parse } = require_extension();
     var { toBuffer } = require_buffer_util();
     var closeTimeout = 30 * 1e3;
     var kAborted = Symbol("kAborted");
@@ -28972,7 +28972,7 @@ var require_websocket = __commonJS({
           false,
           opts.maxPayload
         );
-        opts.headers["Sec-WebSocket-Extensions"] = format({
+        opts.headers["Sec-WebSocket-Extensions"] = format2({
           [PerMessageDeflate.extensionName]: perMessageDeflate.offer()
         });
       }
@@ -29103,29 +29103,29 @@ var require_websocket = __commonJS({
         const secWebSocketExtensions = res.headers["sec-websocket-extensions"];
         if (secWebSocketExtensions !== void 0) {
           if (!perMessageDeflate) {
-            const message = "Server sent a Sec-WebSocket-Extensions header but no extension was requested";
-            abortHandshake(websocket, socket, message);
+            const message2 = "Server sent a Sec-WebSocket-Extensions header but no extension was requested";
+            abortHandshake(websocket, socket, message2);
             return;
           }
           let extensions;
           try {
             extensions = parse(secWebSocketExtensions);
           } catch (err) {
-            const message = "Invalid Sec-WebSocket-Extensions header";
-            abortHandshake(websocket, socket, message);
+            const message2 = "Invalid Sec-WebSocket-Extensions header";
+            abortHandshake(websocket, socket, message2);
             return;
           }
           const extensionNames = Object.keys(extensions);
           if (extensionNames.length !== 1 || extensionNames[0] !== PerMessageDeflate.extensionName) {
-            const message = "Server indicated an extension that was not requested";
-            abortHandshake(websocket, socket, message);
+            const message2 = "Server indicated an extension that was not requested";
+            abortHandshake(websocket, socket, message2);
             return;
           }
           try {
             perMessageDeflate.accept(extensions[PerMessageDeflate.extensionName]);
           } catch (err) {
-            const message = "Invalid Sec-WebSocket-Extensions header";
-            abortHandshake(websocket, socket, message);
+            const message2 = "Invalid Sec-WebSocket-Extensions header";
+            abortHandshake(websocket, socket, message2);
             return;
           }
           websocket._extensions[PerMessageDeflate.extensionName] = perMessageDeflate;
@@ -29160,9 +29160,9 @@ var require_websocket = __commonJS({
       }
       return tls.connect(options);
     }
-    function abortHandshake(websocket, stream, message) {
+    function abortHandshake(websocket, stream, message2) {
       websocket._readyState = WebSocket2.CLOSING;
-      const err = new Error(message);
+      const err = new Error(message2);
       Error.captureStackTrace(err, abortHandshake);
       if (stream.setHeader) {
         stream[kAborted] = true;
@@ -29326,7 +29326,7 @@ var require_stream = __commonJS({
         objectMode: false,
         writableObjectMode: false
       });
-      ws.on("message", function message(msg, isBinary) {
+      ws.on("message", function message2(msg, isBinary) {
         const data = !isBinary && duplex._readableState.objectMode ? msg.toString() : msg;
         if (!duplex.push(data)) ws.pause();
       });
@@ -29639,23 +29639,23 @@ var require_websocket_server = __commonJS({
         const upgrade = req.headers.upgrade;
         const version2 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
-          const message = "Invalid HTTP method";
-          abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
+          const message2 = "Invalid HTTP method";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 405, message2);
           return;
         }
         if (upgrade === void 0 || upgrade.toLowerCase() !== "websocket") {
-          const message = "Invalid Upgrade header";
-          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+          const message2 = "Invalid Upgrade header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message2);
           return;
         }
         if (key === void 0 || !keyRegex.test(key)) {
-          const message = "Missing or invalid Sec-WebSocket-Key header";
-          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+          const message2 = "Missing or invalid Sec-WebSocket-Key header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message2);
           return;
         }
         if (version2 !== 13 && version2 !== 8) {
-          const message = "Missing or invalid Sec-WebSocket-Version header";
-          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
+          const message2 = "Missing or invalid Sec-WebSocket-Version header";
+          abortHandshakeOrEmitwsClientError(this, req, socket, 400, message2, {
             "Sec-WebSocket-Version": "13, 8"
           });
           return;
@@ -29670,8 +29670,8 @@ var require_websocket_server = __commonJS({
           try {
             protocols = subprotocol.parse(secWebSocketProtocol);
           } catch (err) {
-            const message = "Invalid Sec-WebSocket-Protocol header";
-            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+            const message2 = "Invalid Sec-WebSocket-Protocol header";
+            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message2);
             return;
           }
         }
@@ -29690,8 +29690,8 @@ var require_websocket_server = __commonJS({
               extensions[PerMessageDeflate.extensionName] = perMessageDeflate;
             }
           } catch (err) {
-            const message = "Invalid or unacceptable Sec-WebSocket-Extensions header";
-            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
+            const message2 = "Invalid or unacceptable Sec-WebSocket-Extensions header";
+            abortHandshakeOrEmitwsClientError(this, req, socket, 400, message2);
             return;
           }
         }
@@ -29702,9 +29702,9 @@ var require_websocket_server = __commonJS({
             req
           };
           if (this.options.verifyClient.length === 2) {
-            this.options.verifyClient(info, (verified, code, message, headers) => {
+            this.options.verifyClient(info, (verified, code, message2, headers) => {
               if (!verified) {
-                return abortHandshake(socket, code || 401, message, headers);
+                return abortHandshake(socket, code || 401, message2, headers);
               }
               this.completeUpgrade(
                 extensions,
@@ -29802,27 +29802,27 @@ var require_websocket_server = __commonJS({
     function socketOnError() {
       this.destroy();
     }
-    function abortHandshake(socket, code, message, headers) {
-      message = message || http.STATUS_CODES[code];
+    function abortHandshake(socket, code, message2, headers) {
+      message2 = message2 || http.STATUS_CODES[code];
       headers = {
         Connection: "close",
         "Content-Type": "text/html",
-        "Content-Length": Buffer.byteLength(message),
+        "Content-Length": Buffer.byteLength(message2),
         ...headers
       };
       socket.once("finish", socket.destroy);
       socket.end(
         `HTTP/1.1 ${code} ${http.STATUS_CODES[code]}\r
-` + Object.keys(headers).map((h) => `${h}: ${headers[h]}`).join("\r\n") + "\r\n\r\n" + message
+` + Object.keys(headers).map((h) => `${h}: ${headers[h]}`).join("\r\n") + "\r\n\r\n" + message2
       );
     }
-    function abortHandshakeOrEmitwsClientError(server, req, socket, code, message, headers) {
+    function abortHandshakeOrEmitwsClientError(server, req, socket, code, message2, headers) {
       if (server.listenerCount("wsClientError")) {
-        const err = new Error(message);
+        const err = new Error(message2);
         Error.captureStackTrace(err, abortHandshakeOrEmitwsClientError);
         server.emit("wsClientError", err, socket, req);
       } else {
-        abortHandshake(socket, code, message, headers);
+        abortHandshake(socket, code, message2, headers);
       }
     }
   }
@@ -30285,11 +30285,11 @@ var require_jwa = __commonJS({
         es: createECDSAVerifer,
         none: createNoneVerifier
       };
-      var match = algorithm.match(/^(RS|PS|ES|HS)(256|384|512)$|^(none)$/i);
-      if (!match)
+      var match2 = algorithm.match(/^(RS|PS|ES|HS)(256|384|512)$|^(none)$/i);
+      if (!match2)
         throw typeError(MSG_INVALID_ALGORITHM, algorithm);
-      var algo = (match[1] || match[3]).toLowerCase();
-      var bits = match[2];
+      var algo = (match2[1] || match2[3]).toLowerCase();
+      var bits = match2[2];
       return {
         sign: signerFactories[algo](bits),
         verify: verifierFactories[algo](bits)
@@ -30560,13 +30560,13 @@ var require_decode = __commonJS({
 // node_modules/jsonwebtoken/lib/JsonWebTokenError.js
 var require_JsonWebTokenError = __commonJS({
   "node_modules/jsonwebtoken/lib/JsonWebTokenError.js"(exports, module) {
-    var JsonWebTokenError = function(message, error) {
-      Error.call(this, message);
+    var JsonWebTokenError = function(message2, error) {
+      Error.call(this, message2);
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, this.constructor);
       }
       this.name = "JsonWebTokenError";
-      this.message = message;
+      this.message = message2;
       if (error) this.inner = error;
     };
     JsonWebTokenError.prototype = Object.create(Error.prototype);
@@ -30579,8 +30579,8 @@ var require_JsonWebTokenError = __commonJS({
 var require_NotBeforeError = __commonJS({
   "node_modules/jsonwebtoken/lib/NotBeforeError.js"(exports, module) {
     var JsonWebTokenError = require_JsonWebTokenError();
-    var NotBeforeError = function(message, date2) {
-      JsonWebTokenError.call(this, message);
+    var NotBeforeError = function(message2, date2) {
+      JsonWebTokenError.call(this, message2);
       this.name = "NotBeforeError";
       this.date = date2;
     };
@@ -30594,8 +30594,8 @@ var require_NotBeforeError = __commonJS({
 var require_TokenExpiredError = __commonJS({
   "node_modules/jsonwebtoken/lib/TokenExpiredError.js"(exports, module) {
     var JsonWebTokenError = require_JsonWebTokenError();
-    var TokenExpiredError = function(message, expiredAt) {
-      JsonWebTokenError.call(this, message);
+    var TokenExpiredError = function(message2, expiredAt) {
+      JsonWebTokenError.call(this, message2);
       this.name = "TokenExpiredError";
       this.expiredAt = expiredAt;
     };
@@ -30948,8 +30948,8 @@ var require_semver = __commonJS({
             throw new Error("invalid increment argument: identifier is empty");
           }
           if (identifier) {
-            const match = `-${identifier}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE]);
-            if (!match || match[1] !== identifier) {
+            const match2 = `-${identifier}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE]);
+            if (!match2 || match2[1] !== identifier) {
               throw new Error(`invalid identifier: ${identifier}`);
             }
           }
@@ -31336,8 +31336,8 @@ var require_lte = __commonJS({
   "node_modules/jsonwebtoken/node_modules/semver/functions/lte.js"(exports, module) {
     "use strict";
     var compare2 = require_compare();
-    var lte2 = (a, b, loose) => compare2(a, b, loose) <= 0;
-    module.exports = lte2;
+    var lte3 = (a, b, loose) => compare2(a, b, loose) <= 0;
+    module.exports = lte3;
   }
 });
 
@@ -31350,7 +31350,7 @@ var require_cmp = __commonJS({
     var gt2 = require_gt();
     var gte2 = require_gte();
     var lt2 = require_lt();
-    var lte2 = require_lte();
+    var lte3 = require_lte();
     var cmp = (a, op, b, loose) => {
       switch (op) {
         case "===":
@@ -31382,7 +31382,7 @@ var require_cmp = __commonJS({
         case "<":
           return lt2(a, b, loose);
         case "<=":
-          return lte2(a, b, loose);
+          return lte3(a, b, loose);
         default:
           throw new TypeError(`Invalid operator: ${op}`);
       }
@@ -31409,28 +31409,28 @@ var require_coerce = __commonJS({
         return null;
       }
       options = options || {};
-      let match = null;
+      let match2 = null;
       if (!options.rtl) {
-        match = version2.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
+        match2 = version2.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
       } else {
         const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL];
         let next;
-        while ((next = coerceRtlRegex.exec(version2)) && (!match || match.index + match[0].length !== version2.length)) {
-          if (!match || next.index + next[0].length !== match.index + match[0].length) {
-            match = next;
+        while ((next = coerceRtlRegex.exec(version2)) && (!match2 || match2.index + match2[0].length !== version2.length)) {
+          if (!match2 || next.index + next[0].length !== match2.index + match2[0].length) {
+            match2 = next;
           }
           coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length;
         }
         coerceRtlRegex.lastIndex = -1;
       }
-      if (match === null) {
+      if (match2 === null) {
         return null;
       }
-      const major = match[2];
-      const minor = match[3] || "0";
-      const patch = match[4] || "0";
-      const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : "";
-      const build = options.includePrerelease && match[6] ? `+${match[6]}` : "";
+      const major = match2[2];
+      const minor = match2[3] || "0";
+      const patch = match2[4] || "0";
+      const prerelease = options.includePrerelease && match2[5] ? `-${match2[5]}` : "";
+      const build = options.includePrerelease && match2[6] ? `+${match2[6]}` : "";
       return parse(`${major}.${minor}.${patch}${prerelease}${build}`, options);
     };
     module.exports = coerce2;
@@ -32135,7 +32135,7 @@ var require_outside = __commonJS({
     var satisfies = require_satisfies();
     var gt2 = require_gt();
     var lt2 = require_lt();
-    var lte2 = require_lte();
+    var lte3 = require_lte();
     var gte2 = require_gte();
     var outside = (version2, range, hilo, options) => {
       version2 = new SemVer(version2, options);
@@ -32144,7 +32144,7 @@ var require_outside = __commonJS({
       switch (hilo) {
         case ">":
           gtfn = gt2;
-          ltefn = lte2;
+          ltefn = lte3;
           ltfn = lt2;
           comp = ">";
           ecomp = ">=";
@@ -32467,7 +32467,7 @@ var require_semver2 = __commonJS({
     var eq2 = require_eq();
     var neq = require_neq();
     var gte2 = require_gte();
-    var lte2 = require_lte();
+    var lte3 = require_lte();
     var cmp = require_cmp();
     var coerce2 = require_coerce();
     var Comparator = require_comparator();
@@ -32505,7 +32505,7 @@ var require_semver2 = __commonJS({
       eq: eq2,
       neq,
       gte: gte2,
-      lte: lte2,
+      lte: lte3,
       cmp,
       coerce: coerce2,
       Comparator,
@@ -32770,12 +32770,12 @@ var require_verify = __commonJS({
         if (options.audience) {
           const audiences = Array.isArray(options.audience) ? options.audience : [options.audience];
           const target = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-          const match = target.some(function(targetAudience) {
+          const match2 = target.some(function(targetAudience) {
             return audiences.some(function(audience) {
               return audience instanceof RegExp ? audience.test(targetAudience) : audience === targetAudience;
             });
           });
-          if (!match) {
+          if (!match2) {
             return done(new JsonWebTokenError("jwt audience invalid. expected: " + audiences.join(" or ")));
           }
         }
@@ -34089,10 +34089,10 @@ var PgEnumColumn = class extends PgColumn {
 // node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
-  constructor(sql2, selection, alias, isWith = false) {
+  constructor(sql3, selection, alias, isWith = false) {
     this._ = {
       brand: "Subquery",
-      sql: sql2,
+      sql: sql3,
       selectedFields: selection,
       alias,
       isWith
@@ -34482,19 +34482,19 @@ function sql(strings, ...params) {
   }
   return new SQL(queryChunks);
 }
-((sql2) => {
+((sql22) => {
   function empty() {
     return new SQL([]);
   }
-  sql2.empty = empty;
+  sql22.empty = empty;
   function fromList(list) {
     return new SQL(list);
   }
-  sql2.fromList = fromList;
+  sql22.fromList = fromList;
   function raw(str) {
     return new SQL([new StringChunk(str)]);
   }
-  sql2.raw = raw;
+  sql22.raw = raw;
   function join(chunks, separator) {
     const result = [];
     for (const [i, chunk] of chunks.entries()) {
@@ -34505,24 +34505,24 @@ function sql(strings, ...params) {
     }
     return new SQL(result);
   }
-  sql2.join = join;
+  sql22.join = join;
   function identifier(value) {
     return new Name(value);
   }
-  sql2.identifier = identifier;
+  sql22.identifier = identifier;
   function placeholder2(name2) {
     return new Placeholder(name2);
   }
-  sql2.placeholder = placeholder2;
+  sql22.placeholder = placeholder2;
   function param2(value, encoder) {
     return new Param(value, encoder);
   }
-  sql2.param = param2;
+  sql22.param = param2;
 })(sql || (sql = {}));
 ((SQL2) => {
   class Aliased {
-    constructor(sql2, fieldAlias) {
-      this.sql = sql2;
+    constructor(sql22, fieldAlias) {
+      this.sql = sql22;
       this.fieldAlias = fieldAlias;
     }
     static [entityKind] = "SQL.Aliased";
@@ -34698,8 +34698,8 @@ function mapColumnsInSQLToAlias(query, alias) {
 // node_modules/drizzle-orm/errors.js
 var DrizzleError = class extends Error {
   static [entityKind] = "DrizzleError";
-  constructor({ message, cause }) {
-    super(message);
+  constructor({ message: message2, cause }) {
+    super(message2);
     this.name = "DrizzleError";
     this.cause = cause;
   }
@@ -34837,8 +34837,8 @@ function desc(column) {
 // node_modules/drizzle-orm/logger.js
 var ConsoleLogWriter = class {
   static [entityKind] = "ConsoleLogWriter";
-  write(message) {
-    console.log(message);
+  write(message2) {
+    console.log(message2);
   }
 };
 var DefaultLogger = class {
@@ -37272,8 +37272,8 @@ var PgDialect = class {
       return "none";
     }
   }
-  sqlToQuery(sql2, invokeSource) {
-    return sql2.toQuery({
+  sqlToQuery(sql22, invokeSource) {
+    return sql22.toQuery({
       casing: this.casing,
       escapeName: this.escapeName,
       escapeParam: this.escapeParam,
@@ -39426,10 +39426,10 @@ var PgRelationalQuery = class extends QueryPromise {
 
 // node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
-  constructor(execute, sql2, query, mapBatchResult) {
+  constructor(execute, sql3, query, mapBatchResult) {
     super();
     this.execute = execute;
-    this.sql = sql2;
+    this.sql = sql3;
     this.query = query;
     this.mapBatchResult = mapBatchResult;
   }
@@ -39784,8 +39784,8 @@ var PgSession = class {
     ).all();
   }
   /** @internal */
-  async count(sql2, token) {
-    const res = await this.execute(sql2, token);
+  async count(sql22, token) {
+    const res = await this.execute(sql22, token);
     return Number(
       res[0]["count"]
     );
@@ -39835,7 +39835,7 @@ var NeonPreparedQuery = class extends PgPreparedQuery {
       text: queryString,
       types: {
         // @ts-ignore
-        getTypeParser: (typeId, format) => {
+        getTypeParser: (typeId, format2) => {
           if (typeId === types.builtins.TIMESTAMPTZ) {
             return (val) => val;
           }
@@ -39848,7 +39848,7 @@ var NeonPreparedQuery = class extends PgPreparedQuery {
           if (typeId === types.builtins.INTERVAL) {
             return (val) => val;
           }
-          return types.getTypeParser(typeId, format);
+          return types.getTypeParser(typeId, format2);
         }
       }
     };
@@ -39858,7 +39858,7 @@ var NeonPreparedQuery = class extends PgPreparedQuery {
       rowMode: "array",
       types: {
         // @ts-ignore
-        getTypeParser: (typeId, format) => {
+        getTypeParser: (typeId, format2) => {
           if (typeId === types.builtins.TIMESTAMPTZ) {
             return (val) => val;
           }
@@ -39871,7 +39871,7 @@ var NeonPreparedQuery = class extends PgPreparedQuery {
           if (typeId === types.builtins.INTERVAL) {
             return (val) => val;
           }
-          return types.getTypeParser(typeId, format);
+          return types.getTypeParser(typeId, format2);
         }
       }
     };
@@ -39938,8 +39938,8 @@ var NeonSession = class _NeonSession extends PgSession {
   async queryObjects(query, params) {
     return this.client.query(query, params);
   }
-  async count(sql2) {
-    const res = await this.execute(sql2);
+  async count(sql22) {
+    const res = await this.execute(sql22);
     return Number(
       res["rows"][0]["count"]
     );
@@ -40066,14 +40066,31 @@ __export(schema_exports, {
   budgetsRelations: () => budgetsRelations,
   categories: () => categories,
   categoriesRelations: () => categoriesRelations,
+  categoryRules: () => categoryRules,
+  categoryRulesRelations: () => categoryRulesRelations,
   debts: () => debts,
   debtsRelations: () => debtsRelations,
+  goalContributions: () => goalContributions,
+  goalContributionsRelations: () => goalContributionsRelations,
+  goalInsights: () => goalInsights,
+  goalInsightsRelations: () => goalInsightsRelations,
+  goalMilestones: () => goalMilestones,
+  goalMilestonesRelations: () => goalMilestonesRelations,
+  goals: () => goals,
+  goalsRelations: () => goalsRelations,
   insertAccountSchema: () => insertAccountSchema,
   insertAppSettingsSchema: () => insertAppSettingsSchema,
   insertBudgetSchema: () => insertBudgetSchema,
+  insertCategoryRuleSchema: () => insertCategoryRuleSchema,
   insertCategorySchema: () => insertCategorySchema,
   insertDebtSchema: () => insertDebtSchema,
+  insertGoalContributionSchema: () => insertGoalContributionSchema,
+  insertGoalInsightSchema: () => insertGoalInsightSchema,
+  insertGoalMilestoneSchema: () => insertGoalMilestoneSchema,
+  insertGoalSchema: () => insertGoalSchema,
+  insertNotificationSchema: () => insertNotificationSchema,
   insertPermissionSchema: () => insertPermissionSchema,
+  insertRecurringTransactionSchema: () => insertRecurringTransactionSchema,
   insertRolePermissionSchema: () => insertRolePermissionSchema,
   insertRoleSchema: () => insertRoleSchema,
   insertSubscriptionPackageSchema: () => insertSubscriptionPackageSchema,
@@ -40083,8 +40100,11 @@ __export(schema_exports, {
   insertWorkspaceMemberSchema: () => insertWorkspaceMemberSchema,
   insertWorkspaceSchema: () => insertWorkspaceSchema,
   insertWorkspaceSubscriptionSchema: () => insertWorkspaceSubscriptionSchema,
+  notifications: () => notifications,
   permissions: () => permissions,
   permissionsRelations: () => permissionsRelations,
+  recurringTransactions: () => recurringTransactions,
+  recurringTransactionsRelations: () => recurringTransactionsRelations,
   rolePermissions: () => rolePermissions,
   rolePermissionsRelations: () => rolePermissionsRelations,
   roles: () => roles,
@@ -40471,104 +40491,104 @@ ZodError.create = (issues) => {
 
 // node_modules/zod/v3/locales/en.js
 var errorMap = (issue, _ctx) => {
-  let message;
+  let message2;
   switch (issue.code) {
     case ZodIssueCode.invalid_type:
       if (issue.received === ZodParsedType.undefined) {
-        message = "Required";
+        message2 = "Required";
       } else {
-        message = `Expected ${issue.expected}, received ${issue.received}`;
+        message2 = `Expected ${issue.expected}, received ${issue.received}`;
       }
       break;
     case ZodIssueCode.invalid_literal:
-      message = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
+      message2 = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
       break;
     case ZodIssueCode.unrecognized_keys:
-      message = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
+      message2 = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
       break;
     case ZodIssueCode.invalid_union:
-      message = `Invalid input`;
+      message2 = `Invalid input`;
       break;
     case ZodIssueCode.invalid_union_discriminator:
-      message = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
+      message2 = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
       break;
     case ZodIssueCode.invalid_enum_value:
-      message = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
+      message2 = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
       break;
     case ZodIssueCode.invalid_arguments:
-      message = `Invalid function arguments`;
+      message2 = `Invalid function arguments`;
       break;
     case ZodIssueCode.invalid_return_type:
-      message = `Invalid function return type`;
+      message2 = `Invalid function return type`;
       break;
     case ZodIssueCode.invalid_date:
-      message = `Invalid date`;
+      message2 = `Invalid date`;
       break;
     case ZodIssueCode.invalid_string:
       if (typeof issue.validation === "object") {
         if ("includes" in issue.validation) {
-          message = `Invalid input: must include "${issue.validation.includes}"`;
+          message2 = `Invalid input: must include "${issue.validation.includes}"`;
           if (typeof issue.validation.position === "number") {
-            message = `${message} at one or more positions greater than or equal to ${issue.validation.position}`;
+            message2 = `${message2} at one or more positions greater than or equal to ${issue.validation.position}`;
           }
         } else if ("startsWith" in issue.validation) {
-          message = `Invalid input: must start with "${issue.validation.startsWith}"`;
+          message2 = `Invalid input: must start with "${issue.validation.startsWith}"`;
         } else if ("endsWith" in issue.validation) {
-          message = `Invalid input: must end with "${issue.validation.endsWith}"`;
+          message2 = `Invalid input: must end with "${issue.validation.endsWith}"`;
         } else {
           util.assertNever(issue.validation);
         }
       } else if (issue.validation !== "regex") {
-        message = `Invalid ${issue.validation}`;
+        message2 = `Invalid ${issue.validation}`;
       } else {
-        message = "Invalid";
+        message2 = "Invalid";
       }
       break;
     case ZodIssueCode.too_small:
       if (issue.type === "array")
-        message = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
+        message2 = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
       else if (issue.type === "string")
-        message = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
+        message2 = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
       else if (issue.type === "number")
-        message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+        message2 = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
       else if (issue.type === "bigint")
-        message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+        message2 = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
       else if (issue.type === "date")
-        message = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
+        message2 = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
       else
-        message = "Invalid input";
+        message2 = "Invalid input";
       break;
     case ZodIssueCode.too_big:
       if (issue.type === "array")
-        message = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
+        message2 = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
       else if (issue.type === "string")
-        message = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
+        message2 = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
       else if (issue.type === "number")
-        message = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+        message2 = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
       else if (issue.type === "bigint")
-        message = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+        message2 = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
       else if (issue.type === "date")
-        message = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
+        message2 = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
       else
-        message = "Invalid input";
+        message2 = "Invalid input";
       break;
     case ZodIssueCode.custom:
-      message = `Invalid input`;
+      message2 = `Invalid input`;
       break;
     case ZodIssueCode.invalid_intersection_types:
-      message = `Intersection results could not be merged`;
+      message2 = `Intersection results could not be merged`;
       break;
     case ZodIssueCode.not_multiple_of:
-      message = `Number must be a multiple of ${issue.multipleOf}`;
+      message2 = `Number must be a multiple of ${issue.multipleOf}`;
       break;
     case ZodIssueCode.not_finite:
-      message = "Number must be finite";
+      message2 = "Number must be finite";
       break;
     default:
-      message = _ctx.defaultError;
+      message2 = _ctx.defaultError;
       util.assertNever(issue);
   }
-  return { message };
+  return { message: message2 };
 };
 var en_default = errorMap;
 
@@ -40694,8 +40714,8 @@ var isAsync = (x) => typeof Promise !== "undefined" && x instanceof Promise;
 // node_modules/zod/v3/helpers/errorUtil.js
 var errorUtil;
 (function(errorUtil2) {
-  errorUtil2.errToObj = (message) => typeof message === "string" ? { message } : message || {};
-  errorUtil2.toString = (message) => typeof message === "string" ? message : message?.message;
+  errorUtil2.errToObj = (message2) => typeof message2 === "string" ? { message: message2 } : message2 || {};
+  errorUtil2.toString = (message2) => typeof message2 === "string" ? message2 : message2?.message;
 })(errorUtil || (errorUtil = {}));
 
 // node_modules/zod/v3/types.js
@@ -40747,16 +40767,16 @@ function processCreateParams(params) {
   if (errorMap2)
     return { errorMap: errorMap2, description };
   const customMap = (iss, ctx) => {
-    const { message } = params;
+    const { message: message2 } = params;
     if (iss.code === "invalid_enum_value") {
-      return { message: message ?? ctx.defaultError };
+      return { message: message2 ?? ctx.defaultError };
     }
     if (typeof ctx.data === "undefined") {
-      return { message: message ?? required_error ?? ctx.defaultError };
+      return { message: message2 ?? required_error ?? ctx.defaultError };
     }
     if (iss.code !== "invalid_type")
       return { message: ctx.defaultError };
-    return { message: message ?? invalid_type_error ?? ctx.defaultError };
+    return { message: message2 ?? invalid_type_error ?? ctx.defaultError };
   };
   return { errorMap: customMap, description };
 }
@@ -40882,14 +40902,14 @@ var ZodType = class {
     const result = await (isAsync(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
     return handleResult(ctx, result);
   }
-  refine(check, message) {
+  refine(check, message2) {
     const getIssueProperties = (val) => {
-      if (typeof message === "string" || typeof message === "undefined") {
-        return { message };
-      } else if (typeof message === "function") {
-        return message(val);
+      if (typeof message2 === "string" || typeof message2 === "undefined") {
+        return { message: message2 };
+      } else if (typeof message2 === "function") {
+        return message2(val);
       } else {
-        return message;
+        return message2;
       }
     };
     return this._refinement((val, ctx) => {
@@ -41425,11 +41445,11 @@ var ZodString = class _ZodString extends ZodType {
     }
     return { status: status.value, value: input.data };
   }
-  _regex(regex, validation, message) {
+  _regex(regex, validation, message2) {
     return this.refinement((data) => regex.test(data), {
       validation,
       code: ZodIssueCode.invalid_string,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   _addCheck(check) {
@@ -41438,37 +41458,37 @@ var ZodString = class _ZodString extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  email(message) {
-    return this._addCheck({ kind: "email", ...errorUtil.errToObj(message) });
+  email(message2) {
+    return this._addCheck({ kind: "email", ...errorUtil.errToObj(message2) });
   }
-  url(message) {
-    return this._addCheck({ kind: "url", ...errorUtil.errToObj(message) });
+  url(message2) {
+    return this._addCheck({ kind: "url", ...errorUtil.errToObj(message2) });
   }
-  emoji(message) {
-    return this._addCheck({ kind: "emoji", ...errorUtil.errToObj(message) });
+  emoji(message2) {
+    return this._addCheck({ kind: "emoji", ...errorUtil.errToObj(message2) });
   }
-  uuid(message) {
-    return this._addCheck({ kind: "uuid", ...errorUtil.errToObj(message) });
+  uuid(message2) {
+    return this._addCheck({ kind: "uuid", ...errorUtil.errToObj(message2) });
   }
-  nanoid(message) {
-    return this._addCheck({ kind: "nanoid", ...errorUtil.errToObj(message) });
+  nanoid(message2) {
+    return this._addCheck({ kind: "nanoid", ...errorUtil.errToObj(message2) });
   }
-  cuid(message) {
-    return this._addCheck({ kind: "cuid", ...errorUtil.errToObj(message) });
+  cuid(message2) {
+    return this._addCheck({ kind: "cuid", ...errorUtil.errToObj(message2) });
   }
-  cuid2(message) {
-    return this._addCheck({ kind: "cuid2", ...errorUtil.errToObj(message) });
+  cuid2(message2) {
+    return this._addCheck({ kind: "cuid2", ...errorUtil.errToObj(message2) });
   }
-  ulid(message) {
-    return this._addCheck({ kind: "ulid", ...errorUtil.errToObj(message) });
+  ulid(message2) {
+    return this._addCheck({ kind: "ulid", ...errorUtil.errToObj(message2) });
   }
-  base64(message) {
-    return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message) });
+  base64(message2) {
+    return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message2) });
   }
-  base64url(message) {
+  base64url(message2) {
     return this._addCheck({
       kind: "base64url",
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   jwt(options) {
@@ -41498,8 +41518,8 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  date(message) {
-    return this._addCheck({ kind: "date", message });
+  date(message2) {
+    return this._addCheck({ kind: "date", message: message2 });
   }
   time(options) {
     if (typeof options === "string") {
@@ -41515,14 +41535,14 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  duration(message) {
-    return this._addCheck({ kind: "duration", ...errorUtil.errToObj(message) });
+  duration(message2) {
+    return this._addCheck({ kind: "duration", ...errorUtil.errToObj(message2) });
   }
-  regex(regex, message) {
+  regex(regex, message2) {
     return this._addCheck({
       kind: "regex",
       regex,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   includes(value, options) {
@@ -41533,46 +41553,46 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  startsWith(value, message) {
+  startsWith(value, message2) {
     return this._addCheck({
       kind: "startsWith",
       value,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  endsWith(value, message) {
+  endsWith(value, message2) {
     return this._addCheck({
       kind: "endsWith",
       value,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  min(minLength, message) {
+  min(minLength, message2) {
     return this._addCheck({
       kind: "min",
       value: minLength,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  max(maxLength, message) {
+  max(maxLength, message2) {
     return this._addCheck({
       kind: "max",
       value: maxLength,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  length(len, message) {
+  length(len, message2) {
     return this._addCheck({
       kind: "length",
       value: len,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   /**
    * Equivalent to `.min(1)`
    */
-  nonempty(message) {
-    return this.min(1, errorUtil.errToObj(message));
+  nonempty(message2) {
+    return this.min(1, errorUtil.errToObj(message2));
   }
   trim() {
     return new _ZodString({
@@ -41765,19 +41785,19 @@ var ZodNumber = class _ZodNumber extends ZodType {
     }
     return { status: status.value, value: input.data };
   }
-  gte(value, message) {
-    return this.setLimit("min", value, true, errorUtil.toString(message));
+  gte(value, message2) {
+    return this.setLimit("min", value, true, errorUtil.toString(message2));
   }
-  gt(value, message) {
-    return this.setLimit("min", value, false, errorUtil.toString(message));
+  gt(value, message2) {
+    return this.setLimit("min", value, false, errorUtil.toString(message2));
   }
-  lte(value, message) {
-    return this.setLimit("max", value, true, errorUtil.toString(message));
+  lte(value, message2) {
+    return this.setLimit("max", value, true, errorUtil.toString(message2));
   }
-  lt(value, message) {
-    return this.setLimit("max", value, false, errorUtil.toString(message));
+  lt(value, message2) {
+    return this.setLimit("max", value, false, errorUtil.toString(message2));
   }
-  setLimit(kind, value, inclusive, message) {
+  setLimit(kind, value, inclusive, message2) {
     return new _ZodNumber({
       ...this._def,
       checks: [
@@ -41786,7 +41806,7 @@ var ZodNumber = class _ZodNumber extends ZodType {
           kind,
           value,
           inclusive,
-          message: errorUtil.toString(message)
+          message: errorUtil.toString(message2)
         }
       ]
     });
@@ -41797,68 +41817,68 @@ var ZodNumber = class _ZodNumber extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  int(message) {
+  int(message2) {
     return this._addCheck({
       kind: "int",
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  positive(message) {
+  positive(message2) {
     return this._addCheck({
       kind: "min",
       value: 0,
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  negative(message) {
+  negative(message2) {
     return this._addCheck({
       kind: "max",
       value: 0,
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonpositive(message) {
+  nonpositive(message2) {
     return this._addCheck({
       kind: "max",
       value: 0,
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonnegative(message) {
+  nonnegative(message2) {
     return this._addCheck({
       kind: "min",
       value: 0,
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  multipleOf(value, message) {
+  multipleOf(value, message2) {
     return this._addCheck({
       kind: "multipleOf",
       value,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  finite(message) {
+  finite(message2) {
     return this._addCheck({
       kind: "finite",
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  safe(message) {
+  safe(message2) {
     return this._addCheck({
       kind: "min",
       inclusive: true,
       value: Number.MIN_SAFE_INTEGER,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     })._addCheck({
       kind: "max",
       inclusive: true,
       value: Number.MAX_SAFE_INTEGER,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minValue() {
@@ -41981,19 +42001,19 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
     });
     return INVALID;
   }
-  gte(value, message) {
-    return this.setLimit("min", value, true, errorUtil.toString(message));
+  gte(value, message2) {
+    return this.setLimit("min", value, true, errorUtil.toString(message2));
   }
-  gt(value, message) {
-    return this.setLimit("min", value, false, errorUtil.toString(message));
+  gt(value, message2) {
+    return this.setLimit("min", value, false, errorUtil.toString(message2));
   }
-  lte(value, message) {
-    return this.setLimit("max", value, true, errorUtil.toString(message));
+  lte(value, message2) {
+    return this.setLimit("max", value, true, errorUtil.toString(message2));
   }
-  lt(value, message) {
-    return this.setLimit("max", value, false, errorUtil.toString(message));
+  lt(value, message2) {
+    return this.setLimit("max", value, false, errorUtil.toString(message2));
   }
-  setLimit(kind, value, inclusive, message) {
+  setLimit(kind, value, inclusive, message2) {
     return new _ZodBigInt({
       ...this._def,
       checks: [
@@ -42002,7 +42022,7 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
           kind,
           value,
           inclusive,
-          message: errorUtil.toString(message)
+          message: errorUtil.toString(message2)
         }
       ]
     });
@@ -42013,43 +42033,43 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  positive(message) {
+  positive(message2) {
     return this._addCheck({
       kind: "min",
       value: BigInt(0),
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  negative(message) {
+  negative(message2) {
     return this._addCheck({
       kind: "max",
       value: BigInt(0),
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonpositive(message) {
+  nonpositive(message2) {
     return this._addCheck({
       kind: "max",
       value: BigInt(0),
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonnegative(message) {
+  nonnegative(message2) {
     return this._addCheck({
       kind: "min",
       value: BigInt(0),
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  multipleOf(value, message) {
+  multipleOf(value, message2) {
     return this._addCheck({
       kind: "multipleOf",
       value,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minValue() {
@@ -42172,18 +42192,18 @@ var ZodDate = class _ZodDate extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  min(minDate, message) {
+  min(minDate, message2) {
     return this._addCheck({
       kind: "min",
       value: minDate.getTime(),
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  max(maxDate, message) {
+  max(maxDate, message2) {
     return this._addCheck({
       kind: "max",
       value: maxDate.getTime(),
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minDate() {
@@ -42415,26 +42435,26 @@ var ZodArray = class _ZodArray extends ZodType {
   get element() {
     return this._def.type;
   }
-  min(minLength, message) {
+  min(minLength, message2) {
     return new _ZodArray({
       ...this._def,
-      minLength: { value: minLength, message: errorUtil.toString(message) }
+      minLength: { value: minLength, message: errorUtil.toString(message2) }
     });
   }
-  max(maxLength, message) {
+  max(maxLength, message2) {
     return new _ZodArray({
       ...this._def,
-      maxLength: { value: maxLength, message: errorUtil.toString(message) }
+      maxLength: { value: maxLength, message: errorUtil.toString(message2) }
     });
   }
-  length(len, message) {
+  length(len, message2) {
     return new _ZodArray({
       ...this._def,
-      exactLength: { value: len, message: errorUtil.toString(message) }
+      exactLength: { value: len, message: errorUtil.toString(message2) }
     });
   }
-  nonempty(message) {
-    return this.min(1, message);
+  nonempty(message2) {
+    return this.min(1, message2);
   }
 };
 ZodArray.create = (schema, params) => {
@@ -42577,17 +42597,17 @@ var ZodObject = class _ZodObject extends ZodType {
   get shape() {
     return this._def.shape();
   }
-  strict(message) {
+  strict(message2) {
     errorUtil.errToObj;
     return new _ZodObject({
       ...this._def,
       unknownKeys: "strict",
-      ...message !== void 0 ? {
+      ...message2 !== void 0 ? {
         errorMap: (issue, ctx) => {
           const defaultError = this._def.errorMap?.(issue, ctx).message ?? ctx.defaultError;
           if (issue.code === "unrecognized_keys")
             return {
-              message: errorUtil.errToObj(message).message ?? defaultError
+              message: errorUtil.errToObj(message2).message ?? defaultError
             };
           return {
             message: defaultError
@@ -43343,23 +43363,23 @@ var ZodSet = class _ZodSet extends ZodType {
       return finalizeSet(elements);
     }
   }
-  min(minSize, message) {
+  min(minSize, message2) {
     return new _ZodSet({
       ...this._def,
-      minSize: { value: minSize, message: errorUtil.toString(message) }
+      minSize: { value: minSize, message: errorUtil.toString(message2) }
     });
   }
-  max(maxSize, message) {
+  max(maxSize, message2) {
     return new _ZodSet({
       ...this._def,
-      maxSize: { value: maxSize, message: errorUtil.toString(message) }
+      maxSize: { value: maxSize, message: errorUtil.toString(message2) }
     });
   }
-  size(size, message) {
-    return this.min(size, message).max(size, message);
+  size(size, message2) {
+    return this.min(size, message2).max(size, message2);
   }
-  nonempty(message) {
-    return this.min(1, message);
+  nonempty(message2) {
+    return this.min(1, message2);
   }
 };
 ZodSet.create = (valueType, params) => {
@@ -44536,6 +44556,8 @@ var transactions = pgTable("transactions", {
   categoryId: integer("category_id").references(() => categories.id),
   toAccountId: integer("to_account_id").references(() => accounts.id),
   // For transfers
+  debtId: integer("debt_id").references(() => debts.id),
+  // Link to debt record for repayments
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
@@ -44562,6 +44584,129 @@ var debts = pgTable("debts", {
   dueDate: timestamp("due_date"),
   status: text("status").notNull(),
   // 'active' | 'paid' | 'overdue'
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(),
+  // 'savings' | 'debt_payment' | 'investment' | 'emergency_fund' | 'retirement' | 'vacation' | 'house' | 'education'
+  subType: text("sub_type"),
+  // For more specific categorization
+  targetAmount: decimal("target_amount", { precision: 15, scale: 2 }).notNull(),
+  currentAmount: decimal("current_amount", { precision: 15, scale: 2 }).notNull().default("0"),
+  targetDate: date("target_date").notNull(),
+  // Enhanced tracking fields
+  linkedAccountId: integer("linked_account_id").references(() => accounts.id),
+  // Primary account for this goal
+  linkedDebtId: integer("linked_debt_id").references(() => debts.id),
+  // For debt payment goals
+  linkedBudgetIds: text("linked_budget_ids").array(),
+  // Array of budget category IDs that contribute
+  // Smart features
+  isAutoTracking: boolean("is_auto_tracking").notNull().default(true),
+  // Auto-update from transactions
+  autoContributeAmount: decimal("auto_contribute_amount", { precision: 15, scale: 2 }),
+  // Monthly auto-contribution
+  riskTolerance: text("risk_tolerance").default("medium"),
+  // 'low' | 'medium' | 'high' for investment goals
+  // Milestone & Progress tracking
+  milestones: json("milestones"),
+  // JSON array of milestone objects
+  lastProgressUpdate: timestamp("last_progress_update"),
+  projectedCompletionDate: date("projected_completion_date"),
+  // AI-calculated completion date
+  completedAt: timestamp("completed_at"),
+  // Priority & Status
+  priority: text("priority").notNull().default("medium"),
+  // 'low' | 'medium' | 'high' | 'critical'
+  status: text("status").notNull().default("active"),
+  // 'active' | 'completed' | 'paused' | 'archived' | 'failed'
+  // AI & Analytics
+  aiInsights: json("ai_insights"),
+  // AI-generated insights and recommendations
+  performanceMetrics: json("performance_metrics"),
+  // Track success rate, velocity, etc.
+  tags: text("tags").array(),
+  // User-defined tags for better organization
+  // Metadata
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+var goalContributions = pgTable("goal_contributions", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  transactionId: integer("transaction_id").references(() => transactions.id),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  contributionType: text("contribution_type").notNull(),
+  // 'transaction' | 'manual' | 'auto_transfer' | 'interest'
+  source: text("source"),
+  // Description of contribution source
+  date: timestamp("date").notNull(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var goalMilestones = pgTable("goal_milestones", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  name: text("name").notNull(),
+  targetAmount: decimal("target_amount", { precision: 15, scale: 2 }).notNull(),
+  targetDate: date("target_date").notNull(),
+  completedAt: timestamp("completed_at"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  order: integer("order").notNull(),
+  // Sequence order
+  reward: text("reward"),
+  // Optional reward description
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var goalInsights = pgTable("goal_insights", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => goals.id).notNull(),
+  type: text("type").notNull(),
+  // 'recommendation' | 'alert' | 'prediction' | 'achievement'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  severity: text("severity").notNull().default("info"),
+  // 'info' | 'warning' | 'success' | 'error'
+  actionRequired: boolean("action_required").notNull().default(false),
+  data: json("data"),
+  // Additional structured data
+  isRead: boolean("is_read").notNull().default(false),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var recurringTransactions = pgTable("recurring_transactions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(),
+  // 'income' | 'expense' | 'transfer'
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  frequency: text("frequency").notNull(),
+  // 'daily' | 'weekly' | 'monthly' | 'yearly'
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  nextExecution: timestamp("next_execution").notNull(),
+  lastExecuted: timestamp("last_executed"),
+  isActive: boolean("is_active").notNull().default(true),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+var categoryRules = pgTable("category_rules", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  pattern: text("pattern").notNull(),
+  // Comma-separated keywords
+  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  timesUsed: integer("times_used").notNull().default(0),
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
@@ -44628,7 +44773,10 @@ var workspacesRelations = relations(workspaces, ({ one, many }) => ({
   categories: many(categories),
   transactions: many(transactions),
   budgets: many(budgets),
-  debts: many(debts)
+  debts: many(debts),
+  goals: many(goals),
+  recurringTransactions: many(recurringTransactions),
+  categoryRules: many(categoryRules)
 }));
 var workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
   workspace: one(workspaces, {
@@ -44684,10 +44832,82 @@ var budgetsRelations = relations(budgets, ({ one }) => ({
     references: [workspaces.id]
   })
 }));
-var debtsRelations = relations(debts, ({ one }) => ({
+var debtsRelations = relations(debts, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [debts.workspaceId],
     references: [workspaces.id]
+  }),
+  repaymentTransactions: many(transactions)
+}));
+var goalsRelations = relations(goals, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [goals.workspaceId],
+    references: [workspaces.id]
+  }),
+  linkedAccount: one(accounts, {
+    fields: [goals.linkedAccountId],
+    references: [accounts.id]
+  }),
+  linkedDebt: one(debts, {
+    fields: [goals.linkedDebtId],
+    references: [debts.id]
+  }),
+  contributions: many(goalContributions),
+  milestones: many(goalMilestones),
+  insights: many(goalInsights)
+}));
+var goalContributionsRelations = relations(goalContributions, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalContributions.goalId],
+    references: [goals.id]
+  }),
+  transaction: one(transactions, {
+    fields: [goalContributions.transactionId],
+    references: [transactions.id]
+  }),
+  workspace: one(workspaces, {
+    fields: [goalContributions.workspaceId],
+    references: [workspaces.id]
+  })
+}));
+var goalMilestonesRelations = relations(goalMilestones, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalMilestones.goalId],
+    references: [goals.id]
+  })
+}));
+var goalInsightsRelations = relations(goalInsights, ({ one }) => ({
+  goal: one(goals, {
+    fields: [goalInsights.goalId],
+    references: [goals.id]
+  }),
+  workspace: one(workspaces, {
+    fields: [goalInsights.workspaceId],
+    references: [workspaces.id]
+  })
+}));
+var recurringTransactionsRelations = relations(recurringTransactions, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [recurringTransactions.workspaceId],
+    references: [workspaces.id]
+  }),
+  category: one(categories, {
+    fields: [recurringTransactions.categoryId],
+    references: [categories.id]
+  }),
+  account: one(accounts, {
+    fields: [recurringTransactions.accountId],
+    references: [accounts.id]
+  })
+}));
+var categoryRulesRelations = relations(categoryRules, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [categoryRules.workspaceId],
+    references: [workspaces.id]
+  }),
+  category: one(categories, {
+    fields: [categoryRules.categoryId],
+    references: [categories.id]
   })
 }));
 var insertRoleSchema = createInsertSchema(roles).omit({
@@ -44748,6 +44968,58 @@ var insertBudgetSchema = createInsertSchema(budgets).omit({
   createdAt: true
 });
 var insertDebtSchema = createInsertSchema(debts).omit({
+  id: true,
+  createdAt: true
+});
+var insertGoalSchema = createInsertSchema(goals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastProgressUpdate: true,
+  completedAt: true
+});
+var insertGoalContributionSchema = createInsertSchema(goalContributions).omit({
+  id: true,
+  createdAt: true
+});
+var insertGoalMilestoneSchema = createInsertSchema(goalMilestones).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true
+});
+var insertGoalInsightSchema = createInsertSchema(goalInsights).omit({
+  id: true,
+  createdAt: true
+});
+var insertRecurringTransactionSchema = createInsertSchema(recurringTransactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  nextExecution: true,
+  lastExecuted: true
+});
+var insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
+  id: true,
+  createdAt: true,
+  timesUsed: true
+});
+var notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  // 'info', 'success', 'warning', 'error'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  category: text("category"),
+  // 'budget', 'debt', 'goal', 'transaction', 'system'
+  isRead: boolean("is_read").default(false),
+  data: json("data"),
+  // Additional context data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at")
+});
+var insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true
 });
@@ -44834,7 +45106,14 @@ var DatabaseStorage = class {
         const accountTransactions = await db.select().from(transactions).where(eq(transactions.accountId, account.id));
         const calculatedBalance = accountTransactions.reduce((sum, transaction) => {
           const amount = parseFloat(transaction.amount);
-          return transaction.type === "income" ? sum + amount : sum - amount;
+          if (transaction.type === "income" || transaction.type === "debt") {
+            return sum + amount;
+          } else if (transaction.type === "expense" || transaction.type === "repayment") {
+            return sum - amount;
+          } else if (transaction.type === "transfer") {
+            return sum;
+          }
+          return sum;
         }, 0);
         return {
           ...account,
@@ -44867,7 +45146,19 @@ var DatabaseStorage = class {
     return await db.select().from(transactions).where(eq(transactions.accountId, accountId)).orderBy(desc(transactions.date));
   }
   async createTransaction(transaction) {
-    const [newTransaction] = await db.insert(transactions).values(transaction).returning();
+    let transactionToCreate = { ...transaction };
+    if (transaction.type === "debt" && !transaction.debtId) {
+      const newDebt = await this.createDebt({
+        name: transaction.description || "New Debt",
+        type: "debt",
+        totalAmount: transaction.amount,
+        remainingAmount: transaction.amount,
+        status: "active",
+        workspaceId: transaction.workspaceId
+      });
+      transactionToCreate.debtId = newDebt.id;
+    }
+    const [newTransaction] = await db.insert(transactions).values(transactionToCreate).returning();
     const account = await this.getAccount(transaction.accountId);
     if (account) {
       const currentBalance = parseFloat(account.balance);
@@ -44876,6 +45167,13 @@ var DatabaseStorage = class {
         newBalance += parseFloat(transaction.amount);
       } else if (transaction.type === "expense") {
         newBalance -= parseFloat(transaction.amount);
+      } else if (transaction.type === "debt") {
+        newBalance += parseFloat(transaction.amount);
+      } else if (transaction.type === "repayment") {
+        newBalance -= parseFloat(transaction.amount);
+        if (transaction.debtId) {
+          await this.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
+        }
       } else if (transaction.type === "transfer" && transaction.toAccountId) {
         newBalance -= parseFloat(transaction.amount);
         const toAccount = await this.getAccount(transaction.toAccountId);
@@ -44928,6 +45226,31 @@ var DatabaseStorage = class {
   }
   async deleteDebt(id) {
     await db.delete(debts).where(eq(debts.id, id));
+  }
+  async getDebtById(id) {
+    const result = await db.select().from(debts).where(eq(debts.id, id));
+    return result[0] || null;
+  }
+  // Get repayment transactions for a specific debt
+  async getDebtRepayments(debtId) {
+    return await db.select().from(transactions).where(and(
+      eq(transactions.debtId, debtId),
+      eq(transactions.type, "repayment")
+    )).orderBy(desc(transactions.date));
+  }
+  // Update debt remaining amount when repayment is made
+  async updateDebtRepayment(debtId, repaymentAmount) {
+    const debt = await db.select().from(debts).where(eq(debts.id, debtId)).then((rows) => rows[0]);
+    if (!debt) {
+      throw new Error("Debt not found");
+    }
+    const currentRemaining = parseFloat(debt.remainingAmount);
+    const newRemaining = Math.max(0, currentRemaining - repaymentAmount);
+    const newStatus = newRemaining === 0 ? "paid" : debt.status;
+    await db.update(debts).set({
+      remainingAmount: newRemaining.toString(),
+      status: newStatus
+    }).where(eq(debts.id, debtId));
   }
   // Dashboard data
   async getDashboardData(workspaceId) {
@@ -45122,10 +45445,9 @@ var DatabaseStorage = class {
     const currentAccounts = await this.getWorkspaceAccounts(workspaceId);
     const current = currentAccounts.length;
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxAccounts;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
       const limit = 2;
       const canCreate = current < limit;
@@ -45137,15 +45459,13 @@ var DatabaseStorage = class {
     const currentCategories = await this.getWorkspaceCategories(workspaceId);
     const current = currentCategories.length;
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxCategories;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
-      const packageName = "basic";
       const limit = 3;
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
   async checkBudgetLimit(workspaceId, userId, year, month) {
@@ -45153,15 +45473,13 @@ var DatabaseStorage = class {
     const currentBudgets = await this.getWorkspaceBudgets(workspaceId, year, month);
     const current = currentBudgets.length;
     if (userSubResult) {
-      const packageName = userSubResult.package.name;
       const limit = userSubResult.package.maxBudgets;
       const canCreate = limit === null || current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     } else {
-      const packageName = "basic";
       const limit = 2;
       const canCreate = current < limit;
-      return { canCreate, limit, current, packageName };
+      return { canCreate, limit, current };
     }
   }
   async canCreateWorkspace(userId) {
@@ -45225,6 +45543,437 @@ var DatabaseStorage = class {
   // Public APIs
   async getActiveSubscriptionPackages() {
     return await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.isActive, true));
+  }
+  // Analytics methods
+  async getAnalyticsData(workspaceId, timeframe) {
+    const transactions2 = await this.getWorkspaceTransactions(workspaceId, 1e3);
+    const categories3 = await this.getWorkspaceCategories(workspaceId);
+    const budgets3 = await this.getWorkspaceBudgets(workspaceId);
+    const now = /* @__PURE__ */ new Date();
+    let months = 6;
+    if (timeframe === "12months") months = 12;
+    if (timeframe === "3months") months = 3;
+    const startDate = /* @__PURE__ */ new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    const filteredTransactions = transactions2.filter((t) => new Date(t.date) >= startDate);
+    const spendingTrends = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const monthDate = /* @__PURE__ */ new Date();
+      monthDate.setMonth(monthDate.getMonth() - i);
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      const monthTransactions = filteredTransactions.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= monthStart && transactionDate <= monthEnd;
+      });
+      const income = monthTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const expenses = monthTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      spendingTrends.push({
+        month: monthDate.toLocaleString("default", { month: "short" }),
+        income,
+        expenses,
+        savings: income - expenses
+      });
+    }
+    const categoryMap = /* @__PURE__ */ new Map();
+    categories3.forEach((cat) => categoryMap.set(cat.id, cat.name));
+    const categorySpending = /* @__PURE__ */ new Map();
+    filteredTransactions.filter((t) => t.type === "expense").forEach((t) => {
+      const categoryName = categoryMap.get(t.categoryId) || "Uncategorized";
+      const current = categorySpending.get(categoryName) || 0;
+      categorySpending.set(categoryName, current + parseFloat(t.amount));
+    });
+    const totalExpenses = Array.from(categorySpending.values()).reduce((sum, amount) => sum + amount, 0);
+    const categoryData = Array.from(categorySpending.entries()).map(([name, value]) => ({
+      name,
+      value,
+      percentage: totalExpenses > 0 ? value / totalExpenses * 100 : 0
+    }));
+    const budgetComparison = budgets3.map((budget) => {
+      const categoryName = categoryMap.get(budget.categoryId) || "Unknown";
+      const spent = categorySpending.get(categoryName) || 0;
+      const budgetAmount = parseFloat(budget.amount);
+      return {
+        category: categoryName,
+        budget: budgetAmount,
+        spent,
+        remaining: budgetAmount - spent,
+        percentage: budgetAmount > 0 ? spent / budgetAmount * 100 : 0
+      };
+    });
+    return {
+      timeframe,
+      spendingTrends,
+      categoryData: categoryData.slice(0, 10),
+      // Top 10 categories
+      cashFlowForecast: spendingTrends,
+      // Reuse for forecast
+      budgetComparison
+    };
+  }
+  async getFinancialHealthData(workspaceId) {
+    const transactions2 = await this.getWorkspaceTransactions(workspaceId, 1e3);
+    const accounts3 = await this.getWorkspaceAccounts(workspaceId);
+    const debts3 = await this.getWorkspaceDebts(workspaceId);
+    const totalBalance = accounts3.reduce((sum, account) => sum + parseFloat(account.balance), 0);
+    const totalDebt = debts3.filter((debt) => debt.type === "debt").reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
+    const now = /* @__PURE__ */ new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const currentMonthTransactions = transactions2.filter((t) => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+    });
+    const monthlyIncome = currentMonthTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const monthlyExpenses = currentMonthTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const debtToIncomeRatio = monthlyIncome > 0 ? totalDebt / (monthlyIncome * 12) : 0;
+    const savingsRate = monthlyIncome > 0 ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome) : 0;
+    let score = 100;
+    if (debtToIncomeRatio > 0.4) score -= 30;
+    else if (debtToIncomeRatio > 0.3) score -= 20;
+    else if (debtToIncomeRatio > 0.2) score -= 10;
+    if (savingsRate < 0.1) score -= 25;
+    else if (savingsRate < 0.2) score -= 15;
+    if (totalBalance < monthlyExpenses * 3) score -= 20;
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      debtToIncomeRatio,
+      savingsRate,
+      budgetCompliance: 0.82,
+      // Mock for now
+      totalBalance,
+      totalDebt,
+      monthlyIncome,
+      monthlyExpenses,
+      trends: {
+        score: "stable",
+        debtRatio: "improving",
+        savings: "stable"
+      }
+    };
+  }
+  // Notification methods
+  // Notifications methods  
+  async getNotificationsByWorkspace(workspaceId) {
+    return await db.select().from(notifications).where(eq(notifications.workspaceId, workspaceId)).orderBy(desc(notifications.createdAt));
+  }
+  async createNotification(notification) {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+  async markNotificationAsRead(id) {
+    await db.update(notifications).set({ isRead: true, readAt: /* @__PURE__ */ new Date() }).where(eq(notifications.id, id));
+  }
+  async executeRecurringTransactions() {
+    const now = /* @__PURE__ */ new Date();
+    const dueTransactions = await db.select().from(recurringTransactions).where(
+      and(
+        eq(recurringTransactions.isActive, true)
+      )
+    );
+    for (const recurring of dueTransactions) {
+      const nextExecution = new Date(recurring.nextExecution || now);
+      if (nextExecution <= now) {
+        try {
+          const transactionData = {
+            workspaceId: recurring.workspaceId,
+            accountId: recurring.accountId,
+            categoryId: recurring.categoryId,
+            type: recurring.type,
+            amount: recurring.amount,
+            description: `${recurring.name} - Automated`,
+            date: now
+          };
+          await db.insert(transactions).values([transactionData]);
+          let nextExec;
+          switch (recurring.frequency) {
+            case "daily":
+              nextExec = new Date(now.getTime() + 24 * 60 * 60 * 1e3);
+              break;
+            case "weekly":
+              nextExec = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1e3);
+              break;
+            case "monthly":
+              nextExec = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1e3);
+              break;
+            case "yearly":
+              nextExec = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1e3);
+              break;
+            default:
+              nextExec = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1e3);
+          }
+          await db.update(recurringTransactions).set({
+            lastExecuted: now,
+            nextExecution: nextExec
+          }).where(eq(recurringTransactions.id, recurring.id));
+        } catch (error) {
+          console.error(`Failed to execute recurring transaction ${recurring.id}:`, error);
+        }
+      }
+    }
+  }
+  async checkDebtReminders(workspaceId) {
+    const debts3 = await this.getWorkspaceDebts(workspaceId);
+    const reminders = [];
+    const now = /* @__PURE__ */ new Date();
+    for (const debt of debts3) {
+      if (debt.status === "active" && debt.dueDate) {
+        const dueDate = new Date(debt.dueDate);
+        const diffTime = dueDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1e3 * 60 * 60 * 24));
+        if (diffDays === 7 || diffDays === 3 || diffDays === 1) {
+          reminders.push({
+            debtId: debt.id,
+            debtName: debt.name,
+            daysLeft: diffDays,
+            amount: parseFloat(debt.remainingAmount),
+            dueDate: debt.dueDate
+          });
+        }
+      }
+    }
+    return reminders;
+  }
+  async checkBudgetAlerts(workspaceId) {
+    const budgets3 = await this.getWorkspaceBudgets(workspaceId, (/* @__PURE__ */ new Date()).getFullYear(), (/* @__PURE__ */ new Date()).getMonth() + 1);
+    const alerts = [];
+    for (const budget of budgets3) {
+      const transactions2 = await this.getWorkspaceTransactions(workspaceId, 1e3);
+      const currentMonth = (/* @__PURE__ */ new Date()).getMonth();
+      const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+      const categorySpending = transactions2.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return t.categoryId === budget.categoryId && t.type === "expense" && transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+      }).reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const budgetAmount = parseFloat(budget.amount);
+      const percentage = budgetAmount > 0 ? categorySpending / budgetAmount * 100 : 0;
+      if (percentage >= 80) {
+        const category = await db.select().from(categories).where(eq(categories.id, budget.categoryId)).then((rows) => rows[0]);
+        alerts.push({
+          budgetId: budget.id,
+          categoryId: budget.categoryId,
+          categoryName: category?.name || "Unknown",
+          percentage,
+          budgetAmount,
+          spentAmount: categorySpending
+        });
+      }
+    }
+    return alerts;
+  }
+  // Enhanced Goals methods with AI integration
+  async getGoalsByWorkspace(workspaceId) {
+    return await db.select().from(goals).where(eq(goals.workspaceId, workspaceId)).orderBy(desc(goals.priority), desc(goals.createdAt));
+  }
+  async getGoalWithDetails(goalId) {
+    const [goal] = await db.select().from(goals).where(eq(goals.id, goalId));
+    if (!goal) return null;
+    let linkedAccount = null;
+    if (goal.linkedAccountId) {
+      [linkedAccount] = await db.select().from(accounts).where(eq(accounts.id, goal.linkedAccountId));
+    }
+    let linkedDebt = null;
+    if (goal.linkedDebtId) {
+      [linkedDebt] = await db.select().from(debts).where(eq(debts.id, goal.linkedDebtId));
+    }
+    const contributions = await db.select().from(goalContributions).where(eq(goalContributions.goalId, goalId)).orderBy(desc(goalContributions.date));
+    const milestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, goalId)).orderBy(asc(goalMilestones.order));
+    const insights = await db.select().from(goalInsights).where(eq(goalInsights.goalId, goalId)).orderBy(desc(goalInsights.createdAt)).limit(10);
+    return {
+      ...goal,
+      linkedAccount: linkedAccount || void 0,
+      linkedDebt: linkedDebt || void 0,
+      contributions,
+      milestones,
+      insights
+    };
+  }
+  async createGoal(goal) {
+    const [newGoal] = await db.insert(goals).values(goal).returning();
+    return newGoal;
+  }
+  async updateGoal(id, goal) {
+    const [updatedGoal] = await db.update(goals).set({ ...goal, updatedAt: /* @__PURE__ */ new Date() }).where(eq(goals.id, id)).returning();
+    return updatedGoal;
+  }
+  async deleteGoal(id) {
+    await db.delete(goalContributions).where(eq(goalContributions.goalId, id));
+    await db.delete(goalMilestones).where(eq(goalMilestones.goalId, id));
+    await db.delete(goalInsights).where(eq(goalInsights.goalId, id));
+    await db.delete(goals).where(eq(goals.id, id));
+  }
+  // Goal Contributions methods
+  async getGoalContributions(goalId, limit = 100) {
+    return await db.select().from(goalContributions).where(eq(goalContributions.goalId, goalId)).orderBy(desc(goalContributions.date)).limit(limit);
+  }
+  async createGoalContribution(contribution) {
+    const [newContribution] = await db.insert(goalContributions).values(contribution).returning();
+    return newContribution;
+  }
+  // Goal Milestones methods
+  async getGoalMilestones(goalId) {
+    return await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, goalId)).orderBy(asc(goalMilestones.order));
+  }
+  async createGoalMilestone(milestone) {
+    const [newMilestone] = await db.insert(goalMilestones).values(milestone).returning();
+    return newMilestone;
+  }
+  async updateGoalMilestone(id, milestone) {
+    const [updatedMilestone] = await db.update(goalMilestones).set(milestone).where(eq(goalMilestones.id, id)).returning();
+    return updatedMilestone;
+  }
+  async deleteGoalMilestone(id) {
+    await db.delete(goalMilestones).where(eq(goalMilestones.id, id));
+  }
+  // Goal Insights methods
+  async getGoalInsights(goalId) {
+    return await db.select().from(goalInsights).where(eq(goalInsights.goalId, goalId)).orderBy(desc(goalInsights.createdAt));
+  }
+  async getWorkspaceGoalInsights(workspaceId, limit = 50) {
+    return await db.select().from(goalInsights).where(eq(goalInsights.workspaceId, workspaceId)).orderBy(desc(goalInsights.createdAt)).limit(limit);
+  }
+  async createGoalInsight(insight) {
+    const [newInsight] = await db.insert(goalInsights).values(insight).returning();
+    return newInsight;
+  }
+  async markGoalInsightAsRead(id) {
+    const [updatedInsight] = await db.update(goalInsights).set({ isRead: true }).where(eq(goalInsights.id, id)).returning();
+    return updatedInsight;
+  }
+  // Advanced Goals Analytics
+  async getGoalPerformanceMetrics(workspaceId) {
+    const workspaceGoals = await db.select().from(goals).where(eq(goals.workspaceId, workspaceId));
+    const metrics = {
+      totalGoals: workspaceGoals.length,
+      activeGoals: workspaceGoals.filter((g) => g.status === "active").length,
+      completedGoals: workspaceGoals.filter((g) => g.status === "completed").length,
+      pausedGoals: workspaceGoals.filter((g) => g.status === "paused").length,
+      totalTargetAmount: workspaceGoals.reduce((sum, g) => sum + parseFloat(g.targetAmount), 0),
+      totalCurrentAmount: workspaceGoals.reduce((sum, g) => sum + parseFloat(g.currentAmount), 0),
+      averageProgress: workspaceGoals.length > 0 ? workspaceGoals.reduce((sum, g) => {
+        const progress = parseFloat(g.currentAmount) / parseFloat(g.targetAmount);
+        return sum + progress * 100;
+      }, 0) / workspaceGoals.length : 0,
+      goalsByType: {
+        savings: workspaceGoals.filter((g) => g.type === "savings").length,
+        debt_payment: workspaceGoals.filter((g) => g.type === "debt_payment").length,
+        investment: workspaceGoals.filter((g) => g.type === "investment").length,
+        emergency_fund: workspaceGoals.filter((g) => g.type === "emergency_fund").length,
+        retirement: workspaceGoals.filter((g) => g.type === "retirement").length
+      },
+      goalsByPriority: {
+        critical: workspaceGoals.filter((g) => g.priority === "critical").length,
+        high: workspaceGoals.filter((g) => g.priority === "high").length,
+        medium: workspaceGoals.filter((g) => g.priority === "medium").length,
+        low: workspaceGoals.filter((g) => g.priority === "low").length
+      }
+    };
+    return metrics;
+  }
+  // Smart Goal Recommendations
+  async getSmartGoalSuggestions(workspaceId) {
+    const financialHealth = await this.getWorkspaceFinancialHealth(workspaceId);
+    const existingGoals = await this.getGoalsByWorkspace(workspaceId);
+    const suggestions = [];
+    const hasEmergencyFund = existingGoals.some((g) => g.type === "emergency_fund" && g.status === "active");
+    if (!hasEmergencyFund && financialHealth.totalBalance < financialHealth.monthlyExpenses * 6) {
+      suggestions.push({
+        type: "emergency_fund",
+        title: "Build Emergency Fund",
+        description: "Create a safety net for unexpected expenses",
+        recommendedAmount: financialHealth.monthlyExpenses * 6,
+        priority: "critical",
+        reasoning: "You currently don't have sufficient emergency savings. Experts recommend 6 months of expenses.",
+        confidence: 0.95
+      });
+    }
+    const hasDebtGoals = existingGoals.some((g) => g.type === "debt_payment");
+    if (!hasDebtGoals && financialHealth.totalDebt > 0) {
+      suggestions.push({
+        type: "debt_payment",
+        title: "Accelerate Debt Payoff",
+        description: "Create a focused debt elimination plan",
+        recommendedAmount: financialHealth.totalDebt * 0.15,
+        // 15% extra payment
+        priority: "high",
+        timeline: "24 months",
+        reasoning: `You have ${financialHealth.totalDebt.toLocaleString("id-ID", { style: "currency", currency: "IDR" })} in debt. Paying extra can save significant interest.`,
+        confidence: 0.85
+      });
+    }
+    if (hasEmergencyFund && financialHealth.monthlyIncome > financialHealth.monthlyExpenses * 1.5) {
+      suggestions.push({
+        type: "investment",
+        title: "Start Investment Portfolio",
+        description: "Begin building long-term wealth through investments",
+        recommendedAmount: financialHealth.monthlyIncome * 0.2 * 12,
+        // 20% of annual income
+        priority: "medium",
+        timeline: "12 months",
+        reasoning: "You have stable finances and emergency fund. Time to grow wealth through investments.",
+        confidence: 0.75
+      });
+    }
+    return suggestions;
+  }
+  // Financial Health Analysis for Goals
+  async getWorkspaceFinancialHealth(workspaceId) {
+    const accounts3 = await this.getWorkspaceAccounts(workspaceId);
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3);
+    const endDate = /* @__PURE__ */ new Date();
+    const transactions2 = await this.getWorkspaceTransactions(workspaceId, 1e3);
+    const debts3 = await this.getWorkspaceDebts(workspaceId);
+    const totalBalance = accounts3.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
+    const totalDebt = debts3.reduce((sum, debt) => sum + parseFloat(debt.remainingAmount), 0);
+    const recentTransactions = transactions2.filter((t) => new Date(t.date) >= startDate);
+    const monthlyExpenses = recentTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const monthlyIncome = recentTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    return {
+      totalBalance,
+      totalDebt,
+      monthlyIncome,
+      monthlyExpenses,
+      netWorth: totalBalance - totalDebt,
+      savingsRate: monthlyIncome > 0 ? (monthlyIncome - monthlyExpenses) / monthlyIncome : 0
+    };
+  }
+  // Helper methods
+  formatCurrency(amount) {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0
+    }).format(amount);
+  }
+  // Recurring Transactions methods
+  async getRecurringTransactionsByWorkspace(workspaceId) {
+    return await db.select().from(recurringTransactions).where(eq(recurringTransactions.workspaceId, workspaceId)).orderBy(desc(recurringTransactions.createdAt));
+  }
+  async createRecurringTransaction(transaction) {
+    const [newTransaction] = await db.insert(recurringTransactions).values(transaction).returning();
+    return newTransaction;
+  }
+  async updateRecurringTransaction(id, transaction) {
+    const [updatedTransaction] = await db.update(recurringTransactions).set({ ...transaction, updatedAt: /* @__PURE__ */ new Date() }).where(eq(recurringTransactions.id, id)).returning();
+    return updatedTransaction;
+  }
+  async deleteRecurringTransaction(id) {
+    await db.delete(recurringTransactions).where(eq(recurringTransactions.id, id));
+  }
+  // Category Rules methods
+  async getCategoryRulesByWorkspace(workspaceId) {
+    return await db.select().from(categoryRules).where(eq(categoryRules.workspaceId, workspaceId)).orderBy(desc(categoryRules.createdAt));
+  }
+  async createCategoryRule(rule) {
+    const [newRule] = await db.insert(categoryRules).values(rule).returning();
+    return newRule;
+  }
+  async updateCategoryRule(id, rule) {
+    const [updatedRule] = await db.update(categoryRules).set(rule).where(eq(categoryRules.id, id)).returning();
+    return updatedRule;
+  }
+  async deleteCategoryRule(id) {
+    await db.delete(categoryRules).where(eq(categoryRules.id, id));
   }
 };
 var storage = new DatabaseStorage();
@@ -46954,8 +47703,2085 @@ var bcryptjs_default = {
 
 // server/routes.ts
 var import_jsonwebtoken = __toESM(require_jsonwebtoken(), 1);
+
+// node_modules/date-fns/toDate.mjs
+function toDate(argument) {
+  const argStr = Object.prototype.toString.call(argument);
+  if (argument instanceof Date || typeof argument === "object" && argStr === "[object Date]") {
+    return new argument.constructor(+argument);
+  } else if (typeof argument === "number" || argStr === "[object Number]" || typeof argument === "string" || argStr === "[object String]") {
+    return new Date(argument);
+  } else {
+    return /* @__PURE__ */ new Date(NaN);
+  }
+}
+
+// node_modules/date-fns/constructFrom.mjs
+function constructFrom(date2, value) {
+  if (date2 instanceof Date) {
+    return new date2.constructor(value);
+  } else {
+    return new Date(value);
+  }
+}
+
+// node_modules/date-fns/addMonths.mjs
+function addMonths(date2, amount) {
+  const _date = toDate(date2);
+  if (isNaN(amount)) return constructFrom(date2, NaN);
+  if (!amount) {
+    return _date;
+  }
+  const dayOfMonth = _date.getDate();
+  const endOfDesiredMonth = constructFrom(date2, _date.getTime());
+  endOfDesiredMonth.setMonth(_date.getMonth() + amount + 1, 0);
+  const daysInMonth = endOfDesiredMonth.getDate();
+  if (dayOfMonth >= daysInMonth) {
+    return endOfDesiredMonth;
+  } else {
+    _date.setFullYear(
+      endOfDesiredMonth.getFullYear(),
+      endOfDesiredMonth.getMonth(),
+      dayOfMonth
+    );
+    return _date;
+  }
+}
+
+// node_modules/date-fns/constants.mjs
+var daysInYear = 365.2425;
+var maxTime = Math.pow(10, 8) * 24 * 60 * 60 * 1e3;
+var minTime = -maxTime;
+var millisecondsInWeek = 6048e5;
+var millisecondsInDay = 864e5;
+var secondsInHour = 3600;
+var secondsInDay = secondsInHour * 24;
+var secondsInWeek = secondsInDay * 7;
+var secondsInYear = secondsInDay * daysInYear;
+var secondsInMonth = secondsInYear / 12;
+var secondsInQuarter = secondsInMonth * 3;
+
+// node_modules/date-fns/_lib/defaultOptions.mjs
+var defaultOptions = {};
+function getDefaultOptions() {
+  return defaultOptions;
+}
+
+// node_modules/date-fns/startOfWeek.mjs
+function startOfWeek(date2, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  const _date = toDate(date2);
+  const day = _date.getDay();
+  const diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+  _date.setDate(_date.getDate() - diff);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// node_modules/date-fns/startOfISOWeek.mjs
+function startOfISOWeek(date2) {
+  return startOfWeek(date2, { weekStartsOn: 1 });
+}
+
+// node_modules/date-fns/getISOWeekYear.mjs
+function getISOWeekYear(date2) {
+  const _date = toDate(date2);
+  const year = _date.getFullYear();
+  const fourthOfJanuaryOfNextYear = constructFrom(date2, 0);
+  fourthOfJanuaryOfNextYear.setFullYear(year + 1, 0, 4);
+  fourthOfJanuaryOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfISOWeek(fourthOfJanuaryOfNextYear);
+  const fourthOfJanuaryOfThisYear = constructFrom(date2, 0);
+  fourthOfJanuaryOfThisYear.setFullYear(year, 0, 4);
+  fourthOfJanuaryOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfISOWeek(fourthOfJanuaryOfThisYear);
+  if (_date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (_date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+
+// node_modules/date-fns/startOfDay.mjs
+function startOfDay(date2) {
+  const _date = toDate(date2);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds.mjs
+function getTimezoneOffsetInMilliseconds(date2) {
+  const _date = toDate(date2);
+  const utcDate = new Date(
+    Date.UTC(
+      _date.getFullYear(),
+      _date.getMonth(),
+      _date.getDate(),
+      _date.getHours(),
+      _date.getMinutes(),
+      _date.getSeconds(),
+      _date.getMilliseconds()
+    )
+  );
+  utcDate.setUTCFullYear(_date.getFullYear());
+  return +date2 - +utcDate;
+}
+
+// node_modules/date-fns/differenceInCalendarDays.mjs
+function differenceInCalendarDays(dateLeft, dateRight) {
+  const startOfDayLeft = startOfDay(dateLeft);
+  const startOfDayRight = startOfDay(dateRight);
+  const timestampLeft = +startOfDayLeft - getTimezoneOffsetInMilliseconds(startOfDayLeft);
+  const timestampRight = +startOfDayRight - getTimezoneOffsetInMilliseconds(startOfDayRight);
+  return Math.round((timestampLeft - timestampRight) / millisecondsInDay);
+}
+
+// node_modules/date-fns/startOfISOWeekYear.mjs
+function startOfISOWeekYear(date2) {
+  const year = getISOWeekYear(date2);
+  const fourthOfJanuary = constructFrom(date2, 0);
+  fourthOfJanuary.setFullYear(year, 0, 4);
+  fourthOfJanuary.setHours(0, 0, 0, 0);
+  return startOfISOWeek(fourthOfJanuary);
+}
+
+// node_modules/date-fns/isDate.mjs
+function isDate(value) {
+  return value instanceof Date || typeof value === "object" && Object.prototype.toString.call(value) === "[object Date]";
+}
+
+// node_modules/date-fns/isValid.mjs
+function isValid2(date2) {
+  if (!isDate(date2) && typeof date2 !== "number") {
+    return false;
+  }
+  const _date = toDate(date2);
+  return !isNaN(Number(_date));
+}
+
+// node_modules/date-fns/differenceInDays.mjs
+function differenceInDays(dateLeft, dateRight) {
+  const _dateLeft = toDate(dateLeft);
+  const _dateRight = toDate(dateRight);
+  const sign = compareLocalAsc(_dateLeft, _dateRight);
+  const difference = Math.abs(differenceInCalendarDays(_dateLeft, _dateRight));
+  _dateLeft.setDate(_dateLeft.getDate() - sign * difference);
+  const isLastDayNotFull = Number(
+    compareLocalAsc(_dateLeft, _dateRight) === -sign
+  );
+  const result = sign * (difference - isLastDayNotFull);
+  return result === 0 ? 0 : result;
+}
+function compareLocalAsc(dateLeft, dateRight) {
+  const diff = dateLeft.getFullYear() - dateRight.getFullYear() || dateLeft.getMonth() - dateRight.getMonth() || dateLeft.getDate() - dateRight.getDate() || dateLeft.getHours() - dateRight.getHours() || dateLeft.getMinutes() - dateRight.getMinutes() || dateLeft.getSeconds() - dateRight.getSeconds() || dateLeft.getMilliseconds() - dateRight.getMilliseconds();
+  if (diff < 0) {
+    return -1;
+  } else if (diff > 0) {
+    return 1;
+  } else {
+    return diff;
+  }
+}
+
+// node_modules/date-fns/startOfYear.mjs
+function startOfYear(date2) {
+  const cleanDate = toDate(date2);
+  const _date = constructFrom(date2, 0);
+  _date.setFullYear(cleanDate.getFullYear(), 0, 1);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// node_modules/date-fns/locale/en-US/_lib/formatDistance.mjs
+var formatDistanceLocale = {
+  lessThanXSeconds: {
+    one: "less than a second",
+    other: "less than {{count}} seconds"
+  },
+  xSeconds: {
+    one: "1 second",
+    other: "{{count}} seconds"
+  },
+  halfAMinute: "half a minute",
+  lessThanXMinutes: {
+    one: "less than a minute",
+    other: "less than {{count}} minutes"
+  },
+  xMinutes: {
+    one: "1 minute",
+    other: "{{count}} minutes"
+  },
+  aboutXHours: {
+    one: "about 1 hour",
+    other: "about {{count}} hours"
+  },
+  xHours: {
+    one: "1 hour",
+    other: "{{count}} hours"
+  },
+  xDays: {
+    one: "1 day",
+    other: "{{count}} days"
+  },
+  aboutXWeeks: {
+    one: "about 1 week",
+    other: "about {{count}} weeks"
+  },
+  xWeeks: {
+    one: "1 week",
+    other: "{{count}} weeks"
+  },
+  aboutXMonths: {
+    one: "about 1 month",
+    other: "about {{count}} months"
+  },
+  xMonths: {
+    one: "1 month",
+    other: "{{count}} months"
+  },
+  aboutXYears: {
+    one: "about 1 year",
+    other: "about {{count}} years"
+  },
+  xYears: {
+    one: "1 year",
+    other: "{{count}} years"
+  },
+  overXYears: {
+    one: "over 1 year",
+    other: "over {{count}} years"
+  },
+  almostXYears: {
+    one: "almost 1 year",
+    other: "almost {{count}} years"
+  }
+};
+var formatDistance = (token, count, options) => {
+  let result;
+  const tokenValue = formatDistanceLocale[token];
+  if (typeof tokenValue === "string") {
+    result = tokenValue;
+  } else if (count === 1) {
+    result = tokenValue.one;
+  } else {
+    result = tokenValue.other.replace("{{count}}", count.toString());
+  }
+  if (options?.addSuffix) {
+    if (options.comparison && options.comparison > 0) {
+      return "in " + result;
+    } else {
+      return result + " ago";
+    }
+  }
+  return result;
+};
+
+// node_modules/date-fns/locale/_lib/buildFormatLongFn.mjs
+function buildFormatLongFn(args) {
+  return (options = {}) => {
+    const width = options.width ? String(options.width) : args.defaultWidth;
+    const format2 = args.formats[width] || args.formats[args.defaultWidth];
+    return format2;
+  };
+}
+
+// node_modules/date-fns/locale/en-US/_lib/formatLong.mjs
+var dateFormats = {
+  full: "EEEE, MMMM do, y",
+  long: "MMMM do, y",
+  medium: "MMM d, y",
+  short: "MM/dd/yyyy"
+};
+var timeFormats = {
+  full: "h:mm:ss a zzzz",
+  long: "h:mm:ss a z",
+  medium: "h:mm:ss a",
+  short: "h:mm a"
+};
+var dateTimeFormats = {
+  full: "{{date}} 'at' {{time}}",
+  long: "{{date}} 'at' {{time}}",
+  medium: "{{date}}, {{time}}",
+  short: "{{date}}, {{time}}"
+};
+var formatLong = {
+  date: buildFormatLongFn({
+    formats: dateFormats,
+    defaultWidth: "full"
+  }),
+  time: buildFormatLongFn({
+    formats: timeFormats,
+    defaultWidth: "full"
+  }),
+  dateTime: buildFormatLongFn({
+    formats: dateTimeFormats,
+    defaultWidth: "full"
+  })
+};
+
+// node_modules/date-fns/locale/en-US/_lib/formatRelative.mjs
+var formatRelativeLocale = {
+  lastWeek: "'last' eeee 'at' p",
+  yesterday: "'yesterday at' p",
+  today: "'today at' p",
+  tomorrow: "'tomorrow at' p",
+  nextWeek: "eeee 'at' p",
+  other: "P"
+};
+var formatRelative = (token, _date, _baseDate, _options) => formatRelativeLocale[token];
+
+// node_modules/date-fns/locale/_lib/buildLocalizeFn.mjs
+function buildLocalizeFn(args) {
+  return (value, options) => {
+    const context = options?.context ? String(options.context) : "standalone";
+    let valuesArray;
+    if (context === "formatting" && args.formattingValues) {
+      const defaultWidth = args.defaultFormattingWidth || args.defaultWidth;
+      const width = options?.width ? String(options.width) : defaultWidth;
+      valuesArray = args.formattingValues[width] || args.formattingValues[defaultWidth];
+    } else {
+      const defaultWidth = args.defaultWidth;
+      const width = options?.width ? String(options.width) : args.defaultWidth;
+      valuesArray = args.values[width] || args.values[defaultWidth];
+    }
+    const index = args.argumentCallback ? args.argumentCallback(value) : value;
+    return valuesArray[index];
+  };
+}
+
+// node_modules/date-fns/locale/en-US/_lib/localize.mjs
+var eraValues = {
+  narrow: ["B", "A"],
+  abbreviated: ["BC", "AD"],
+  wide: ["Before Christ", "Anno Domini"]
+};
+var quarterValues = {
+  narrow: ["1", "2", "3", "4"],
+  abbreviated: ["Q1", "Q2", "Q3", "Q4"],
+  wide: ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"]
+};
+var monthValues = {
+  narrow: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  abbreviated: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ],
+  wide: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ]
+};
+var dayValues = {
+  narrow: ["S", "M", "T", "W", "T", "F", "S"],
+  short: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  abbreviated: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  wide: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ]
+};
+var dayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  }
+};
+var formattingDayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  }
+};
+var ordinalNumber = (dirtyNumber, _options) => {
+  const number = Number(dirtyNumber);
+  const rem100 = number % 100;
+  if (rem100 > 20 || rem100 < 10) {
+    switch (rem100 % 10) {
+      case 1:
+        return number + "st";
+      case 2:
+        return number + "nd";
+      case 3:
+        return number + "rd";
+    }
+  }
+  return number + "th";
+};
+var localize = {
+  ordinalNumber,
+  era: buildLocalizeFn({
+    values: eraValues,
+    defaultWidth: "wide"
+  }),
+  quarter: buildLocalizeFn({
+    values: quarterValues,
+    defaultWidth: "wide",
+    argumentCallback: (quarter) => quarter - 1
+  }),
+  month: buildLocalizeFn({
+    values: monthValues,
+    defaultWidth: "wide"
+  }),
+  day: buildLocalizeFn({
+    values: dayValues,
+    defaultWidth: "wide"
+  }),
+  dayPeriod: buildLocalizeFn({
+    values: dayPeriodValues,
+    defaultWidth: "wide",
+    formattingValues: formattingDayPeriodValues,
+    defaultFormattingWidth: "wide"
+  })
+};
+
+// node_modules/date-fns/locale/_lib/buildMatchFn.mjs
+function buildMatchFn(args) {
+  return (string, options = {}) => {
+    const width = options.width;
+    const matchPattern = width && args.matchPatterns[width] || args.matchPatterns[args.defaultMatchWidth];
+    const matchResult = string.match(matchPattern);
+    if (!matchResult) {
+      return null;
+    }
+    const matchedString = matchResult[0];
+    const parsePatterns = width && args.parsePatterns[width] || args.parsePatterns[args.defaultParseWidth];
+    const key = Array.isArray(parsePatterns) ? findIndex(parsePatterns, (pattern) => pattern.test(matchedString)) : (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- I challange you to fix the type
+      findKey(parsePatterns, (pattern) => pattern.test(matchedString))
+    );
+    let value;
+    value = args.valueCallback ? args.valueCallback(key) : key;
+    value = options.valueCallback ? (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- I challange you to fix the type
+      options.valueCallback(value)
+    ) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+function findKey(object, predicate) {
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key) && predicate(object[key])) {
+      return key;
+    }
+  }
+  return void 0;
+}
+function findIndex(array, predicate) {
+  for (let key = 0; key < array.length; key++) {
+    if (predicate(array[key])) {
+      return key;
+    }
+  }
+  return void 0;
+}
+
+// node_modules/date-fns/locale/_lib/buildMatchPatternFn.mjs
+function buildMatchPatternFn(args) {
+  return (string, options = {}) => {
+    const matchResult = string.match(args.matchPattern);
+    if (!matchResult) return null;
+    const matchedString = matchResult[0];
+    const parseResult = string.match(args.parsePattern);
+    if (!parseResult) return null;
+    let value = args.valueCallback ? args.valueCallback(parseResult[0]) : parseResult[0];
+    value = options.valueCallback ? options.valueCallback(value) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+
+// node_modules/date-fns/locale/en-US/_lib/match.mjs
+var matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
+var parseOrdinalNumberPattern = /\d+/i;
+var matchEraPatterns = {
+  narrow: /^(b|a)/i,
+  abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
+  wide: /^(before christ|before common era|anno domini|common era)/i
+};
+var parseEraPatterns = {
+  any: [/^b/i, /^(a|c)/i]
+};
+var matchQuarterPatterns = {
+  narrow: /^[1234]/i,
+  abbreviated: /^q[1234]/i,
+  wide: /^[1234](th|st|nd|rd)? quarter/i
+};
+var parseQuarterPatterns = {
+  any: [/1/i, /2/i, /3/i, /4/i]
+};
+var matchMonthPatterns = {
+  narrow: /^[jfmasond]/i,
+  abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
+  wide: /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
+};
+var parseMonthPatterns = {
+  narrow: [
+    /^j/i,
+    /^f/i,
+    /^m/i,
+    /^a/i,
+    /^m/i,
+    /^j/i,
+    /^j/i,
+    /^a/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ],
+  any: [
+    /^ja/i,
+    /^f/i,
+    /^mar/i,
+    /^ap/i,
+    /^may/i,
+    /^jun/i,
+    /^jul/i,
+    /^au/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ]
+};
+var matchDayPatterns = {
+  narrow: /^[smtwf]/i,
+  short: /^(su|mo|tu|we|th|fr|sa)/i,
+  abbreviated: /^(sun|mon|tue|wed|thu|fri|sat)/i,
+  wide: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
+};
+var parseDayPatterns = {
+  narrow: [/^s/i, /^m/i, /^t/i, /^w/i, /^t/i, /^f/i, /^s/i],
+  any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
+};
+var matchDayPeriodPatterns = {
+  narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
+  any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
+};
+var parseDayPeriodPatterns = {
+  any: {
+    am: /^a/i,
+    pm: /^p/i,
+    midnight: /^mi/i,
+    noon: /^no/i,
+    morning: /morning/i,
+    afternoon: /afternoon/i,
+    evening: /evening/i,
+    night: /night/i
+  }
+};
+var match = {
+  ordinalNumber: buildMatchPatternFn({
+    matchPattern: matchOrdinalNumberPattern,
+    parsePattern: parseOrdinalNumberPattern,
+    valueCallback: (value) => parseInt(value, 10)
+  }),
+  era: buildMatchFn({
+    matchPatterns: matchEraPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseEraPatterns,
+    defaultParseWidth: "any"
+  }),
+  quarter: buildMatchFn({
+    matchPatterns: matchQuarterPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseQuarterPatterns,
+    defaultParseWidth: "any",
+    valueCallback: (index) => index + 1
+  }),
+  month: buildMatchFn({
+    matchPatterns: matchMonthPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseMonthPatterns,
+    defaultParseWidth: "any"
+  }),
+  day: buildMatchFn({
+    matchPatterns: matchDayPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseDayPatterns,
+    defaultParseWidth: "any"
+  }),
+  dayPeriod: buildMatchFn({
+    matchPatterns: matchDayPeriodPatterns,
+    defaultMatchWidth: "any",
+    parsePatterns: parseDayPeriodPatterns,
+    defaultParseWidth: "any"
+  })
+};
+
+// node_modules/date-fns/locale/en-US.mjs
+var enUS = {
+  code: "en-US",
+  formatDistance,
+  formatLong,
+  formatRelative,
+  localize,
+  match,
+  options: {
+    weekStartsOn: 0,
+    firstWeekContainsDate: 1
+  }
+};
+
+// node_modules/date-fns/getDayOfYear.mjs
+function getDayOfYear(date2) {
+  const _date = toDate(date2);
+  const diff = differenceInCalendarDays(_date, startOfYear(_date));
+  const dayOfYear = diff + 1;
+  return dayOfYear;
+}
+
+// node_modules/date-fns/getISOWeek.mjs
+function getISOWeek(date2) {
+  const _date = toDate(date2);
+  const diff = +startOfISOWeek(_date) - +startOfISOWeekYear(_date);
+  return Math.round(diff / millisecondsInWeek) + 1;
+}
+
+// node_modules/date-fns/getWeekYear.mjs
+function getWeekYear(date2, options) {
+  const _date = toDate(date2);
+  const year = _date.getFullYear();
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const firstWeekOfNextYear = constructFrom(date2, 0);
+  firstWeekOfNextYear.setFullYear(year + 1, 0, firstWeekContainsDate);
+  firstWeekOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfWeek(firstWeekOfNextYear, options);
+  const firstWeekOfThisYear = constructFrom(date2, 0);
+  firstWeekOfThisYear.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeekOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfWeek(firstWeekOfThisYear, options);
+  if (_date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (_date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+
+// node_modules/date-fns/startOfWeekYear.mjs
+function startOfWeekYear(date2, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const year = getWeekYear(date2, options);
+  const firstWeek = constructFrom(date2, 0);
+  firstWeek.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeek.setHours(0, 0, 0, 0);
+  const _date = startOfWeek(firstWeek, options);
+  return _date;
+}
+
+// node_modules/date-fns/getWeek.mjs
+function getWeek(date2, options) {
+  const _date = toDate(date2);
+  const diff = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
+  return Math.round(diff / millisecondsInWeek) + 1;
+}
+
+// node_modules/date-fns/_lib/addLeadingZeros.mjs
+function addLeadingZeros(number, targetLength) {
+  const sign = number < 0 ? "-" : "";
+  const output = Math.abs(number).toString().padStart(targetLength, "0");
+  return sign + output;
+}
+
+// node_modules/date-fns/_lib/format/lightFormatters.mjs
+var lightFormatters = {
+  // Year
+  y(date2, token) {
+    const signedYear = date2.getFullYear();
+    const year = signedYear > 0 ? signedYear : 1 - signedYear;
+    return addLeadingZeros(token === "yy" ? year % 100 : year, token.length);
+  },
+  // Month
+  M(date2, token) {
+    const month = date2.getMonth();
+    return token === "M" ? String(month + 1) : addLeadingZeros(month + 1, 2);
+  },
+  // Day of the month
+  d(date2, token) {
+    return addLeadingZeros(date2.getDate(), token.length);
+  },
+  // AM or PM
+  a(date2, token) {
+    const dayPeriodEnumValue = date2.getHours() / 12 >= 1 ? "pm" : "am";
+    switch (token) {
+      case "a":
+      case "aa":
+        return dayPeriodEnumValue.toUpperCase();
+      case "aaa":
+        return dayPeriodEnumValue;
+      case "aaaaa":
+        return dayPeriodEnumValue[0];
+      case "aaaa":
+      default:
+        return dayPeriodEnumValue === "am" ? "a.m." : "p.m.";
+    }
+  },
+  // Hour [1-12]
+  h(date2, token) {
+    return addLeadingZeros(date2.getHours() % 12 || 12, token.length);
+  },
+  // Hour [0-23]
+  H(date2, token) {
+    return addLeadingZeros(date2.getHours(), token.length);
+  },
+  // Minute
+  m(date2, token) {
+    return addLeadingZeros(date2.getMinutes(), token.length);
+  },
+  // Second
+  s(date2, token) {
+    return addLeadingZeros(date2.getSeconds(), token.length);
+  },
+  // Fraction of second
+  S(date2, token) {
+    const numberOfDigits = token.length;
+    const milliseconds = date2.getMilliseconds();
+    const fractionalSeconds = Math.trunc(
+      milliseconds * Math.pow(10, numberOfDigits - 3)
+    );
+    return addLeadingZeros(fractionalSeconds, token.length);
+  }
+};
+
+// node_modules/date-fns/_lib/format/formatters.mjs
+var dayPeriodEnum = {
+  am: "am",
+  pm: "pm",
+  midnight: "midnight",
+  noon: "noon",
+  morning: "morning",
+  afternoon: "afternoon",
+  evening: "evening",
+  night: "night"
+};
+var formatters = {
+  // Era
+  G: function(date2, token, localize2) {
+    const era = date2.getFullYear() > 0 ? 1 : 0;
+    switch (token) {
+      // AD, BC
+      case "G":
+      case "GG":
+      case "GGG":
+        return localize2.era(era, { width: "abbreviated" });
+      // A, B
+      case "GGGGG":
+        return localize2.era(era, { width: "narrow" });
+      // Anno Domini, Before Christ
+      case "GGGG":
+      default:
+        return localize2.era(era, { width: "wide" });
+    }
+  },
+  // Year
+  y: function(date2, token, localize2) {
+    if (token === "yo") {
+      const signedYear = date2.getFullYear();
+      const year = signedYear > 0 ? signedYear : 1 - signedYear;
+      return localize2.ordinalNumber(year, { unit: "year" });
+    }
+    return lightFormatters.y(date2, token);
+  },
+  // Local week-numbering year
+  Y: function(date2, token, localize2, options) {
+    const signedWeekYear = getWeekYear(date2, options);
+    const weekYear = signedWeekYear > 0 ? signedWeekYear : 1 - signedWeekYear;
+    if (token === "YY") {
+      const twoDigitYear = weekYear % 100;
+      return addLeadingZeros(twoDigitYear, 2);
+    }
+    if (token === "Yo") {
+      return localize2.ordinalNumber(weekYear, { unit: "year" });
+    }
+    return addLeadingZeros(weekYear, token.length);
+  },
+  // ISO week-numbering year
+  R: function(date2, token) {
+    const isoWeekYear = getISOWeekYear(date2);
+    return addLeadingZeros(isoWeekYear, token.length);
+  },
+  // Extended year. This is a single number designating the year of this calendar system.
+  // The main difference between `y` and `u` localizers are B.C. years:
+  // | Year | `y` | `u` |
+  // |------|-----|-----|
+  // | AC 1 |   1 |   1 |
+  // | BC 1 |   1 |   0 |
+  // | BC 2 |   2 |  -1 |
+  // Also `yy` always returns the last two digits of a year,
+  // while `uu` pads single digit years to 2 characters and returns other years unchanged.
+  u: function(date2, token) {
+    const year = date2.getFullYear();
+    return addLeadingZeros(year, token.length);
+  },
+  // Quarter
+  Q: function(date2, token, localize2) {
+    const quarter = Math.ceil((date2.getMonth() + 1) / 3);
+    switch (token) {
+      // 1, 2, 3, 4
+      case "Q":
+        return String(quarter);
+      // 01, 02, 03, 04
+      case "QQ":
+        return addLeadingZeros(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+      case "Qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "QQQ":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "QQQQQ":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "QQQQ":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone quarter
+  q: function(date2, token, localize2) {
+    const quarter = Math.ceil((date2.getMonth() + 1) / 3);
+    switch (token) {
+      // 1, 2, 3, 4
+      case "q":
+        return String(quarter);
+      // 01, 02, 03, 04
+      case "qq":
+        return addLeadingZeros(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+      case "qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "qqq":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "qqqqq":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "qqqq":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // Month
+  M: function(date2, token, localize2) {
+    const month = date2.getMonth();
+    switch (token) {
+      case "M":
+      case "MM":
+        return lightFormatters.M(date2, token);
+      // 1st, 2nd, ..., 12th
+      case "Mo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      // Jan, Feb, ..., Dec
+      case "MMM":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // J, F, ..., D
+      case "MMMMM":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // January, February, ..., December
+      case "MMMM":
+      default:
+        return localize2.month(month, { width: "wide", context: "formatting" });
+    }
+  },
+  // Stand-alone month
+  L: function(date2, token, localize2) {
+    const month = date2.getMonth();
+    switch (token) {
+      // 1, 2, ..., 12
+      case "L":
+        return String(month + 1);
+      // 01, 02, ..., 12
+      case "LL":
+        return addLeadingZeros(month + 1, 2);
+      // 1st, 2nd, ..., 12th
+      case "Lo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      // Jan, Feb, ..., Dec
+      case "LLL":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // J, F, ..., D
+      case "LLLLL":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // January, February, ..., December
+      case "LLLL":
+      default:
+        return localize2.month(month, { width: "wide", context: "standalone" });
+    }
+  },
+  // Local week of year
+  w: function(date2, token, localize2, options) {
+    const week = getWeek(date2, options);
+    if (token === "wo") {
+      return localize2.ordinalNumber(week, { unit: "week" });
+    }
+    return addLeadingZeros(week, token.length);
+  },
+  // ISO week of year
+  I: function(date2, token, localize2) {
+    const isoWeek = getISOWeek(date2);
+    if (token === "Io") {
+      return localize2.ordinalNumber(isoWeek, { unit: "week" });
+    }
+    return addLeadingZeros(isoWeek, token.length);
+  },
+  // Day of the month
+  d: function(date2, token, localize2) {
+    if (token === "do") {
+      return localize2.ordinalNumber(date2.getDate(), { unit: "date" });
+    }
+    return lightFormatters.d(date2, token);
+  },
+  // Day of year
+  D: function(date2, token, localize2) {
+    const dayOfYear = getDayOfYear(date2);
+    if (token === "Do") {
+      return localize2.ordinalNumber(dayOfYear, { unit: "dayOfYear" });
+    }
+    return addLeadingZeros(dayOfYear, token.length);
+  },
+  // Day of week
+  E: function(date2, token, localize2) {
+    const dayOfWeek = date2.getDay();
+    switch (token) {
+      // Tue
+      case "E":
+      case "EE":
+      case "EEE":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "EEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "EEEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "EEEE":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Local day of week
+  e: function(date2, token, localize2, options) {
+    const dayOfWeek = date2.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token) {
+      // Numerical value (Nth day of week with current locale or weekStartsOn)
+      case "e":
+        return String(localDayOfWeek);
+      // Padded numerical value
+      case "ee":
+        return addLeadingZeros(localDayOfWeek, 2);
+      // 1st, 2nd, ..., 7th
+      case "eo":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "eee":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "eeeee":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "eeeeee":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "eeee":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone local day of week
+  c: function(date2, token, localize2, options) {
+    const dayOfWeek = date2.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token) {
+      // Numerical value (same as in `e`)
+      case "c":
+        return String(localDayOfWeek);
+      // Padded numerical value
+      case "cc":
+        return addLeadingZeros(localDayOfWeek, token.length);
+      // 1st, 2nd, ..., 7th
+      case "co":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "ccc":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // T
+      case "ccccc":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // Tu
+      case "cccccc":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "standalone"
+        });
+      // Tuesday
+      case "cccc":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // ISO day of week
+  i: function(date2, token, localize2) {
+    const dayOfWeek = date2.getDay();
+    const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    switch (token) {
+      // 2
+      case "i":
+        return String(isoDayOfWeek);
+      // 02
+      case "ii":
+        return addLeadingZeros(isoDayOfWeek, token.length);
+      // 2nd
+      case "io":
+        return localize2.ordinalNumber(isoDayOfWeek, { unit: "day" });
+      // Tue
+      case "iii":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "iiiii":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "iiiiii":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "iiii":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM or PM
+  a: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    const dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    switch (token) {
+      case "a":
+      case "aa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "aaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "aaaaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "aaaa":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM, PM, midnight, noon
+  b: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    let dayPeriodEnumValue;
+    if (hours === 12) {
+      dayPeriodEnumValue = dayPeriodEnum.noon;
+    } else if (hours === 0) {
+      dayPeriodEnumValue = dayPeriodEnum.midnight;
+    } else {
+      dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    }
+    switch (token) {
+      case "b":
+      case "bb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "bbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "bbbbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "bbbb":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // in the morning, in the afternoon, in the evening, at night
+  B: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    let dayPeriodEnumValue;
+    if (hours >= 17) {
+      dayPeriodEnumValue = dayPeriodEnum.evening;
+    } else if (hours >= 12) {
+      dayPeriodEnumValue = dayPeriodEnum.afternoon;
+    } else if (hours >= 4) {
+      dayPeriodEnumValue = dayPeriodEnum.morning;
+    } else {
+      dayPeriodEnumValue = dayPeriodEnum.night;
+    }
+    switch (token) {
+      case "B":
+      case "BB":
+      case "BBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "BBBBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "BBBB":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Hour [1-12]
+  h: function(date2, token, localize2) {
+    if (token === "ho") {
+      let hours = date2.getHours() % 12;
+      if (hours === 0) hours = 12;
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return lightFormatters.h(date2, token);
+  },
+  // Hour [0-23]
+  H: function(date2, token, localize2) {
+    if (token === "Ho") {
+      return localize2.ordinalNumber(date2.getHours(), { unit: "hour" });
+    }
+    return lightFormatters.H(date2, token);
+  },
+  // Hour [0-11]
+  K: function(date2, token, localize2) {
+    const hours = date2.getHours() % 12;
+    if (token === "Ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token.length);
+  },
+  // Hour [1-24]
+  k: function(date2, token, localize2) {
+    let hours = date2.getHours();
+    if (hours === 0) hours = 24;
+    if (token === "ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token.length);
+  },
+  // Minute
+  m: function(date2, token, localize2) {
+    if (token === "mo") {
+      return localize2.ordinalNumber(date2.getMinutes(), { unit: "minute" });
+    }
+    return lightFormatters.m(date2, token);
+  },
+  // Second
+  s: function(date2, token, localize2) {
+    if (token === "so") {
+      return localize2.ordinalNumber(date2.getSeconds(), { unit: "second" });
+    }
+    return lightFormatters.s(date2, token);
+  },
+  // Fraction of second
+  S: function(date2, token) {
+    return lightFormatters.S(date2, token);
+  },
+  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
+  X: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    if (timezoneOffset === 0) {
+      return "Z";
+    }
+    switch (token) {
+      // Hours and optional minutes
+      case "X":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XX`
+      case "XXXX":
+      case "XX":
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XXX`
+      case "XXXXX":
+      case "XXX":
+      // Hours and minutes with `:` delimiter
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
+  x: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Hours and optional minutes
+      case "x":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xx`
+      case "xxxx":
+      case "xx":
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xxx`
+      case "xxxxx":
+      case "xxx":
+      // Hours and minutes with `:` delimiter
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (GMT)
+  O: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Short
+      case "O":
+      case "OO":
+      case "OOO":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      // Long
+      case "OOOO":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (specific non-location)
+  z: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Short
+      case "z":
+      case "zz":
+      case "zzz":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      // Long
+      case "zzzz":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Seconds timestamp
+  t: function(date2, token, _localize) {
+    const timestamp2 = Math.trunc(date2.getTime() / 1e3);
+    return addLeadingZeros(timestamp2, token.length);
+  },
+  // Milliseconds timestamp
+  T: function(date2, token, _localize) {
+    const timestamp2 = date2.getTime();
+    return addLeadingZeros(timestamp2, token.length);
+  }
+};
+function formatTimezoneShort(offset, delimiter = "") {
+  const sign = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = Math.trunc(absOffset / 60);
+  const minutes = absOffset % 60;
+  if (minutes === 0) {
+    return sign + String(hours);
+  }
+  return sign + String(hours) + delimiter + addLeadingZeros(minutes, 2);
+}
+function formatTimezoneWithOptionalMinutes(offset, delimiter) {
+  if (offset % 60 === 0) {
+    const sign = offset > 0 ? "-" : "+";
+    return sign + addLeadingZeros(Math.abs(offset) / 60, 2);
+  }
+  return formatTimezone(offset, delimiter);
+}
+function formatTimezone(offset, delimiter = "") {
+  const sign = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = addLeadingZeros(Math.trunc(absOffset / 60), 2);
+  const minutes = addLeadingZeros(absOffset % 60, 2);
+  return sign + hours + delimiter + minutes;
+}
+
+// node_modules/date-fns/_lib/format/longFormatters.mjs
+var dateLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "P":
+      return formatLong2.date({ width: "short" });
+    case "PP":
+      return formatLong2.date({ width: "medium" });
+    case "PPP":
+      return formatLong2.date({ width: "long" });
+    case "PPPP":
+    default:
+      return formatLong2.date({ width: "full" });
+  }
+};
+var timeLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "p":
+      return formatLong2.time({ width: "short" });
+    case "pp":
+      return formatLong2.time({ width: "medium" });
+    case "ppp":
+      return formatLong2.time({ width: "long" });
+    case "pppp":
+    default:
+      return formatLong2.time({ width: "full" });
+  }
+};
+var dateTimeLongFormatter = (pattern, formatLong2) => {
+  const matchResult = pattern.match(/(P+)(p+)?/) || [];
+  const datePattern = matchResult[1];
+  const timePattern = matchResult[2];
+  if (!timePattern) {
+    return dateLongFormatter(pattern, formatLong2);
+  }
+  let dateTimeFormat;
+  switch (datePattern) {
+    case "P":
+      dateTimeFormat = formatLong2.dateTime({ width: "short" });
+      break;
+    case "PP":
+      dateTimeFormat = formatLong2.dateTime({ width: "medium" });
+      break;
+    case "PPP":
+      dateTimeFormat = formatLong2.dateTime({ width: "long" });
+      break;
+    case "PPPP":
+    default:
+      dateTimeFormat = formatLong2.dateTime({ width: "full" });
+      break;
+  }
+  return dateTimeFormat.replace("{{date}}", dateLongFormatter(datePattern, formatLong2)).replace("{{time}}", timeLongFormatter(timePattern, formatLong2));
+};
+var longFormatters = {
+  p: timeLongFormatter,
+  P: dateTimeLongFormatter
+};
+
+// node_modules/date-fns/_lib/protectedTokens.mjs
+var dayOfYearTokenRE = /^D+$/;
+var weekYearTokenRE = /^Y+$/;
+var throwTokens = ["D", "DD", "YY", "YYYY"];
+function isProtectedDayOfYearToken(token) {
+  return dayOfYearTokenRE.test(token);
+}
+function isProtectedWeekYearToken(token) {
+  return weekYearTokenRE.test(token);
+}
+function warnOrThrowProtectedError(token, format2, input) {
+  const _message = message(token, format2, input);
+  console.warn(_message);
+  if (throwTokens.includes(token)) throw new RangeError(_message);
+}
+function message(token, format2, input) {
+  const subject = token[0] === "Y" ? "years" : "days of the month";
+  return `Use \`${token.toLowerCase()}\` instead of \`${token}\` (in \`${format2}\`) for formatting ${subject} to the input \`${input}\`; see: https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md`;
+}
+
+// node_modules/date-fns/format.mjs
+var formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
+var longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
+var escapedStringRegExp = /^'([^]*?)'?$/;
+var doubleQuoteRegExp = /''/g;
+var unescapedLatinCharacterRegExp = /[a-zA-Z]/;
+function format(date2, formatStr, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const locale = options?.locale ?? defaultOptions2.locale ?? enUS;
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  const originalDate = toDate(date2);
+  if (!isValid2(originalDate)) {
+    throw new RangeError("Invalid time value");
+  }
+  let parts = formatStr.match(longFormattingTokensRegExp).map((substring) => {
+    const firstCharacter = substring[0];
+    if (firstCharacter === "p" || firstCharacter === "P") {
+      const longFormatter = longFormatters[firstCharacter];
+      return longFormatter(substring, locale.formatLong);
+    }
+    return substring;
+  }).join("").match(formattingTokensRegExp).map((substring) => {
+    if (substring === "''") {
+      return { isToken: false, value: "'" };
+    }
+    const firstCharacter = substring[0];
+    if (firstCharacter === "'") {
+      return { isToken: false, value: cleanEscapedString(substring) };
+    }
+    if (formatters[firstCharacter]) {
+      return { isToken: true, value: substring };
+    }
+    if (firstCharacter.match(unescapedLatinCharacterRegExp)) {
+      throw new RangeError(
+        "Format string contains an unescaped latin alphabet character `" + firstCharacter + "`"
+      );
+    }
+    return { isToken: false, value: substring };
+  });
+  if (locale.localize.preprocessor) {
+    parts = locale.localize.preprocessor(originalDate, parts);
+  }
+  const formatterOptions = {
+    firstWeekContainsDate,
+    weekStartsOn,
+    locale
+  };
+  return parts.map((part) => {
+    if (!part.isToken) return part.value;
+    const token = part.value;
+    if (!options?.useAdditionalWeekYearTokens && isProtectedWeekYearToken(token) || !options?.useAdditionalDayOfYearTokens && isProtectedDayOfYearToken(token)) {
+      warnOrThrowProtectedError(token, formatStr, String(date2));
+    }
+    const formatter = formatters[token[0]];
+    return formatter(originalDate, token, locale.localize, formatterOptions);
+  }).join("");
+}
+function cleanEscapedString(input) {
+  const matched = input.match(escapedStringRegExp);
+  if (!matched) {
+    return input;
+  }
+  return matched[1].replace(doubleQuoteRegExp, "'");
+}
+
+// node_modules/date-fns/isAfter.mjs
+function isAfter(date2, dateToCompare) {
+  const _date = toDate(date2);
+  const _dateToCompare = toDate(dateToCompare);
+  return _date.getTime() > _dateToCompare.getTime();
+}
+
+// server/goals-service.ts
+var GoalsService = class {
+  /**
+   * AI-Powered Goal Analysis and Recommendations
+   */
+  async analyzeGoal(goalId) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal) throw new Error("Goal not found");
+    const contributions = await this.getGoalContributions(goalId, 90);
+    const workspaceData = await this.getWorkspaceFinancialData(goal.workspaceId);
+    const velocity = this.calculateVelocity(contributions);
+    const remaining = parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount);
+    const monthsToComplete = velocity > 0 ? remaining / velocity : Infinity;
+    const projectedCompletion = addMonths(/* @__PURE__ */ new Date(), Math.ceil(monthsToComplete));
+    const healthScore = this.calculateGoalHealthScore(goal, velocity, workspaceData);
+    const riskLevel = this.assessRiskLevel(goal, velocity, workspaceData);
+    const recommendations = await this.generateRecommendations(goal, velocity, workspaceData);
+    return {
+      velocity,
+      projectedCompletion,
+      healthScore,
+      riskLevel,
+      recommendations
+    };
+  }
+  /**
+   * Auto-create intelligent milestones for a goal
+   */
+  async createIntelligentMilestones(goalId) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal) throw new Error("Goal not found");
+    const targetAmount = parseFloat(goal.targetAmount);
+    const currentAmount = parseFloat(goal.currentAmount);
+    const remainingAmount = targetAmount - currentAmount;
+    const targetDate = new Date(goal.targetDate);
+    const now = /* @__PURE__ */ new Date();
+    const monthsRemaining = Math.max(1, Math.ceil(differenceInDays(targetDate, now) / 30));
+    const milestones = [];
+    if (remainingAmount >= 1e7) {
+      const quarters = Math.min(8, Math.ceil(monthsRemaining / 3));
+      const quarterlyAmount = remainingAmount / quarters;
+      for (let i = 1; i <= quarters; i++) {
+        const milestoneDate = addMonths(now, i * 3);
+        if (isAfter(milestoneDate, targetDate)) break;
+        milestones.push({
+          name: `Quarter ${i} Target`,
+          targetAmount: currentAmount + quarterlyAmount * i,
+          targetDate: milestoneDate,
+          order: i,
+          reward: i === Math.ceil(quarters / 2) ? "Mid-goal celebration!" : void 0
+        });
+      }
+    } else {
+      const monthlyAmount = remainingAmount / monthsRemaining;
+      for (let i = 1; i <= monthsRemaining; i++) {
+        const milestoneDate = addMonths(now, i);
+        if (isAfter(milestoneDate, targetDate)) break;
+        milestones.push({
+          name: `Month ${i} Target`,
+          targetAmount: currentAmount + monthlyAmount * i,
+          targetDate: milestoneDate,
+          order: i,
+          reward: i % 3 === 0 ? "Monthly reward treat!" : void 0
+        });
+      }
+    }
+    milestones.push({
+      name: "Goal Achievement",
+      targetAmount,
+      targetDate,
+      order: milestones.length + 1,
+      reward: "\u{1F389} Goal Completed! Time to celebrate!"
+    });
+    for (const milestone of milestones) {
+      await db.insert(goalMilestones).values({
+        goalId,
+        name: milestone.name,
+        targetAmount: milestone.targetAmount.toString(),
+        targetDate: format(milestone.targetDate, "yyyy-MM-dd"),
+        order: milestone.order,
+        reward: milestone.reward
+      });
+    }
+  }
+  /**
+   * Process transaction and update related goals automatically
+   */
+  async processTransactionForGoals(transactionId) {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, transactionId));
+    if (!transaction) return;
+    const applicableGoals = await this.findApplicableGoals(transaction);
+    for (const goal of applicableGoals) {
+      await this.updateGoalProgress(goal.id, transaction);
+      await this.checkMilestoneCompletion(goal.id);
+      await this.generateProgressInsight(goal.id, transaction);
+    }
+  }
+  /**
+   * Smart Goal Suggestions based on user's financial profile
+   */
+  async generateGoalSuggestions(workspaceId) {
+    const financialData = await this.getWorkspaceFinancialData(workspaceId);
+    const suggestions = [];
+    if (financialData.totalBalance < financialData.monthlyExpenses * 6) {
+      const recommendedAmount = financialData.monthlyExpenses * 6;
+      suggestions.push({
+        type: "strategy",
+        title: "Emergency Fund Critical",
+        message: `Build emergency fund to ${this.formatCurrency(recommendedAmount)}. Currently you have ${this.formatCurrency(financialData.totalBalance)} saved.`,
+        confidence: 0.95,
+        actionable: true,
+        data: {
+          goalType: "emergency_fund",
+          targetAmount: recommendedAmount,
+          priority: "critical"
+        }
+      });
+    }
+    if (financialData.totalDebt > 0) {
+      const monthlyCapacity = Math.max(0, financialData.monthlyIncome - financialData.monthlyExpenses);
+      const payoffMonths = monthlyCapacity > 0 ? Math.ceil(financialData.totalDebt / monthlyCapacity) : 0;
+      suggestions.push({
+        type: "strategy",
+        title: "Debt Freedom Goal",
+        message: `Clear all debts in ${payoffMonths} months by allocating ${this.formatCurrency(monthlyCapacity)} monthly.`,
+        confidence: 0.88,
+        actionable: payoffMonths > 0,
+        data: {
+          goalType: "debt_payment",
+          targetAmount: financialData.totalDebt,
+          monthlyContribution: monthlyCapacity
+        }
+      });
+    }
+    if (financialData.savingsRate > 0.2) {
+      const annualSavings = (financialData.monthlyIncome - financialData.monthlyExpenses) * 12;
+      suggestions.push({
+        type: "amount",
+        title: "Wealth Building Opportunity",
+        message: `Your savings rate is excellent! Consider setting a ${this.formatCurrency(annualSavings)} annual investment goal.`,
+        confidence: 0.82,
+        actionable: true,
+        data: {
+          goalType: "investment",
+          targetAmount: annualSavings,
+          timeline: "yearly"
+        }
+      });
+    }
+    return suggestions;
+  }
+  /**
+   * Update goal progress from a transaction
+   */
+  async updateGoalProgress(goalId, transaction) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal || !goal.isAutoTracking) return;
+    let contributionAmount = 0;
+    let contributionType = "transaction";
+    if (goal.linkedAccountId === transaction.accountId) {
+      if (transaction.type === "income" || transaction.type === "transfer") {
+        contributionAmount = parseFloat(transaction.amount);
+      }
+    } else if (goal.linkedDebtId && transaction.debtId === goal.linkedDebtId) {
+      if (transaction.type === "repayment") {
+        contributionAmount = parseFloat(transaction.amount);
+      }
+    }
+    if (contributionAmount > 0) {
+      await db.insert(goalContributions).values({
+        goalId,
+        transactionId: transaction.id,
+        amount: contributionAmount.toString(),
+        contributionType,
+        source: `${transaction.type} transaction`,
+        date: transaction.date,
+        workspaceId: transaction.workspaceId
+      });
+      const newCurrentAmount = parseFloat(goal.currentAmount) + contributionAmount;
+      await db.update(goals).set({
+        currentAmount: newCurrentAmount.toString(),
+        lastProgressUpdate: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq(goals.id, goalId));
+      if (newCurrentAmount >= parseFloat(goal.targetAmount) && goal.status !== "completed") {
+        await db.update(goals).set({
+          status: "completed",
+          completedAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(goals.id, goalId));
+        await this.createAchievementInsight(goalId);
+      }
+    }
+  }
+  /**
+   * Get goal with all related details
+   */
+  async getGoalWithDetails(goalId) {
+    const [goal] = await db.select().from(goals).where(eq(goals.id, goalId));
+    return goal;
+  }
+  /**
+   * Get goal contributions within specified days
+   */
+  async getGoalContributions(goalId, days = 90) {
+    const cutoffDate = /* @__PURE__ */ new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    return await db.select().from(goalContributions).where(
+      and(
+        eq(goalContributions.goalId, goalId),
+        gte(goalContributions.date, cutoffDate)
+      )
+    ).orderBy(desc(goalContributions.date));
+  }
+  /**
+   * Calculate monthly velocity from contributions
+   */
+  calculateVelocity(contributions) {
+    if (contributions.length === 0) return 0;
+    const totalAmount = contributions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+    const daysCovered = Math.max(1, differenceInDays(/* @__PURE__ */ new Date(), new Date(contributions[contributions.length - 1].date)));
+    const monthlyVelocity = totalAmount / daysCovered * 30;
+    return monthlyVelocity;
+  }
+  /**
+   * Calculate goal health score (0-100)
+   */
+  calculateGoalHealthScore(goal, velocity, workspaceData) {
+    let score = 100;
+    const progressPercentage = parseFloat(goal.currentAmount) / parseFloat(goal.targetAmount);
+    const timeElapsed = differenceInDays(/* @__PURE__ */ new Date(), new Date(goal.createdAt));
+    const totalDays = differenceInDays(new Date(goal.targetDate), new Date(goal.createdAt));
+    const expectedProgress = Math.max(0, timeElapsed / totalDays);
+    if (progressPercentage < expectedProgress * 0.7) score -= 30;
+    else if (progressPercentage < expectedProgress * 0.85) score -= 15;
+    if (velocity === 0) score -= 25;
+    else {
+      const remaining = parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount);
+      const daysRemaining = differenceInDays(new Date(goal.targetDate), /* @__PURE__ */ new Date());
+      const requiredMonthlyVelocity = remaining / (daysRemaining / 30);
+      if (velocity < requiredMonthlyVelocity * 0.5) score -= 20;
+      else if (velocity < requiredMonthlyVelocity * 0.8) score -= 10;
+    }
+    const monthlyCapacity = workspaceData.monthlyIncome - workspaceData.monthlyExpenses;
+    const goalDemand = velocity;
+    if (goalDemand > monthlyCapacity * 0.8) score -= 20;
+    else if (goalDemand > monthlyCapacity * 0.5) score -= 10;
+    return Math.max(0, Math.min(100, score));
+  }
+  /**
+   * Assess goal risk level
+   */
+  assessRiskLevel(goal, velocity, workspaceData) {
+    const daysRemaining = differenceInDays(new Date(goal.targetDate), /* @__PURE__ */ new Date());
+    const remaining = parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount);
+    const requiredMonthlyVelocity = remaining / (daysRemaining / 30);
+    if (velocity >= requiredMonthlyVelocity * 1.2) return "low";
+    if (velocity >= requiredMonthlyVelocity * 0.8) return "medium";
+    return "high";
+  }
+  /**
+   * Generate AI-powered recommendations
+   */
+  async generateRecommendations(goal, velocity, workspaceData) {
+    const recommendations = [];
+    const remaining = parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount);
+    const daysRemaining = differenceInDays(new Date(goal.targetDate), /* @__PURE__ */ new Date());
+    const requiredMonthlyVelocity = remaining / (daysRemaining / 30);
+    if (velocity < requiredMonthlyVelocity * 0.8) {
+      recommendations.push({
+        type: "amount",
+        title: "Increase Monthly Contribution",
+        message: `Increase monthly contribution by ${this.formatCurrency(requiredMonthlyVelocity - velocity)} to stay on track.`,
+        confidence: 0.9,
+        actionable: true,
+        data: { requiredIncrease: requiredMonthlyVelocity - velocity }
+      });
+    }
+    if (daysRemaining < 90 && remaining > velocity * 3) {
+      recommendations.push({
+        type: "timeline",
+        title: "Consider Extending Timeline",
+        message: `Goal timeline is aggressive. Consider extending by ${Math.ceil(remaining / velocity - daysRemaining / 30)} months for realistic achievement.`,
+        confidence: 0.85,
+        actionable: true,
+        data: { suggestedExtension: Math.ceil(remaining / velocity - daysRemaining / 30) }
+      });
+    }
+    if (workspaceData.monthlyIncome - workspaceData.monthlyExpenses < requiredMonthlyVelocity) {
+      recommendations.push({
+        type: "strategy",
+        title: "Budget Optimization Needed",
+        message: "Review expenses or increase income to create capacity for goal contributions.",
+        confidence: 0.88,
+        actionable: true,
+        data: { deficit: requiredMonthlyVelocity - (workspaceData.monthlyIncome - workspaceData.monthlyExpenses) }
+      });
+    }
+    return recommendations;
+  }
+  /**
+   * Find goals applicable for a transaction
+   */
+  async findApplicableGoals(transaction) {
+    return await db.select().from(goals).where(
+      and(
+        eq(goals.workspaceId, transaction.workspaceId),
+        eq(goals.status, "active"),
+        eq(goals.isAutoTracking, true)
+      )
+    );
+  }
+  /**
+   * Check and complete milestones
+   */
+  async checkMilestoneCompletion(goalId) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal) return;
+    const currentAmount = parseFloat(goal.currentAmount);
+    const milestones = await db.select().from(goalMilestones).where(
+      and(
+        eq(goalMilestones.goalId, goalId),
+        eq(goalMilestones.isCompleted, false)
+      )
+    ).orderBy(asc(goalMilestones.order));
+    for (const milestone of milestones) {
+      if (currentAmount >= parseFloat(milestone.targetAmount)) {
+        await db.update(goalMilestones).set({
+          isCompleted: true,
+          completedAt: /* @__PURE__ */ new Date()
+        }).where(eq(goalMilestones.id, milestone.id));
+        await db.insert(goalInsights).values({
+          goalId,
+          type: "achievement",
+          title: "Milestone Achieved! \u{1F389}",
+          message: `Congratulations! You've reached milestone: ${milestone.name}${milestone.reward ? ` - ${milestone.reward}` : ""}`,
+          severity: "success",
+          actionRequired: false,
+          workspaceId: goal.workspaceId
+        });
+      } else {
+        break;
+      }
+    }
+  }
+  /**
+   * Generate progress insight from transaction
+   */
+  async generateProgressInsight(goalId, transaction) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal) return;
+    const progressPercentage = parseFloat(goal.currentAmount) / parseFloat(goal.targetAmount) * 100;
+    if (progressPercentage >= 25 && progressPercentage < 30) {
+      await this.createProgressInsight(goalId, "Quarter way there!", `Great progress! You're 25% closer to your goal: ${goal.name}`, goal.workspaceId);
+    } else if (progressPercentage >= 50 && progressPercentage < 55) {
+      await this.createProgressInsight(goalId, "Halfway milestone!", `Amazing! You're halfway to achieving: ${goal.name}`, goal.workspaceId);
+    } else if (progressPercentage >= 75 && progressPercentage < 80) {
+      await this.createProgressInsight(goalId, "Almost there!", `Fantastic! You're 75% of the way to: ${goal.name}`, goal.workspaceId);
+    }
+  }
+  /**
+   * Create achievement insight
+   */
+  async createAchievementInsight(goalId) {
+    const goal = await this.getGoalWithDetails(goalId);
+    if (!goal) return;
+    await db.insert(goalInsights).values({
+      goalId,
+      type: "achievement",
+      title: "Goal Achieved! \u{1F389}",
+      message: `Congratulations! You've successfully achieved your goal: ${goal.name}. Time to celebrate and set new aspirations!`,
+      severity: "success",
+      actionRequired: false,
+      workspaceId: goal.workspaceId
+    });
+  }
+  /**
+   * Create progress insight
+   */
+  async createProgressInsight(goalId, title, message2, workspaceId) {
+    await db.insert(goalInsights).values({
+      goalId,
+      type: "achievement",
+      title,
+      message: message2,
+      severity: "success",
+      actionRequired: false,
+      workspaceId
+    });
+  }
+  /**
+   * Get comprehensive workspace financial data
+   */
+  async getWorkspaceFinancialData(workspaceId) {
+    const recentTransactions = await db.select().from(transactions).where(eq(transactions.workspaceId, workspaceId)).orderBy(desc(transactions.createdAt)).limit(1e3);
+    const totalBalance = recentTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + parseFloat(t.amount), 0) - recentTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const threeMonthsAgo = /* @__PURE__ */ new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const recentIncomeTransactions = recentTransactions.filter((t) => t.type === "income" && new Date(t.createdAt) >= threeMonthsAgo);
+    const recentExpenseTransactions = recentTransactions.filter((t) => t.type === "expense" && new Date(t.createdAt) >= threeMonthsAgo);
+    const monthlyIncome = recentIncomeTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0) / 3;
+    const monthlyExpenses = recentExpenseTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0) / 3;
+    const debtTransactions = recentTransactions.filter((t) => t.type === "repayment");
+    const totalDebt = debtTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const savingsRate = monthlyIncome > 0 ? Math.max(0, (monthlyIncome - monthlyExpenses) / monthlyIncome) : 0;
+    return {
+      totalBalance,
+      totalDebt,
+      monthlyIncome,
+      monthlyExpenses,
+      savingsRate
+    };
+  }
+  /**
+   * Format currency for display
+   */
+  formatCurrency(amount) {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0
+    }).format(amount);
+  }
+};
+var goalsService = new GoalsService();
+
+// server/routes.ts
 var storage2 = new DatabaseStorage();
 var JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+async function checkNonRepaymentNotifications(workspaceId, transaction) {
+  try {
+    const amount = parseFloat(transaction.amount);
+    if (amount > 1e6) {
+      console.log(`Unusual transaction detected: ${amount} IDR`);
+    }
+    if (transaction.type === "expense" && transaction.categoryId) {
+      const budgets3 = await storage2.getWorkspaceBudgets(workspaceId);
+      const categoryBudget = budgets3.find((b) => b.categoryId === transaction.categoryId);
+      if (categoryBudget) {
+        const spent = await calculateCategorySpending(workspaceId, transaction.categoryId);
+        const budgetAmount = parseFloat(categoryBudget.amount);
+        const percentage = spent / budgetAmount * 100;
+        if (percentage >= 90) {
+          console.log(`Budget alert: ${percentage.toFixed(0)}% spent in category`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Smart notification error:", error);
+  }
+}
+async function calculateCategorySpending(workspaceId, categoryId) {
+  const currentMonth = /* @__PURE__ */ new Date();
+  const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const transactions2 = await storage2.getWorkspaceTransactions(workspaceId, 1e3);
+  return transactions2.filter((t) => t.type === "expense" && t.categoryId === categoryId && new Date(t.date) >= startOfMonth).reduce((sum, t) => sum + parseFloat(t.amount), 0);
+}
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -47250,8 +50076,8 @@ async function registerRoutes(app2) {
   app2.get("/api/workspaces/:workspaceId/categories", authenticateToken, async (req, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      const categories2 = await storage2.getWorkspaceCategories(workspaceId);
-      res.json(categories2);
+      const categories3 = await storage2.getWorkspaceCategories(workspaceId);
+      res.json(categories3);
     } catch (error) {
       res.status(500).json({ message: "Failed to get categories" });
     }
@@ -47299,8 +50125,8 @@ async function registerRoutes(app2) {
   app2.get("/api/workspaces/:workspaceId/accounts", authenticateToken, async (req, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      const accounts2 = await storage2.getWorkspaceAccounts(workspaceId);
-      res.json(accounts2);
+      const accounts3 = await storage2.getWorkspaceAccounts(workspaceId);
+      res.json(accounts3);
     } catch (error) {
       res.status(500).json({ message: "Failed to get accounts" });
     }
@@ -47372,6 +50198,11 @@ async function registerRoutes(app2) {
         // Ensure date is properly formatted
       });
       const transaction = await storage2.createTransaction(transactionData);
+      if (transaction.type === "repayment" && transaction.debtId) {
+        await storage2.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
+        console.log(`Debt payment processed: ${transaction.amount} for debt ID: ${transaction.debtId}`);
+      }
+      await checkNonRepaymentNotifications(workspaceId, transaction);
       res.json(transaction);
     } catch (error) {
       console.error("Transaction creation error:", error);
@@ -47423,8 +50254,8 @@ async function registerRoutes(app2) {
       const workspaceId = parseInt(req.params.workspaceId);
       const year = parseInt(req.query.year) || (/* @__PURE__ */ new Date()).getFullYear();
       const month = req.query.month ? parseInt(req.query.month) : void 0;
-      const budgets2 = await storage2.getWorkspaceBudgets(workspaceId, year, month);
-      res.json(budgets2);
+      const budgets3 = await storage2.getWorkspaceBudgets(workspaceId, year, month);
+      res.json(budgets3);
     } catch (error) {
       res.status(500).json({ message: "Failed to get budgets" });
     }
@@ -47493,8 +50324,8 @@ async function registerRoutes(app2) {
   app2.get("/api/workspaces/:workspaceId/debts", authenticateToken, async (req, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
-      const debts2 = await storage2.getWorkspaceDebts(workspaceId);
-      res.json(debts2);
+      const debts3 = await storage2.getWorkspaceDebts(workspaceId);
+      res.json(debts3);
     } catch (error) {
       res.status(500).json({ message: "Failed to get debts" });
     }
@@ -47552,6 +50383,16 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Debt delete error:", error);
       res.status(400).json({ message: "Failed to delete debt" });
+    }
+  });
+  app2.get("/api/debts/:id/repayments", authenticateToken, async (req, res) => {
+    try {
+      const debtId = parseInt(req.params.id);
+      const repayments = await storage2.getDebtRepayments(debtId);
+      res.json(repayments);
+    } catch (error) {
+      console.error("Get debt repayments error:", error);
+      res.status(500).json({ message: "Failed to get debt repayments" });
     }
   });
   app2.get("/api/roles", authenticateToken, requirePermission("roles.read"), async (req, res) => {
@@ -47668,6 +50509,45 @@ async function registerRoutes(app2) {
       res.json({ message: "Subscription package deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Failed to delete subscription package" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/notifications", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const notifications2 = await storage2.getNotificationsByWorkspace(workspaceId);
+      res.json(notifications2);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/notifications", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const notificationData = req.body;
+      const notification = await storage2.createNotification({
+        ...notificationData,
+        workspaceId
+      });
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create notification" });
+    }
+  });
+  app2.patch("/api/notifications/:id/read", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage2.markNotificationAsRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/execute-recurring", authenticateToken, async (req, res) => {
+    try {
+      await storage2.executeRecurringTransactions();
+      res.json({ success: true, message: "Recurring transactions processed" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to execute recurring transactions" });
     }
   });
   app2.get("/api/users", authenticateToken, requirePermission("users.read"), async (req, res) => {
@@ -47935,6 +50815,47 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: "Failed to update application settings" });
     }
   });
+  app2.get("/api/workspaces/:workspaceId/analytics", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const timeframe = req.query.timeframe || "6months";
+      const analyticsData = await storage2.getAnalyticsData(workspaceId, timeframe);
+      res.json(analyticsData);
+    } catch (error) {
+      console.error("Failed to get analytics data:", error);
+      res.status(500).json({ message: "Failed to get analytics data" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/financial-health", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const healthData = await storage2.getFinancialHealthData(workspaceId);
+      res.json(healthData);
+    } catch (error) {
+      console.error("Failed to get financial health data:", error);
+      res.status(500).json({ message: "Failed to get financial health data" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/notifications/debt-reminders", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const reminders = await storage2.checkDebtReminders(workspaceId);
+      res.json(reminders);
+    } catch (error) {
+      console.error("Failed to get debt reminders:", error);
+      res.status(500).json({ message: "Failed to get debt reminders" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/notifications/budget-alerts", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const alerts = await storage2.checkBudgetAlerts(workspaceId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Failed to get budget alerts:", error);
+      res.status(500).json({ message: "Failed to get budget alerts" });
+    }
+  });
   app2.post("/api/payment/process", authenticateToken, async (req, res) => {
     try {
       const { packageId, cardNumber, cardHolder } = req.body;
@@ -47957,6 +50878,258 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Payment processing error:", error);
       res.status(400).json({ message: "Payment processing failed" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const goals2 = await storage2.getGoalsByWorkspace(workspaceId);
+      res.json(goals2);
+    } catch (error) {
+      console.error("Failed to get goals:", error);
+      res.status(500).json({ message: "Failed to get goals" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/metrics", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const metrics = await storage2.getGoalPerformanceMetrics(workspaceId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Failed to get goal metrics:", error);
+      res.status(500).json({ message: "Failed to get goal metrics" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const suggestions = await storage2.getSmartGoalSuggestions(workspaceId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Failed to get goal suggestions:", error);
+      res.status(500).json({ message: "Failed to get goal suggestions" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const limit = parseInt(req.query.limit) || 50;
+      const insights = await storage2.getWorkspaceGoalInsights(workspaceId, limit);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get goal insights:", error);
+      res.status(500).json({ message: "Failed to get goal insights" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid goal ID" });
+      }
+      const goalDetails = await storage2.getGoalWithDetails(id);
+      if (!goalDetails) {
+        return res.status(404).json({ message: "Goal not found" });
+      }
+      res.json(goalDetails);
+    } catch (error) {
+      console.error("Failed to get goal details:", error);
+      res.status(500).json({ message: "Failed to get goal details" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/:id/analytics", authenticateToken, async (req, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const analytics = await goalsService.analyzeGoal(goalId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Failed to get goal analytics:", error);
+      res.status(500).json({ message: "Failed to get goal analytics" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/goals", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const goalData = insertGoalSchema.parse({
+        ...req.body,
+        workspaceId,
+        targetDate: req.body.targetDate
+      });
+      const goal = await storage2.createGoal(goalData);
+      if (req.body.createMilestones) {
+        await goalsService.createIntelligentMilestones(goal.id);
+      }
+      res.json(goal);
+    } catch (error) {
+      console.error("Failed to create goal:", error);
+      res.status(400).json({ message: "Failed to create goal" });
+    }
+  });
+  app2.patch("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const workspaceId = parseInt(req.params.workspaceId);
+      const updates = req.body;
+      const goal = await storage2.updateGoal(id, updates);
+      res.json(goal);
+    } catch (error) {
+      console.error("Failed to update goal:", error);
+      res.status(400).json({ message: "Failed to update goal" });
+    }
+  });
+  app2.delete("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage2.deleteGoal(id);
+      res.json({ message: "Goal deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      res.status(400).json({ message: "Failed to delete goal" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/goals/:id/milestones", authenticateToken, async (req, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const milestones = await storage2.getGoalMilestones(goalId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Failed to get goal milestones:", error);
+      res.status(500).json({ message: "Failed to get goal milestones" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/goals/:id/milestones", authenticateToken, async (req, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const milestoneData = insertGoalMilestoneSchema.parse({
+        ...req.body,
+        goalId
+      });
+      const milestone = await storage2.createGoalMilestone(milestoneData);
+      res.json(milestone);
+    } catch (error) {
+      console.error("Failed to create milestone:", error);
+      res.status(400).json({ message: "Failed to create milestone" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/goals/:id/milestones/generate", authenticateToken, async (req, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      await goalsService.createIntelligentMilestones(goalId);
+      const milestones = await storage2.getGoalMilestones(goalId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Failed to generate milestones:", error);
+      res.status(400).json({ message: "Failed to generate milestones" });
+    }
+  });
+  app2.patch("/api/workspaces/:workspaceId/goals/insights/:id/read", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const insight = await storage2.markGoalInsightAsRead(id);
+      res.json(insight);
+    } catch (error) {
+      console.error("Failed to mark insight as read:", error);
+      res.status(400).json({ message: "Failed to mark insight as read" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const transactions2 = await storage2.getRecurringTransactionsByWorkspace(workspaceId);
+      res.json(transactions2);
+    } catch (error) {
+      console.error("Failed to get recurring transactions:", error);
+      res.status(500).json({ message: "Failed to get recurring transactions" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const startDate = new Date(req.body.startDate);
+      let nextExecution = new Date(startDate);
+      const transactionData = insertRecurringTransactionSchema.parse({
+        ...req.body,
+        workspaceId,
+        startDate: req.body.startDate,
+        // Keep as string
+        endDate: req.body.endDate || void 0
+        // Keep as string or undefined
+      });
+      const createData = {
+        ...transactionData,
+        nextExecution
+      };
+      const transaction = await storage2.createRecurringTransaction(createData);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Failed to create recurring transaction:", error);
+      res.status(400).json({ message: "Failed to create recurring transaction" });
+    }
+  });
+  app2.patch("/api/workspaces/:workspaceId/recurring-transactions/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const transaction = await storage2.updateRecurringTransaction(id, updates);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Failed to update recurring transaction:", error);
+      res.status(400).json({ message: "Failed to update recurring transaction" });
+    }
+  });
+  app2.delete("/api/workspaces/:workspaceId/recurring-transactions/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage2.deleteRecurringTransaction(id);
+      res.json({ message: "Recurring transaction deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete recurring transaction:", error);
+      res.status(400).json({ message: "Failed to delete recurring transaction" });
+    }
+  });
+  app2.get("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const rules = await storage2.getCategoryRulesByWorkspace(workspaceId);
+      res.json(rules);
+    } catch (error) {
+      console.error("Failed to get category rules:", error);
+      res.status(500).json({ message: "Failed to get category rules" });
+    }
+  });
+  app2.post("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req, res) => {
+    try {
+      const workspaceId = parseInt(req.params.workspaceId);
+      const ruleData = insertCategoryRuleSchema.parse({
+        ...req.body,
+        workspaceId
+      });
+      const rule = await storage2.createCategoryRule(ruleData);
+      res.json(rule);
+    } catch (error) {
+      console.error("Failed to create category rule:", error);
+      res.status(400).json({ message: "Failed to create category rule" });
+    }
+  });
+  app2.patch("/api/workspaces/:workspaceId/category-rules/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const rule = await storage2.updateCategoryRule(id, updates);
+      res.json(rule);
+    } catch (error) {
+      console.error("Failed to update category rule:", error);
+      res.status(400).json({ message: "Failed to update category rule" });
+    }
+  });
+  app2.delete("/api/workspaces/:workspaceId/category-rules/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage2.deleteCategoryRule(id);
+      res.json({ message: "Category rule deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete category rule:", error);
+      res.status(400).json({ message: "Failed to delete category rule" });
     }
   });
   const httpServer = createServer(app2);

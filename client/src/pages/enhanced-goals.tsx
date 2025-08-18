@@ -482,7 +482,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 <div>
                   <p className="text-sm text-gray-600">Total Goals</p>
                   <p className="text-2xl font-bold" data-testid="metric-total-goals">
-                    {metrics.totalGoals}
+                    {metrics?.totalGoals || 0}
                   </p>
                 </div>
                 <Target className="w-8 h-8 text-blue-600" />
@@ -495,7 +495,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 <div>
                   <p className="text-sm text-gray-600">Active Goals</p>
                   <p className="text-2xl font-bold text-green-600" data-testid="metric-active-goals">
-                    {metrics.activeGoals}
+                    {metrics?.activeGoals || 0}
                   </p>
                 </div>
                 <Clock className="w-8 h-8 text-green-600" />
@@ -508,7 +508,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 <div>
                   <p className="text-sm text-gray-600">Completed</p>
                   <p className="text-2xl font-bold text-blue-600" data-testid="metric-completed-goals">
-                    {metrics.completedGoals}
+                    {metrics?.completedGoals || 0}
                   </p>
                 </div>
                 <CheckCircle2 className="w-8 h-8 text-blue-600" />
@@ -521,7 +521,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 <div>
                   <p className="text-sm text-gray-600">Avg Progress</p>
                   <p className="text-2xl font-bold text-orange-600" data-testid="metric-avg-progress">
-                    {metrics.averageProgress.toFixed(0)}%
+                    {(metrics?.averageProgress || 0).toFixed(0)}%
                   </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-orange-600" />
@@ -542,7 +542,9 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {goals.map((goal: any) => {
-              const progress = (parseFloat(goal.currentAmount) / parseFloat(goal.targetAmount)) * 100;
+              const currentAmount = parseFloat(goal.currentAmount) || 0;
+              const targetAmount = parseFloat(goal.targetAmount) || 1; // Avoid division by zero
+              const progress = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
               return (
                 <Card key={goal.id} className="hover:shadow-lg transition-shadow cursor-pointer"
                       onClick={() => setSelectedGoal(goal)} data-testid={`card-goal-${goal.id}`}>
@@ -566,12 +568,12 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Progress</span>
-                        <span className="font-medium">{progress.toFixed(1)}%</span>
+                        <span className="font-medium">{(progress || 0).toFixed(1)}%</span>
                       </div>
                       <Progress value={progress} className="h-2" />
                       <div className="flex justify-between text-sm text-gray-600">
-                        <span>{formatCurrency(parseFloat(goal.currentAmount))}</span>
-                        <span>{formatCurrency(parseFloat(goal.targetAmount))}</span>
+                        <span>{formatCurrency(currentAmount)}</span>
+                        <span>{formatCurrency(targetAmount)}</span>
                       </div>
                     </div>
                     
@@ -778,25 +780,27 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Total Target</p>
                       <p className="text-lg font-bold text-blue-600">
-                        {formatCurrency(metrics.totalTargetAmount)}
+                        {formatCurrency(metrics?.totalTargetAmount || 0)}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Total Saved</p>
                       <p className="text-lg font-bold text-green-600">
-                        {formatCurrency(metrics.totalCurrentAmount)}
+                        {formatCurrency(metrics?.totalCurrentAmount || 0)}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Remaining</p>
                       <p className="text-lg font-bold text-orange-600">
-                        {formatCurrency(metrics.totalTargetAmount - metrics.totalCurrentAmount)}
+                        {formatCurrency((metrics?.totalTargetAmount || 0) - (metrics?.totalCurrentAmount || 0))}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Overall Progress</p>
                       <p className="text-lg font-bold text-purple-600">
-                        {((metrics.totalCurrentAmount / metrics.totalTargetAmount) * 100).toFixed(1)}%
+                        {(metrics?.totalCurrentAmount && metrics?.totalTargetAmount && metrics.totalTargetAmount > 0 
+                          ? ((metrics.totalCurrentAmount / metrics.totalTargetAmount) * 100).toFixed(1) 
+                          : '0.0')}%
                       </p>
                     </div>
                   </div>
@@ -829,16 +833,25 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                   <div className="flex justify-between">
                     <span>Current Progress</span>
                     <span className="font-medium">
-                      {((parseFloat(selectedGoal.currentAmount) / parseFloat(selectedGoal.targetAmount)) * 100).toFixed(1)}%
+                      {(() => {
+                        const current = parseFloat(selectedGoal.currentAmount) || 0;
+                        const target = parseFloat(selectedGoal.targetAmount) || 1;
+                        const progress = target > 0 ? (current / target) * 100 : 0;
+                        return (progress || 0).toFixed(1);
+                      })()}%
                     </span>
                   </div>
                   <Progress 
-                    value={(parseFloat(selectedGoal.currentAmount) / parseFloat(selectedGoal.targetAmount)) * 100} 
+                    value={(() => {
+                      const current = parseFloat(selectedGoal.currentAmount) || 0;
+                      const target = parseFloat(selectedGoal.targetAmount) || 1;
+                      return target > 0 ? (current / target) * 100 : 0;
+                    })()} 
                     className="h-3"
                   />
                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>{formatCurrency(parseFloat(selectedGoal.currentAmount))}</span>
-                    <span>{formatCurrency(parseFloat(selectedGoal.targetAmount))}</span>
+                    <span>{formatCurrency(parseFloat(selectedGoal.currentAmount) || 0)}</span>
+                    <span>{formatCurrency(parseFloat(selectedGoal.targetAmount) || 0)}</span>
                   </div>
                 </div>
               </div>
