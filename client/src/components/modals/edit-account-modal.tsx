@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -36,7 +37,14 @@ interface EditAccountModalProps {
 export default function EditAccountModal({ account, isOpen, onClose, workspaceId }: EditAccountModalProps) {
   const queryClient = useQueryClient();
 
-  const form = useForm<EditAccountFormData>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<EditAccountFormData>({
     resolver: zodResolver(editAccountSchema),
     defaultValues: {
       name: account?.name || '',
@@ -48,41 +56,43 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
   // Reset form when account changes
   React.useEffect(() => {
     if (account) {
-      form.reset({
+      reset({
         name: account.name,
         type: account.type as any,
         balance: account.balance,
       });
     }
-  }, [account, form]);
+  }, [account, reset]);
 
   const updateMutation = useMutation({
     mutationFn: (data: EditAccountFormData) =>
-      apiRequest('PATCH', `/api/workspaces/${workspaceId}/accounts/${account?.id}`, data),
+      apiRequest('PATCH', `/api/accounts/${account?.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
       notificationService.success('Account Updated', 'Account details updated successfully!');
       onClose();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update account error:', error);
       notificationService.error('Update Failed', 'Failed to update account. Please try again.');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () =>
-      apiRequest('DELETE', `/api/workspaces/${workspaceId}/accounts/${account?.id}`),
+      apiRequest('DELETE', `/api/accounts/${account?.id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
       notificationService.success('Account Deleted', 'Account removed successfully!');
       onClose();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Delete account error:', error);
       notificationService.error('Delete Failed', 'Failed to delete account. Please try again.');
     },
   });
 
-  const handleSubmit = (data: EditAccountFormData) => {
+  const onSubmit = (data: EditAccountFormData) => {
     updateMutation.mutate(data);
   };
 
@@ -101,21 +111,24 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
           <DialogTitle>Edit Account</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label htmlFor="name">Account Name</Label>
             <Input
               id="name"
-              {...form.register('name')}
+              {...register('name')}
               placeholder="e.g., Main Checking"
             />
+            {errors.name && (
+              <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+            )}
           </div>
 
           <div>
             <Label htmlFor="type">Account Type</Label>
             <Select
-              value={form.watch('type')}
-              onValueChange={(value) => form.setValue('type', value as any)}
+              value={watch('type')}
+              onValueChange={(value) => setValue('type', value as any)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select account type" />
@@ -128,6 +141,9 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
                 <SelectItem value="cash">Cash</SelectItem>
               </SelectContent>
             </Select>
+            {errors.type && (
+              <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
+            )}
           </div>
 
           <div>
@@ -136,9 +152,12 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
               id="balance"
               type="number"
               step="0.01"
-              {...form.register('balance')}
+              {...register('balance')}
               placeholder="0.00"
             />
+            {errors.balance && (
+              <p className="text-sm text-red-600 mt-1">{errors.balance.message}</p>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
