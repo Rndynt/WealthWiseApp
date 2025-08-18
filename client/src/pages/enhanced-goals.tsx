@@ -102,53 +102,18 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
     })
   });
 
-  // Fetch goal suggestions
-  const { data: suggestions = [] } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'goals', 'suggestions'],
+  // Fetch AI-powered goal suggestions
+  const { data: suggestions = [], isLoading: suggestionsLoading } = useQuery({
+    queryKey: [`/api/workspaces/${workspaceId}/goals/suggestions`],
     enabled: !!workspaceId,
-    queryFn: () => Promise.resolve([
-      {
-        id: 1,
-        title: 'Emergency Fund',
-        description: 'Build an emergency fund covering 6 months of expenses',
-        type: 'emergency_fund',
-        recommendedAmount: 15000000,
-        timeline: '12months',
-        priority: 'high',
-        reasoning: 'Financial security foundation',
-        confidence: 0.95
-      },
-      {
-        id: 2,
-        title: 'Vacation Savings',
-        description: 'Save for your dream vacation',
-        type: 'vacation',
-        recommendedAmount: 8000000,
-        timeline: '8months',
-        priority: 'medium',
-        reasoning: 'Work-life balance improvement',
-        confidence: 0.78
-      }
-    ])
+    staleTime: 5 * 60 * 1000, // 5 minutes - AI suggestions don't change that often
   });
 
-  // Fetch insights
-  const { data: insights = [] } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'goals', 'insights'],
+  // Fetch AI-powered insights
+  const { data: insights = [], isLoading: insightsLoading } = useQuery({
+    queryKey: [`/api/workspaces/${workspaceId}/goals/insights`],
     enabled: !!workspaceId,
-    queryFn: () => Promise.resolve([
-      {
-        id: 1,
-        type: 'milestone_achieved',
-        title: 'Milestone Reached!',
-        message: 'You\'ve completed 25% of your savings goal',
-        severity: 'info',
-        actionRequired: false,
-        isRead: false,
-        goalId: 1,
-        data: { progress: 25 }
-      }
-    ])
+    staleTime: 3 * 60 * 1000, // 3 minutes - insights can be more frequent
   });
 
   // Fetch accounts and debts for linking
@@ -667,8 +632,21 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {suggestions.map((suggestion: any, index: number) => (
+              {suggestionsLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <Card key={index} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {suggestions.map((suggestion: any, index: number) => (
                   <Card key={index} className="border-l-4 border-l-purple-500">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
@@ -715,15 +693,16 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-                {suggestions.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No suggestions available at the moment.</p>
-                    <p className="text-sm">Add more financial data to get personalized recommendations.</p>
-                  </div>
-                )}
-              </div>
+                  ))}
+                  {suggestions.length === 0 && !suggestionsLoading && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No AI suggestions available at the moment.</p>
+                      <p className="text-sm">Add more financial data to get personalized AI recommendations.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -741,8 +720,20 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-96">
-                <div className="space-y-3">
-                  {insights.map((insight: any) => (
+                {insightsLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Card key={index} className="animate-pulse">
+                        <CardContent className="p-3">
+                          <div className="h-5 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-200 rounded"></div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {insights.map((insight: any) => (
                     <Card key={insight.id} className={`border-l-4 ${
                       insight.severity === 'warning' ? 'border-l-orange-500' :
                       insight.severity === 'error' ? 'border-l-red-500' :
@@ -778,15 +769,16 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                  {insights.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No insights available yet.</p>
-                      <p className="text-sm">Insights will appear as your goals progress.</p>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                    {insights.length === 0 && !insightsLoading && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>No AI insights available yet.</p>
+                        <p className="text-sm">AI insights will appear as your goals progress.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </ScrollArea>
             </CardContent>
           </Card>
