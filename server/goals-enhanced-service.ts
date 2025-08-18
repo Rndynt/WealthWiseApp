@@ -5,6 +5,7 @@ import {
   goalContributions,
   goalMilestones,
   goalInsights,
+  goalMatchAudits,
   transactions,
   accounts,
   debts,
@@ -16,10 +17,12 @@ import {
   type GoalContribution,
   type GoalMilestone,
   type GoalInsight,
+  type GoalMatchAudit,
   type InsertGoal,
   type InsertGoalContribution,
   type InsertGoalMilestone,
   type InsertGoalInsight,
+  type InsertGoalMatchAudit,
   type InsertNotification,
 } from '@shared/schema.js';
 import { differenceInDays, addMonths, addDays, format, parseISO, isBefore, isAfter } from 'date-fns';
@@ -133,7 +136,7 @@ export class GoalsEnhancedService {
     await this.updateMilestoneProgress(goalId, newAmount);
   }
 
-  // Smart transaction recognition and contribution tracking
+  // Smart transaction recognition and contribution tracking using AI-powered goal matching
   async processTransactionForGoals(transactionId: number, workspaceId: number): Promise<{ tracked: number; goals: string[] }> {
     const transaction = await db.select()
       .from(transactions)
@@ -142,110 +145,130 @@ export class GoalsEnhancedService {
 
     if (!transaction[0]) return { tracked: 0, goals: [] };
 
-    // Find goals that might be affected by this transaction
-    const relevantGoals = await db.select()
-      .from(goals)
+    // Check for duplicate processing
+    const existingAudit = await db.select()
+      .from(goalMatchAudits)
       .where(and(
-        eq(goals.workspaceId, workspaceId),
-        eq(goals.isAutoTracking, true),
-        eq(goals.status, 'active')
-      ));
+        eq(goalMatchAudits.transactionId, transaction[0].id),
+        eq(goalMatchAudits.workspaceId, workspaceId)
+      ))
+      .limit(1);
 
-    const trackedGoals: string[] = [];
-    let trackedCount = 0;
-
-    for (const goal of relevantGoals) {
-      let shouldTrack = false;
-      let contributionType = 'transaction';
-      let matchingReason = '';
-
-      // Check if transaction affects this goal - Account linking
-      if (goal.linkedAccountId === transaction[0].accountId) {
-        shouldTrack = true;
-        matchingReason = `Account: ${goal.linkedAccountId}`;
-      }
-
-      // Check for debt payment goals - Debt linking
-      if (goal.type === 'debt_payment' && goal.linkedDebtId === transaction[0].debtId) {
-        shouldTrack = true;
-        contributionType = 'debt_payment';
-        matchingReason = `Debt: ${goal.linkedDebtId}`;
-      }
-
-      // Smart categorization based on goal type and transaction description
-      if (!shouldTrack) {
-        const description = transaction[0].description.toLowerCase();
-        const goalType = goal.type;
-        
-        const keywordMatches = this.getGoalKeywords(goalType);
-        const matchedKeywords = keywordMatches.filter(keyword => description.includes(keyword));
-        
-        if (matchedKeywords.length > 0) {
-          shouldTrack = true;
-          contributionType = 'auto_categorized';
-          matchingReason = `Keywords: ${matchedKeywords.join(', ')}`;
-        }
-      }
-
-      // Enhanced logic: Process tracking based on goal type and transaction type relevance
-      const shouldProcessTransaction = this.shouldTrackTransactionForGoal(
-        transaction[0].type,
-        goal.type,
-        parseFloat(transaction[0].amount),
-        matchingReason
-      );
-
-      if (shouldTrack && shouldProcessTransaction) {
-        try {
-          // Check for duplicate contributions
-          const existingContribution = await db.select()
-            .from(goalContributions)
-            .where(and(
-              eq(goalContributions.goalId, goal.id),
-              eq(goalContributions.transactionId, transaction[0].id)
-            ))
-            .limit(1);
-
-          if (existingContribution.length === 0) {
-            // Create goal contribution record
-            await db.insert(goalContributions).values({
-              goalId: goal.id,
-              transactionId: transaction[0].id,
-              amount: transaction[0].amount,
-              contributionType,
-              source: `Auto-tracked from ${transaction[0].description} (${matchingReason})`,
-              date: transaction[0].date,
-              workspaceId,
-            });
-
-            // Update goal progress
-            await this.updateGoalProgress(goal.id, workspaceId);
-            
-            trackedGoals.push(`${goal.name} (${matchingReason})`);
-            trackedCount++;
-
-            // Create notification for successful auto-tracking
-            await db.insert(notifications).values({
-              workspaceId,
-              userId: null, // Workspace-level notification
-              type: 'goal_progress',
-              title: 'Goal Auto-Tracked',
-              message: `Transaction "${transaction[0].description}" (${transaction[0].amount}) was automatically linked to goal "${goal.name}"`,
-              isRead: false,
-              createdAt: new Date()
-            });
-
-            console.log(`✅ Auto-tracked: ${goal.name} <- ${transaction[0].description} (${matchingReason})`);
-          } else {
-            console.log(`⚠️  Duplicate avoided: ${goal.name} <- ${transaction[0].description}`);
-          }
-        } catch (error) {
-          console.error(`❌ Auto-tracking failed for goal ${goal.name}:`, error);
-        }
-      }
+    if (existingAudit.length > 0) {
+      console.log(`⚠️  Transaction ${transaction[0].id} already processed for goals`);
+      return { tracked: 0, goals: [] };
     }
 
-    return { tracked: trackedCount, goals: trackedGoals };
+    // Use Smart Goal Matcher to find the best goal
+    const { smartGoalMatcher } = await import('./smart-goal-matcher-service');
+    
+    const transactionContext = {
+      id: transaction[0].id,
+      description: transaction[0].description,
+      amount: transaction[0].amount,
+      type: transaction[0].type,
+      accountId: transaction[0].accountId,
+      debtId: transaction[0].debtId,
+      category: null, // Will be resolved from categoryId if needed
+      date: transaction[0].date
+    };
+
+    const matchResult = await smartGoalMatcher.findBestGoalMatch(transactionContext, workspaceId);
+
+    // Create audit record for the decision
+    await db.insert(goalMatchAudits).values({
+      transactionId: transaction[0].id,
+      workspaceId,
+      selectedGoalId: matchResult.selectedGoal?.goalId || null,
+      matchedGoalsData: matchResult.allScores,
+      decision: matchResult.decision,
+      reasoning: matchResult.reasoning,
+      confidence: matchResult.selectedGoal?.confidence?.toString() || null,
+      totalScore: matchResult.selectedGoal?.totalScore?.toString() || null,
+      wasTracked: false, // Will be updated after successful tracking
+    });
+
+    // If no goal was matched, return early
+    if (!matchResult.selectedGoal || matchResult.decision === 'no_match') {
+      console.log(`🚫 No goal match for transaction: ${transaction[0].description} - ${matchResult.reasoning}`);
+      return { tracked: 0, goals: [] };
+    }
+
+    const selectedGoal = matchResult.selectedGoal;
+    let contributionType = 'auto_categorized';
+
+    // Determine contribution type based on highest scoring criteria
+    if (selectedGoal.criteria.accountLinking >= 40) {
+      contributionType = selectedGoal.goalType === 'debt_payment' ? 'debt_payment' : 'account_linked';
+    }
+
+    try {
+      // Check for duplicate contributions (safety check)
+      const existingContribution = await db.select()
+        .from(goalContributions)
+        .where(and(
+          eq(goalContributions.goalId, selectedGoal.goalId),
+          eq(goalContributions.transactionId, transaction[0].id)
+        ))
+        .limit(1);
+
+      if (existingContribution.length === 0) {
+        // Create goal contribution record
+        await db.insert(goalContributions).values({
+          goalId: selectedGoal.goalId,
+          transactionId: transaction[0].id,
+          amount: transaction[0].amount,
+          contributionType,
+          source: `Smart auto-tracked: ${selectedGoal.reasoning}`,
+          date: transaction[0].date,
+          workspaceId,
+        });
+
+        // Update goal progress
+        await this.updateGoalProgress(selectedGoal.goalId, workspaceId);
+        
+        // Update audit record to mark as tracked
+        await db.update(goalMatchAudits)
+          .set({ wasTracked: true })
+          .where(and(
+            eq(goalMatchAudits.transactionId, transaction[0].id),
+            eq(goalMatchAudits.workspaceId, workspaceId)
+          ));
+
+        // Create notification for successful auto-tracking
+        await db.insert(notifications).values({
+          workspaceId,
+          userId: null, // Workspace-level notification
+          type: 'goal_progress',
+          title: 'Smart Goal Auto-Tracking',
+          message: `Transaction "${transaction[0].description}" (${transaction[0].amount}) was intelligently matched to goal "${selectedGoal.goalName}" (Score: ${selectedGoal.totalScore}, Confidence: ${Math.round(selectedGoal.confidence * 100)}%)`,
+          isRead: false,
+          createdAt: new Date(),
+          data: {
+            transactionId: transaction[0].id,
+            goalId: selectedGoal.goalId,
+            matchingScore: selectedGoal.totalScore,
+            confidence: selectedGoal.confidence,
+            criteria: selectedGoal.criteria
+          }
+        });
+
+        console.log(`✅ Smart auto-tracked: ${selectedGoal.goalName} <- ${transaction[0].description}`);
+        console.log(`   📊 Score: ${selectedGoal.totalScore}, Confidence: ${Math.round(selectedGoal.confidence * 100)}%`);
+        console.log(`   🔍 Criteria: Account(${selectedGoal.criteria.accountLinking}) + Keywords(${selectedGoal.criteria.keywordRelevance}) + Context(${selectedGoal.criteria.transactionContext}) + AI(${selectedGoal.criteria.aiSemanticMatch})`);
+
+        return { 
+          tracked: 1, 
+          goals: [`${selectedGoal.goalName} (Score: ${selectedGoal.totalScore}, AI-Matched)`] 
+        };
+      } else {
+        console.log(`⚠️  Duplicate avoided: ${selectedGoal.goalName} <- ${transaction[0].description}`);
+        return { tracked: 0, goals: [] };
+      }
+    } catch (error) {
+      console.error(`❌ Smart auto-tracking failed for goal ${selectedGoal.goalName}:`, error);
+      return { tracked: 0, goals: [] };
+    }
   }
 
   // AI-powered goal suggestions
