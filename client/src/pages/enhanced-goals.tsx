@@ -115,7 +115,8 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
         recommendedAmount: 15000000,
         timeline: '12months',
         priority: 'high',
-        reasoning: 'Financial security foundation'
+        reasoning: 'Financial security foundation',
+        confidence: 0.95
       },
       {
         id: 2,
@@ -125,7 +126,8 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
         recommendedAmount: 8000000,
         timeline: '8months',
         priority: 'medium',
-        reasoning: 'Work-life balance improvement'
+        reasoning: 'Work-life balance improvement',
+        confidence: 0.78
       }
     ])
   });
@@ -799,7 +801,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(metrics.goalsByType).map(([type, count]) => (
+                    {metrics?.goalsByType && Object.entries(metrics.goalsByType).map(([type, count]) => (
                       <div key={type} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {getGoalTypeIcon(type)}
@@ -818,7 +820,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(metrics.goalsByPriority).map(([priority, count]) => (
+                    {metrics?.goalsByPriority && Object.entries(metrics.goalsByPriority).map(([priority, count]) => (
                       <div key={priority} className="flex items-center justify-between">
                         <span className="capitalize">{priority}</span>
                         <Badge className={getPriorityColor(priority)}>{count as number}</Badge>
