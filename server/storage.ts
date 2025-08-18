@@ -334,6 +334,17 @@ export class DatabaseStorage implements IStorage {
           .from(transactions)
           .where(eq(transactions.accountId, account.id));
 
+        // Get all transfer transactions where this account is the destination
+        const incomingTransfers = await db
+          .select()
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.toAccountId, account.id),
+              eq(transactions.type, 'transfer')
+            )
+          );
+
         // Calculate balance: income and debt add, expense and repayment subtract
         const calculatedBalance = accountTransactions.reduce((sum: number, transaction: any) => {
           const amount = parseFloat(transaction.amount);
@@ -342,15 +353,24 @@ export class DatabaseStorage implements IStorage {
           } else if (transaction.type === 'expense' || transaction.type === 'repayment') {
             return sum - amount;
           } else if (transaction.type === 'transfer') {
-            // For transfers, it depends on whether this is the source or destination account
-            return sum; // Transfer logic is handled separately in createTransaction
+            // If this account is the source account, subtract
+            if (transaction.accountId === account.id) {
+              return sum - amount;
+            }
           }
           return sum;
         }, 0);
 
+        // Add incoming transfers
+        const incomingTransferAmount = incomingTransfers.reduce((sum: number, transfer: any) => {
+          return sum + parseFloat(transfer.amount);
+        }, 0);
+
+        const finalBalance = calculatedBalance + incomingTransferAmount;
+
         return {
           ...account,
-          balance: calculatedBalance.toString()
+          balance: finalBalance.toString()
         };
       })
     );
@@ -369,11 +389,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account> {
+    console.log("Updating account in database:", id, account);
     const [updatedAccount] = await db
       .update(accounts)
       .set(account)
       .where(eq(accounts.id, id))
       .returning();
+    
+    if (!updatedAccount) {
+      throw new Error(`Account with id ${id} not found`);
+    }
+    
+    console.log("Account updated successfully:", updatedAccount);
     return updatedAccount;
   }
 
@@ -439,15 +466,9 @@ export class DatabaseStorage implements IStorage {
           await this.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
         }
       } else if (transaction.type === 'transfer' && transaction.toAccountId) {
-        // Subtract from source account
+        // For transfer, only subtract from source account
+        // The destination account balance will be calculated by getWorkspaceAccounts
         newBalance -= parseFloat(transaction.amount);
-
-        // Add to destination account
-        const toAccount = await this.getAccount(transaction.toAccountId);
-        if (toAccount) {
-          const toBalance = parseFloat(toAccount.balance) + parseFloat(transaction.amount);
-          await this.updateAccount(transaction.toAccountId, { balance: toBalance.toString() });
-        }
       }
 
       await this.updateAccount(transaction.accountId, { balance: newBalance.toString() });
