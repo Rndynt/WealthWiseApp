@@ -43,7 +43,8 @@ async function checkNonRepaymentNotifications(workspaceId: number, transaction: 
     
     // Check budget compliance if expense
     if (transaction.type === 'expense' && transaction.categoryId) {
-      const budgets = await storage.getWorkspaceBudgets(workspaceId);
+      const currentYear = new Date().getFullYear();
+      const budgets = await storage.getWorkspaceBudgets(workspaceId, currentYear);
       const categoryBudget = budgets.find(b => b.categoryId === transaction.categoryId);
       if (categoryBudget) {
         const spent = await calculateCategorySpending(workspaceId, transaction.categoryId);
@@ -553,16 +554,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/accounts/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updates = req.body;
-      if (updates.balance) {
-        updates.balance = updates.balance.toString();
+      const updates = { ...req.body };
+      
+      // Validate required fields and convert types
+      if (updates.balance !== undefined) {
+        updates.balance = parseFloat(updates.balance).toString();
+      }
+      if (updates.startDate) {
+        updates.startDate = new Date(updates.startDate);
+      }
+      
+      // Ensure workspace validation
+      if (!updates.workspaceId && req.body.workspaceId) {
+        updates.workspaceId = parseInt(req.body.workspaceId);
       }
 
+      console.log("Updating account:", id, "with data:", updates);
       const account = await storage.updateAccount(id, updates);
       res.json(account);
     } catch (error) {
       console.error("Account update error:", error);
-      res.status(400).json({ message: "Failed to update account" });
+      res.status(400).json({ 
+        message: "Failed to update account", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
@@ -1436,7 +1451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [transactions, accounts, budgets, goals, debts] = await Promise.all([
         storage.getWorkspaceTransactions(workspaceId, 100), // Recent 100 transactions
         storage.getWorkspaceAccounts(workspaceId),
-        storage.getWorkspaceBudgets(workspaceId),
+        storage.getWorkspaceBudgets(workspaceId, new Date().getFullYear()),
         storage.getGoalsByWorkspace(workspaceId),
         storage.getWorkspaceDebts(workspaceId)
       ]);
@@ -1477,7 +1492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [transactions, goals, budgets] = await Promise.all([
         storage.getWorkspaceTransactions(workspaceId, 50), // Recent 50 transactions
         storage.getGoalsByWorkspace(workspaceId),
-        storage.getWorkspaceBudgets(workspaceId)
+        storage.getWorkspaceBudgets(workspaceId, new Date().getFullYear())
       ]);
 
       // Calculate financial metrics
