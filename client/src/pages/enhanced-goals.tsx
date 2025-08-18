@@ -105,10 +105,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   // Create goal mutation
   const createGoalMutation = useMutation({
     mutationFn: (data: EnhancedGoalForm) => 
-      apiRequest(`/api/workspaces/${workspaceId}/goals`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('POST', `/api/workspaces/${workspaceId}/goals`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
@@ -119,10 +116,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   // Update goal mutation
   const updateGoalMutation = useMutation({
     mutationFn: ({ goalId, data }: { goalId: number; data: Partial<EnhancedGoalForm> }) =>
-      apiRequest(`/api/workspaces/${workspaceId}/goals/${goalId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('PATCH', `/api/workspaces/${workspaceId}/goals/${goalId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'metrics'] });
@@ -132,19 +126,16 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   // Create goal from suggestion
   const createFromSuggestionMutation = useMutation({
     mutationFn: (suggestion: any) =>
-      apiRequest(`/api/workspaces/${workspaceId}/goals`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: suggestion.title,
-          description: suggestion.description,
-          type: suggestion.type,
-          targetAmount: suggestion.recommendedAmount.toString(),
-          currentAmount: '0',
-          targetDate: getDateFromTimeline(suggestion.timeline),
-          priority: suggestion.priority,
-          isAutoTracking: true,
-          createMilestones: true,
-        }),
+      apiRequest('POST', `/api/workspaces/${workspaceId}/goals`, {
+        name: suggestion.title,
+        description: suggestion.description,
+        type: suggestion.type,
+        targetAmount: suggestion.recommendedAmount.toString(),
+        currentAmount: '0',
+        targetDate: getDateFromTimeline(suggestion.timeline),
+        priority: suggestion.priority,
+        isAutoTracking: true,
+        createMilestones: true,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals'] });
@@ -155,9 +146,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
   // Mark insight as read
   const markInsightReadMutation = useMutation({
     mutationFn: (insightId: number) =>
-      apiRequest(`/api/workspaces/${workspaceId}/goals/insights/${insightId}/read`, {
-        method: 'PATCH',
-      }),
+      apiRequest('PATCH', `/api/workspaces/${workspaceId}/goals/insights/${insightId}/read`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/workspaces', workspaceId, 'goals', 'insights'] });
     },
