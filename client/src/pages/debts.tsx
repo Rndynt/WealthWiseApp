@@ -1,14 +1,21 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, CreditCard, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Calendar, ChevronDown, ChevronUp, ArrowDownLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, CreditCard, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Calendar, ChevronDown, ChevronUp, ArrowDownLeft, Bell, BellRing } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Debt } from '@/types';
 import AddDebtModal from '@/components/modals/add-debt-modal';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface DebtsProps {
   workspaceId: number | undefined;
@@ -17,6 +24,8 @@ interface DebtsProps {
 export default function Debts({ workspaceId }: DebtsProps) {
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [deletingDebt, setDeletingDebt] = useState<Debt | null>(null);
 
   const toggleCard = (debtId: number) => {
     const newExpandedCards = new Set(expandedCards);
@@ -267,10 +276,20 @@ export default function Debts({ workspaceId }: DebtsProps) {
                           </div>
                         </div>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => setEditingDebt(debt)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => setDeletingDebt(debt)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -306,12 +325,56 @@ export default function Debts({ workspaceId }: DebtsProps) {
                       </>
                     )}
 
-                    <div className="flex justify-between items-center text-sm text-gray-600">
-                      {debt.interestRate && (
-                        <span>Interest: {debt.interestRate}%</span>
-                      )}
-                      {debt.dueDate && (
-                        <span>Due: {format(new Date(debt.dueDate), 'dd MMM yyyy')}</span>
+                    {/* Enhanced Payment Information */}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                        {debt.interestRate && (
+                          <div>
+                            <span className="text-xs text-gray-500">Interest Rate</span>
+                            <p className="font-medium">{debt.interestRate}%</p>
+                          </div>
+                        )}
+                        {debt.dueDate && (
+                          <div>
+                            <span className="text-xs text-gray-500">Final Due Date</span>
+                            <p className="font-medium">{format(new Date(debt.dueDate), 'dd MMM yyyy')}</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Monthly Payment Info */}
+                      {debt.monthlyPaymentAmount && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-blue-800 dark:text-blue-300">Monthly Payment Schedule</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-xs text-gray-600">Monthly Amount</span>
+                              <p className="font-semibold text-blue-700 dark:text-blue-300">
+                                Rp {parseFloat(debt.monthlyPaymentAmount).toLocaleString('id-ID')}
+                              </p>
+                            </div>
+                            {debt.monthlyPaymentDate && (
+                              <div>
+                                <span className="text-xs text-gray-600">Payment Date</span>
+                                <p className="font-semibold">Every {debt.monthlyPaymentDate}th of month</p>
+                              </div>
+                            )}
+                          </div>
+                          {debt.nextPaymentDate && (
+                            <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                              <div className="flex items-center gap-2">
+                                {debt.paymentReminder && <BellRing className="h-4 w-4 text-orange-600" />}
+                                <span className="text-xs text-gray-600">Next Payment</span>
+                              </div>
+                              <p className="font-semibold text-orange-600">
+                                {format(new Date(debt.nextPaymentDate), 'dd MMMM yyyy')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -371,6 +434,391 @@ export default function Debts({ workspaceId }: DebtsProps) {
         onOpenChange={setShowDebtModal}
         workspaceId={workspaceId}
       />
+
+      {/* Edit Debt Modal */}
+      <EditDebtModal 
+        debt={editingDebt}
+        onClose={() => setEditingDebt(null)}
+        workspaceId={workspaceId}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteDebtModal 
+        debt={deletingDebt}
+        onClose={() => setDeletingDebt(null)}
+        workspaceId={workspaceId}
+      />
     </div>
+  );
+}
+
+// Edit Debt Modal Component
+function EditDebtModal({ 
+  debt, 
+  onClose, 
+  workspaceId 
+}: {
+  debt: Debt | null;
+  onClose: () => void;
+  workspaceId: number;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    name: '',
+    type: 'debt',
+    totalAmount: '',
+    remainingAmount: '',
+    interestRate: '',
+    dueDate: '',
+    monthlyPaymentAmount: '',
+    monthlyPaymentDate: '',
+    nextPaymentDate: '',
+    minimumPaymentAmount: '',
+    paymentReminder: true,
+    status: 'active'
+  });
+
+  // Update form when debt changes
+  useEffect(() => {
+    if (debt) {
+      setForm({
+        name: debt.name,
+        type: debt.type,
+        totalAmount: debt.totalAmount,
+        remainingAmount: debt.remainingAmount,
+        interestRate: debt.interestRate || '',
+        dueDate: debt.dueDate ? format(new Date(debt.dueDate), 'yyyy-MM-dd') : '',
+        monthlyPaymentAmount: debt.monthlyPaymentAmount || '',
+        monthlyPaymentDate: debt.monthlyPaymentDate?.toString() || '',
+        nextPaymentDate: debt.nextPaymentDate ? format(new Date(debt.nextPaymentDate), 'yyyy-MM-dd') : '',
+        minimumPaymentAmount: debt.minimumPaymentAmount || '',
+        paymentReminder: debt.paymentReminder ?? true,
+        status: debt.status
+      });
+    }
+  }, [debt]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/debts/${debt!.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update debt');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/debts`] });
+      toast({
+        title: "Utang berhasil diupdate",
+        description: "Perubahan telah disimpan",
+      });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal mengupdate utang",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    updateMutation.mutate({
+      name: form.name,
+      type: form.type,
+      totalAmount: parseFloat(form.totalAmount),
+      remainingAmount: parseFloat(form.remainingAmount),
+      interestRate: form.interestRate ? parseFloat(form.interestRate) : null,
+      dueDate: form.dueDate ? new Date(form.dueDate) : null,
+      monthlyPaymentAmount: form.monthlyPaymentAmount ? parseFloat(form.monthlyPaymentAmount) : null,
+      monthlyPaymentDate: form.monthlyPaymentDate ? parseInt(form.monthlyPaymentDate) : null,
+      nextPaymentDate: form.nextPaymentDate ? new Date(form.nextPaymentDate) : null,
+      minimumPaymentAmount: form.minimumPaymentAmount ? parseFloat(form.minimumPaymentAmount) : null,
+      paymentReminder: form.paymentReminder,
+      status: form.status
+    });
+  };
+
+  if (!debt) return null;
+
+  return (
+    <Dialog open={!!debt} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Debt Record</DialogTitle>
+          <DialogDescription>
+            Update debt information and payment schedule
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Nama</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Nama utang/kredit"
+                required
+              />
+            </div>
+            <div>
+              <Label>Jenis</Label>
+              <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="debt">Utang</SelectItem>
+                  <SelectItem value="credit">Kredit/Piutang</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Total Amount</Label>
+              <Input
+                type="number"
+                value={form.totalAmount}
+                onChange={(e) => setForm({ ...form, totalAmount: e.target.value })}
+                placeholder="0"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div>
+              <Label>Remaining Amount</Label>
+              <Input
+                type="number"
+                value={form.remainingAmount}
+                onChange={(e) => setForm({ ...form, remainingAmount: e.target.value })}
+                placeholder="0"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Interest Rate (%)</Label>
+              <Input
+                type="number"
+                value={form.interestRate}
+                onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Final Due Date</Label>
+            <Input
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+            />
+          </div>
+
+          {/* Monthly Payment Section */}
+          <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Monthly Payment Schedule
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Monthly Payment Amount</Label>
+                <Input
+                  type="number"
+                  value={form.monthlyPaymentAmount}
+                  onChange={(e) => setForm({ ...form, monthlyPaymentAmount: e.target.value })}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label>Monthly Payment Date (1-31)</Label>
+                <Input
+                  type="number"
+                  value={form.monthlyPaymentDate}
+                  onChange={(e) => setForm({ ...form, monthlyPaymentDate: e.target.value })}
+                  placeholder="1"
+                  min="1"
+                  max="31"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <Label>Next Payment Date</Label>
+                <Input
+                  type="date"
+                  value={form.nextPaymentDate}
+                  onChange={(e) => setForm({ ...form, nextPaymentDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Minimum Payment</Label>
+                <Input
+                  type="number"
+                  value={form.minimumPaymentAmount}
+                  onChange={(e) => setForm({ ...form, minimumPaymentAmount: e.target.value })}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={form.paymentReminder}
+                  onChange={(e) => setForm({ ...form, paymentReminder: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Enable payment reminders</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending} className="flex-1">
+              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Delete Debt Modal Component
+function DeleteDebtModal({ 
+  debt, 
+  onClose, 
+  workspaceId 
+}: {
+  debt: Debt | null;
+  onClose: () => void;
+  workspaceId: number;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/debts/${debt!.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to delete debt');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/debts`] });
+      toast({
+        title: "Utang berhasil dihapus",
+        description: "Record utang telah dihapus dari sistem",
+      });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal menghapus utang",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    }
+  });
+
+  if (!debt) return null;
+
+  return (
+    <Dialog open={!!debt} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Delete Debt Record
+          </DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this debt record? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <h4 className="font-medium">{debt.name}</h4>
+          <p className="text-lg font-semibold text-red-600">
+            Rp {parseFloat(debt.remainingAmount).toLocaleString('id-ID')} remaining
+          </p>
+          <p className="text-sm text-gray-500">
+            Total: Rp {parseFloat(debt.totalAmount).toLocaleString('id-ID')}
+          </p>
+        </div>
+
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Deleting this debt record will also remove all associated payment history and cannot be recovered.
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+            className="flex-1"
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -66,6 +66,12 @@ export interface Debt {
   remainingAmount: string;
   interestRate?: string;
   dueDate?: string;
+  // Enhanced payment tracking
+  monthlyPaymentAmount?: string;
+  monthlyPaymentDate?: number;
+  nextPaymentDate?: string;
+  minimumPaymentAmount?: string;
+  paymentReminder: boolean;
   status: 'active' | 'paid' | 'overdue';
   workspaceId: number;
   createdAt: string;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, ArrowUpDown, Filter, Search, ArrowRight, Edit, Trash2, X, Calendar, CreditCard, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -457,7 +457,7 @@ function TransactionDetailModal({
             <div>
               <Label className="text-sm font-medium text-gray-500">Kategori</Label>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-lg">{category.icon}</span>
+                <span className="text-lg">{iconMap[category.icon] || category.icon}</span>
                 <span className="font-medium">{category.name}</span>
               </div>
             </div>
@@ -528,7 +528,7 @@ function EditTransactionModal({
   });
 
   // Update form when transaction changes
-  useState(() => {
+  useEffect(() => {
     if (transaction) {
       setForm({
         type: transaction.type,
@@ -541,14 +541,21 @@ function EditTransactionModal({
         debtId: transaction.debtId?.toString() || ''
       });
     }
-  });
+  }, [transaction]);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: any) => {
-      return apiRequest(`/api/transactions/${transaction!.id}`, {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/transactions/${transaction!.id}`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(updates)
       });
+      if (!response.ok) throw new Error('Failed to update transaction');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });
@@ -662,7 +669,7 @@ function EditTransactionModal({
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.icon} {category.name}
+                      {iconMap[category.icon] || category.icon} {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -717,9 +724,16 @@ function DeleteTransactionModal({
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/transactions/${transaction!.id}`, {
-        method: 'DELETE'
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/transactions/${transaction!.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.ok) throw new Error('Failed to delete transaction');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });

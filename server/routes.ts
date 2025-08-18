@@ -779,6 +779,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         remainingAmount: req.body.remainingAmount.toString(),
         interestRate: req.body.interestRate ? req.body.interestRate.toString() : null,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+        monthlyPaymentAmount: req.body.monthlyPaymentAmount ? req.body.monthlyPaymentAmount.toString() : null,
+        nextPaymentDate: req.body.nextPaymentDate ? new Date(req.body.nextPaymentDate) : null,
+        minimumPaymentAmount: req.body.minimumPaymentAmount ? req.body.minimumPaymentAmount.toString() : null,
       });
 
       const debt = await storage.createDebt(debtData);
@@ -800,6 +803,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.dueDate) {
         updates.dueDate = new Date(updates.dueDate);
       }
+      if (updates.nextPaymentDate) {
+        updates.nextPaymentDate = new Date(updates.nextPaymentDate);
+      }
       if (updates.totalAmount) {
         updates.totalAmount = updates.totalAmount.toString();
       }
@@ -808,6 +814,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (updates.interestRate) {
         updates.interestRate = updates.interestRate.toString();
+      }
+      if (updates.monthlyPaymentAmount) {
+        updates.monthlyPaymentAmount = updates.monthlyPaymentAmount.toString();
+      }
+      if (updates.minimumPaymentAmount) {
+        updates.minimumPaymentAmount = updates.minimumPaymentAmount.toString();
       }
 
       const debt = await storage.updateDebt(id, updates);
