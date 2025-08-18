@@ -129,7 +129,10 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => setEditingAccount(account)}>
+                        <DropdownMenuItem onClick={() => {
+                          console.log('Edit account clicked:', account);
+                          setEditingAccount(account);
+                        }}>
                           <Edit size={16} className="mr-2" />
                           Edit
                         </DropdownMenuItem>

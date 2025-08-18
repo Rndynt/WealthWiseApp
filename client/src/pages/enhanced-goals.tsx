@@ -69,7 +69,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
 
   // Fetch goals data
   const { data: goals = [], isLoading: goalsLoading } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'goals'],
+    queryKey: [`/api/workspaces/${workspaceId}/goals`],
     enabled: !!workspaceId,
   });
 
@@ -93,12 +93,12 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
 
   // Fetch accounts and debts for linking
   const { data: accounts = [] } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'accounts'],
+    queryKey: [`/api/workspaces/${workspaceId}/accounts`],
     enabled: !!workspaceId,
   });
 
   const { data: debts = [] } = useQuery({
-    queryKey: ['/api/workspaces', workspaceId, 'debts'],
+    queryKey: [`/api/workspaces/${workspaceId}/debts`],
     enabled: !!workspaceId,
   });
 
