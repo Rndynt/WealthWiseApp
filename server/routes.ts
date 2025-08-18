@@ -29,6 +29,9 @@ declare global {
 const storage = new DatabaseStorage();
 import { goalsService } from './goals-service';
 import { aiGoalsService } from './ai-goals-service';
+import { GoalsEnhancedService } from './goals-enhanced-service';
+
+const goalsEnhancedService = new GoalsEnhancedService();
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
