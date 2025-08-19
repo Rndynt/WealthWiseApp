@@ -13,10 +13,12 @@ export interface GoalMatchScore {
   goalType: string;
   totalScore: number;
   criteria: {
-    accountLinking: number;    // 0-40 points
-    keywordRelevance: number;  // 0-30 points  
-    transactionContext: number;// 0-20 points
-    aiSemanticMatch: number;   // 0-10 points
+    accountLinking: number;           // 0-35 points (reduced from 40)
+    keywordRelevance: number;         // 0-25 points (reduced from 30)
+    transactionContext: number;       // 0-15 points (reduced from 20)
+    aiSemanticMatch: number;          // 0-10 points
+    languageAdaptation: number;       // 0-10 points (NEW)
+    behavioralPattern: number;        // 0-5 points (NEW)
   };
   confidence: number;
   reasoning: string;
@@ -135,9 +137,15 @@ export class SmartGoalMatcherService {
     
     // 4. AI Semantic Match Score (0-10 points)
     const aiScore = await this.calculateAISemanticScore(transaction, goal, matchingFactors);
+    
+    // 5. Language Adaptation Score (0-10 points) - NEW
+    const languageScore = this.calculateLanguageAdaptationScore(transaction, goal, matchingFactors);
+    
+    // 6. Behavioral Pattern Score (0-5 points) - NEW
+    const behavioralScore = await this.calculateBehavioralPatternScore(transaction, goal, matchingFactors);
 
-    const totalScore = accountScore + keywordScore + contextScore + aiScore;
-    const confidence = this.calculateConfidence(accountScore, keywordScore, contextScore, aiScore);
+    const totalScore = accountScore + keywordScore + contextScore + aiScore + languageScore + behavioralScore;
+    const confidence = this.calculateConfidence(accountScore, keywordScore, contextScore, aiScore, languageScore, behavioralScore);
 
     return {
       goalId: goal.id,
@@ -148,7 +156,9 @@ export class SmartGoalMatcherService {
         accountLinking: accountScore,
         keywordRelevance: keywordScore,
         transactionContext: contextScore,
-        aiSemanticMatch: aiScore
+        aiSemanticMatch: aiScore,
+        languageAdaptation: languageScore,
+        behavioralPattern: behavioralScore
       },
       confidence,
       reasoning: this.buildReasoningText(goal, matchingFactors, totalScore),
@@ -162,16 +172,16 @@ export class SmartGoalMatcherService {
     factors: string[]
   ): number {
     
-    // Direct account match
+    // Direct account match (reduced from 40 to 35 points)
     if (goal.linkedAccountId && goal.linkedAccountId === transaction.accountId) {
       factors.push(`Direct account link (Account ID: ${goal.linkedAccountId})`);
-      return 40;
+      return 35;
     }
 
     // Debt payment match  
     if (goal.type === 'debt_payment' && goal.linkedDebtId === transaction.debtId) {
       factors.push(`Direct debt link (Debt ID: ${goal.linkedDebtId})`);
-      return 40;
+      return 35;
     }
 
     return 0;
@@ -214,13 +224,162 @@ export class SmartGoalMatcherService {
       }
     }
 
-    // Cap at 30 points maximum
-    score = Math.min(score, 30);
+    // Cap at 25 points maximum (reduced from 30)
+    score = Math.min(score, 25);
 
     if (matchedKeywords.length > 0) {
       factors.push(`Keyword matches: ${matchedKeywords.join(', ')}`);
     }
 
+    return score;
+  }
+
+  private calculateLanguageAdaptationScore(
+    transaction: TransactionContext,
+    goal: any,
+    factors: string[]
+  ): number {
+    let score = 0;
+    const description = transaction.description.toLowerCase();
+    const goalName = goal.name.toLowerCase();
+    const goalDescription = goal.description ? goal.description.toLowerCase() : '';
+    
+    // Indonesian language patterns and keywords
+    const indonesianKeywords = this.getIndonesianKeywords(goal.type);
+    const matchedIndonesianKeywords: string[] = [];
+    
+    // Check Indonesian keywords
+    for (const keyword of indonesianKeywords) {
+      if (description.includes(keyword.toLowerCase())) {
+        matchedIndonesianKeywords.push(keyword);
+        score += 3; // 3 points per Indonesian keyword match
+      }
+    }
+    
+    // Indonesian transaction patterns (nabung, beli, bayar, etc.)
+    const indonesianPatterns = [
+      { pattern: /nabung|menabung|saving|tabungan/, points: 2 },
+      { pattern: /beli|membeli|purchase|shopping|belanja/, points: 2 },
+      { pattern: /bayar|pembayaran|payment|lunas/, points: 2 },
+      { pattern: /cicilan|installment|angsuran/, points: 2 },
+      { pattern: /dp|down\s?payment|uang\s?muka/, points: 3 },
+      { pattern: /investasi|invest|berinvestasi/, points: 3 },
+      { pattern: /darurat|emergency|mendadak/, points: 3 },
+      { pattern: /liburan|vacation|holiday|wisata/, points: 3 },
+      { pattern: /rumah|house|home|properti/, points: 3 },
+      { pattern: /motor|mobil|kendaraan|vehicle/, points: 2 },
+      { pattern: /sekolah|pendidikan|education|kuliah/, points: 2 }
+    ];
+    
+    for (const { pattern, points } of indonesianPatterns) {
+      if (pattern.test(description)) {
+        matchedIndonesianKeywords.push(`pattern:${pattern.source}`);
+        score += points;
+        break; // Only count one pattern match to avoid over-scoring
+      }
+    }
+    
+    // Goal name similarity in Indonesian context
+    const goalWords = goalName.split(' ');
+    for (const word of goalWords) {
+      if (word.length > 2) {
+        // Check for Indonesian variations and abbreviations
+        const variations = this.getIndonesianVariations(word);
+        for (const variation of variations) {
+          if (description.includes(variation)) {
+            matchedIndonesianKeywords.push(`goal-variant:${variation}`);
+            score += 2;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Cap at 10 points maximum
+    score = Math.min(score, 10);
+    
+    if (matchedIndonesianKeywords.length > 0) {
+      factors.push(`Indonesian language matches: ${matchedIndonesianKeywords.join(', ')}`);
+    }
+    
+    return score;
+  }
+
+  private async calculateBehavioralPatternScore(
+    transaction: TransactionContext,
+    goal: any,
+    factors: string[]
+  ): Promise<number> {
+    let score = 0;
+    
+    try {
+      // Get recent transaction history for this goal to identify patterns
+      const recentContributions = await db.select()
+        .from(goalContributions)
+        .where(and(
+          eq(goalContributions.goalId, goal.id),
+          eq(goalContributions.workspaceId, goal.workspaceId)
+        ))
+        .limit(10);
+      
+      if (recentContributions.length > 0) {
+        const transactionAmount = parseFloat(transaction.amount);
+        
+        // Calculate average contribution amount
+        const avgAmount = recentContributions.reduce((sum, contrib) => 
+          sum + parseFloat(contrib.amount), 0) / recentContributions.length;
+        
+        // Amount pattern matching
+        const amountDifference = Math.abs(transactionAmount - avgAmount) / avgAmount;
+        if (amountDifference < 0.3) { // Within 30% of average
+          score += 2;
+          factors.push(`Amount pattern: similar to average contributions (${avgAmount.toLocaleString('id-ID')})`);
+        }
+        
+        // Frequency pattern (if user contributes regularly to this goal)
+        if (recentContributions.length >= 3) {
+          score += 1;
+          factors.push(`Behavioral pattern: regular contributor to this goal`);
+        }
+        
+        // Account consistency
+        const sameAccountContributions = recentContributions.filter(contrib => {
+          // We would need to join with transactions to get account info
+          // For now, we'll use a simpler heuristic
+          return true;
+        });
+        
+        if (sameAccountContributions.length > recentContributions.length * 0.7) {
+          score += 1;
+          factors.push(`Account pattern: consistent source account usage`);
+        }
+      }
+      
+      // Time-based patterns (weekend vs weekday, month-end, etc.)
+      const transactionDate = new Date(transaction.date);
+      const dayOfWeek = transactionDate.getDay();
+      const dayOfMonth = transactionDate.getDate();
+      
+      // Weekend savings pattern
+      if ([0, 6].includes(dayOfWeek) && ['saving', 'investment'].includes(goal.type)) {
+        score += 1;
+        factors.push(`Time pattern: weekend saving behavior`);
+      }
+      
+      // Month-end pattern  
+      if (dayOfMonth >= 25 && ['saving', 'house', 'vacation'].includes(goal.type)) {
+        score += 1;
+        factors.push(`Time pattern: end-of-month planning`);
+      }
+      
+    } catch (error) {
+      console.error('Error calculating behavioral pattern score:', error);
+      // Don't fail the whole process, just skip behavioral scoring
+    }
+    
+    // Cap at 5 points maximum
+    score = Math.min(score, 5);
+    
     return score;
   }
 
@@ -255,7 +414,7 @@ export class SmartGoalMatcherService {
       }
     }
 
-    return Math.min(score, 20); // Cap at 20 points
+    return Math.min(score, 15); // Cap at 15 points (reduced from 20)
   }
 
   private async calculateAISemanticScore(
@@ -359,17 +518,26 @@ Respond with only a JSON object: {"score": number, "reasoning": "brief explanati
     return relevanceMatrix[transactionType]?.[goalType] || { score: 0, reason: 'No relevance found' };
   }
 
-  private calculateConfidence(account: number, keyword: number, context: number, ai: number): number {
-    const total = account + keyword + context + ai;
+  private calculateConfidence(
+    account: number, 
+    keyword: number, 
+    context: number, 
+    ai: number,
+    language: number,
+    behavioral: number
+  ): number {
+    const total = account + keyword + context + ai + language + behavioral;
     
-    // High confidence factors
+    // High confidence factors (adjusted for new scoring system)
     let confidenceBoosts = 0;
-    if (account >= 40) confidenceBoosts += 0.3; // Strong account link
+    if (account >= 35) confidenceBoosts += 0.25; // Strong account link
     if (keyword >= 20) confidenceBoosts += 0.2; // Strong keyword match  
     if (ai >= 7) confidenceBoosts += 0.2; // Strong AI match
     if (context >= 10) confidenceBoosts += 0.1; // Good context match
+    if (language >= 7) confidenceBoosts += 0.15; // Strong language match
+    if (behavioral >= 3) confidenceBoosts += 0.1; // Good behavioral pattern
 
-    // Base confidence from total score
+    // Base confidence from total score (adjusted for max 100 points)
     const baseConfidence = Math.min(total / 100, 0.8);
     
     return Math.min(baseConfidence + confidenceBoosts, 1.0);
@@ -431,6 +599,39 @@ Respond with only a JSON object: {"score": number, "reasoning": "brief explanati
     };
 
     return keywordMap[goalType] || [];
+  }
+
+  private getIndonesianKeywords(goalType: string): string[] {
+    const indonesianKeywordMap: Record<string, string[]> = {
+      'emergency_fund': ['darurat', 'mendadak', 'cadangan', 'backup', 'dana darurat', 'emergency'],
+      'vacation': ['liburan', 'wisata', 'jalan-jalan', 'piknik', 'holiday', 'vacation', 'libur', 'rekreasi'],
+      'house': ['rumah', 'properti', 'dp rumah', 'uang muka', 'cicilan rumah', 'kpr', 'hunian'],
+      'debt_payment': ['hutang', 'utang', 'cicilan', 'angsuran', 'pinjaman', 'kredit', 'lunas'],
+      'investment': ['investasi', 'invest', 'saham', 'reksadana', 'obligasi', 'portofolio', 'trading'],
+      'education': ['pendidikan', 'sekolah', 'kuliah', 'kursus', 'les', 'pelatihan', 'spp', 'uang sekolah'],
+      'retirement': ['pensiun', 'hari tua', 'masa depan', 'tabungan pensiun', 'dana pensiun'],
+      'savings': ['tabungan', 'menabung', 'simpan', 'saving', 'nabung', 'celengan', 'deposito']
+    };
+
+    return indonesianKeywordMap[goalType] || [];
+  }
+
+  private getIndonesianVariations(word: string): string[] {
+    const variationMap: Record<string, string[]> = {
+      'rumah': ['rumah', 'home', 'house', 'hunian', 'properti'],
+      'liburan': ['liburan', 'vacation', 'holiday', 'libur', 'wisata', 'piknik'],
+      'bali': ['bali', 'denpasar', 'ubud', 'sanur', 'kuta', 'nusa dua'],
+      'tabungan': ['tabungan', 'saving', 'save', 'nabung', 'menabung', 'simpan'],
+      'investasi': ['investasi', 'investment', 'invest', 'berinvestasi'],
+      'darurat': ['darurat', 'emergency', 'mendadak', 'urgent'],
+      'pendidikan': ['pendidikan', 'education', 'sekolah', 'kuliah'],
+      'motor': ['motor', 'sepeda motor', 'motorcycle', 'bike'],
+      'mobil': ['mobil', 'car', 'kendaraan', 'vehicle', 'otomotif'],
+      'hp': ['hp', 'handphone', 'smartphone', 'phone', 'gadget'],
+      'laptop': ['laptop', 'komputer', 'computer', 'notebook', 'pc']
+    };
+
+    return variationMap[word.toLowerCase()] || [word];
   }
 }
 
