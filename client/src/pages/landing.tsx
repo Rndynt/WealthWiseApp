@@ -31,11 +31,27 @@ interface SubscriptionPackage {
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Tambah toggle siklus penagihan untuk pricing section
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const { data: packages } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/public/subscription-packages'],
     retry: false,
   });
+
+  // Formatter harga IDR
+  const formatPrice = (price: string) => {
+    const num = parseFloat(price);
+    return num === 0 ? 'Gratis' : `Rp ${num.toLocaleString('id-ID')}`;
+  };
+
+  // Total tahunan dengan promo hemat 2 bulan (bayar 10x harga bulanan)
+  const formatYearlyTotal = (price: string) => {
+    const monthly = parseFloat(price);
+    if (monthly === 0) return 'Gratis';
+    const total = monthly * 10;
+    return `Rp ${total.toLocaleString('id-ID')}`;
+  };
 
   const features = [
     {
@@ -172,14 +188,32 @@ export default function LandingPage() {
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Start free and upgrade as you grow
             </p>
+            {/* Toggle bulanan/tahunan */}
+            <div className="mt-6 flex justify-center">
+              <div className="inline-flex items-center p-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <button
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}
+                  onClick={() => setBillingCycle('monthly')}
+                >
+                  Bulanan
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'yearly' ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}
+                  onClick={() => setBillingCycle('yearly')}
+                >
+                  Tahunan
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Hemat 2 bulan</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {packages && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {packages.filter(pkg => pkg.isActive).map((pkg) => (
-                <Card key={pkg.id} className={`relative ${pkg.name.toLowerCase() === 'premium' ? 'border-blue-500 shadow-xl' : ''}`}>
+                <Card key={pkg.id} className={`relative transition-transform hover:-translate-y-1 hover:shadow-2xl ${pkg.name.toLowerCase() === 'premium' ? 'border-blue-500 shadow-xl ring-2 ring-blue-200' : 'border border-gray-200 dark:border-gray-700'}`}>
                   {pkg.name.toLowerCase() === 'premium' && (
-                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                       <Crown size={12} className="mr-1" />
                       Most Popular
                     </Badge>
@@ -195,9 +229,15 @@ export default function LandingPage() {
                     </div>
                     <CardTitle className="text-2xl">{pkg.name}</CardTitle>
                     <div className="text-3xl font-bold">
-                      ${pkg.price}
-                      <span className="text-base font-normal text-gray-500">/month</span>
+                      {formatPrice(pkg.price)}
+                      <span className="text-base font-normal text-gray-500">/bulan</span>
                     </div>
+                    {billingCycle === 'yearly' && parseFloat(pkg.price) > 0 && (
+                      <div className="text-sm text-green-600 mt-1">
+                        Dibayar tahunan: <span className="font-semibold">{formatYearlyTotal(pkg.price)}</span>
+                        <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">Hemat 2 bulan</Badge>
+                      </div>
+                    )}
                     <p className="text-gray-600 dark:text-gray-300">{pkg.description}</p>
                   </CardHeader>
                   
