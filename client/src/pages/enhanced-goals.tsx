@@ -346,7 +346,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Target className="w-6 h-6 text-blue-600" />
-            Enhanced Goals
+             Goals
           </h1>
           <p className="text-gray-600 text-sm">
             AI-powered goal management with smart insights and automation
