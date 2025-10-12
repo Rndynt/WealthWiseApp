@@ -1804,6 +1804,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Fix database sequences after seeding
+  app.post("/api/admin/fix-sequences", authenticateToken, async (req: any, res) => {
+    try {
+      // Check if user is root or admin
+      const user = await storage.getUserWithRole(req.user.userId);
+      if (!user || (user.role?.name !== 'root' && user.role?.name !== 'admin')) {
+        return res.status(403).json({ message: "Only root and admin can fix sequences" });
+      }
+
+      const sequences = [
+        { table: 'roles', column: 'id' },
+        { table: 'permissions', column: 'id' },
+        { table: 'role_permissions', column: 'id' },
+        { table: 'subscription_packages', column: 'id' },
+        { table: 'users', column: 'id' },
+        { table: 'user_subscriptions', column: 'id' },
+        { table: 'workspaces', column: 'id' },
+        { table: 'workspace_members', column: 'id' },
+        { table: 'categories', column: 'id' },
+        { table: 'accounts', column: 'id' },
+        { table: 'transactions', column: 'id' },
+        { table: 'budgets', column: 'id' },
+        { table: 'debts', column: 'id' },
+      ];
+
+      const results = [];
+      for (const { table, column } of sequences) {
+        try {
+          await db.execute(`
+            SELECT setval(
+              pg_get_serial_sequence('${table}', '${column}'),
+              COALESCE((SELECT MAX(${column}) FROM ${table}), 1),
+              true
+            );
+          `);
+          results.push({ table, status: 'fixed' });
+        } catch (error: any) {
+          results.push({ table, status: 'error', message: error.message });
+        }
+      }
+
+      res.json({ 
+        message: "Database sequences fixed successfully",
+        results 
+      });
+    } catch (error) {
+      console.error("Failed to fix sequences:", error);
+      res.status(500).json({ message: "Failed to fix sequences" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

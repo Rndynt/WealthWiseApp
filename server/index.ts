@@ -61,6 +61,9 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // For now use static serving until Vite configuration is fixed
-  serveStatic(app);
+  if (app.get("env") === "development") {
+    await setupVite(app, httpServer);
+  } else {
+    serveStatic(app);
+  }
 })();

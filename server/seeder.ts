@@ -546,6 +546,45 @@ async function seedAccounts() {
   ]).onConflictDoNothing();
 }
 
+async function fixSequences() {
+  console.log("Fixing database sequences...");
+  
+  // Fix sequences untuk semua tabel yang menggunakan serial/auto-increment
+  const sequences = [
+    { table: 'roles', column: 'id' },
+    { table: 'permissions', column: 'id' },
+    { table: 'role_permissions', column: 'id' },
+    { table: 'subscription_packages', column: 'id' },
+    { table: 'users', column: 'id' },
+    { table: 'user_subscriptions', column: 'id' },
+    { table: 'workspaces', column: 'id' },
+    { table: 'workspace_members', column: 'id' },
+    { table: 'categories', column: 'id' },
+    { table: 'accounts', column: 'id' },
+    { table: 'transactions', column: 'id' },
+    { table: 'budgets', column: 'id' },
+    { table: 'debts', column: 'id' },
+  ];
+
+  for (const { table, column } of sequences) {
+    try {
+      // Update sequence to start from max ID + 1
+      await db.execute(`
+        SELECT setval(
+          pg_get_serial_sequence('${table}', '${column}'),
+          COALESCE((SELECT MAX(${column}) FROM ${table}), 1),
+          true
+        );
+      `);
+      console.log(`✓ Fixed sequence for ${table}.${column}`);
+    } catch (error) {
+      console.error(`✗ Error fixing sequence for ${table}.${column}:`, error);
+    }
+  }
+  
+  console.log("Database sequences fixed successfully!");
+}
+
 export async function runSeeder(reset = false) {
   try {
     console.log("Starting database seeding...");
@@ -564,6 +603,9 @@ export async function runSeeder(reset = false) {
     await seedWorkspaceMembers();
     await seedCategories();
     await seedAccounts();
+    
+    // PENTING: Fix sequences setelah seeding untuk mencegah konflik ID
+    await fixSequences();
     
     console.log("Database seeding completed successfully!");
     
