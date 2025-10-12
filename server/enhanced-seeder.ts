@@ -50,10 +50,10 @@ async function seedEnhancedRoles() {
   console.log("🔐 Seeding enhanced roles...");
 
   await db.insert(roles).values([
-    { id: 1, name: "root", description: "Super administrator dengan bypass penuh sistem" },
-    { id: 2, name: "admin", description: "Administrator aplikasi dengan akses manajemen user dan sistem" },
-    { id: 3, name: "user_basic", description: "User basic dengan fitur terbatas sesuai paket basic" },
-    { id: 4, name: "user_premium", description: "User premium dengan fitur unlimited untuk personal" },
+    { name: "root", description: "Super administrator dengan bypass penuh sistem" },
+    { name: "admin", description: "Administrator aplikasi dengan akses manajemen user dan sistem" },
+    { name: "user_basic", description: "User basic dengan fitur terbatas sesuai paket basic" },
+    { name: "user_premium", description: "User premium dengan fitur unlimited untuk personal" },
   ]).onConflictDoNothing();
 }
 
@@ -231,7 +231,6 @@ async function seedEnhancedSubscriptionPackages() {
 
   await db.insert(subscriptionPackages).values([
     {
-      id: 1,
       name: "basic",
       price: "0.00",
       features: [
@@ -254,7 +253,6 @@ async function seedEnhancedSubscriptionPackages() {
       isActive: true
     },
     {
-      id: 2,
       name: "premium",
       price: "15000.00",
       features: [
@@ -279,7 +277,6 @@ async function seedEnhancedSubscriptionPackages() {
       isActive: true
     },
     {
-      id: 3,
       name: "professional",
       price: "25000.00",
       features: [
@@ -307,7 +304,6 @@ async function seedEnhancedSubscriptionPackages() {
       isActive: true
     },
     {
-      id: 4,
       name: "business",
       price: "50000.00",
       features: [
@@ -344,41 +340,48 @@ async function seedEnhancedUsers() {
   const hashedPassword = await bcrypt.hash("admin123", 10);
   const demoPassword = await bcrypt.hash("demo123", 10);
 
+  // Get role IDs dynamically
+  const allRoles = await db.select().from(roles);
+  const rootRole = allRoles.find(r => r.name === 'root');
+  const adminRole = allRoles.find(r => r.name === 'admin');
+  const userBasicRole = allRoles.find(r => r.name === 'user_basic');
+  const userPremiumRole = allRoles.find(r => r.name === 'user_premium');
+
+  if (!rootRole || !adminRole || !userBasicRole || !userPremiumRole) {
+    console.log("⚠️ Skipping users - missing required roles");
+    return;
+  }
+
   await db.insert(users).values([
     {
-      id: 1,
       email: "root@financeflow.com",
       password: hashedPassword,
       name: "Root Administrator",
-      roleId: 1 // root
+      roleId: rootRole.id
     },
     {
-      id: 2,
       email: "admin@financeflow.com",
       password: hashedPassword,
       name: "System Administrator",
-      roleId: 2 // admin
+      roleId: adminRole.id
     },
     {
-      id: 3,
       email: "basic@financeflow.com",
       password: demoPassword,
       name: "Basic User",
-      roleId: 3 // user_basic
+      roleId: userBasicRole.id
     },
     {
-      id: 4,
       email: "premium@financeflow.com",
       password: demoPassword,
       name: "Premium User",
-      roleId: 4 // user_premium
+      roleId: userPremiumRole.id
     },
     {
-      id: 5,
       email: "demo@financeflow.com",
       password: demoPassword,
       name: "Demo User Basic",
-      roleId: 3 // user_basic
+      roleId: userBasicRole.id
     }
   ]).onConflictDoNothing();
 }
@@ -393,38 +396,58 @@ async function seedEnhancedUserSubscriptions() {
   const unlimitedYear = new Date();
   unlimitedYear.setFullYear(now.getFullYear() + 999);
 
+  // Get users and packages dynamically
+  const allUsers = await db.select().from(users);
+  const allPackages = await db.select().from(subscriptionPackages);
+
+  const rootUser = allUsers.find(u => u.email === 'root@financeflow.com');
+  const adminUser = allUsers.find(u => u.email === 'admin@financeflow.com');
+  const basicUser = allUsers.find(u => u.email === 'basic@financeflow.com');
+  const premiumUser = allUsers.find(u => u.email === 'premium@financeflow.com');
+  const demoUser = allUsers.find(u => u.email === 'demo@financeflow.com');
+
+  const basicPackage = allPackages.find(p => p.name === 'basic');
+  const premiumPackage = allPackages.find(p => p.name === 'premium');
+  const businessPackage = allPackages.find(p => p.name === 'business');
+
+  if (!rootUser || !adminUser || !basicUser || !premiumUser || !demoUser ||
+      !basicPackage || !premiumPackage || !businessPackage) {
+    console.log("⚠️ Skipping user subscriptions - missing required data");
+    return;
+  }
+
   await db.insert(userSubscriptions).values([
     {
-      userId: 1,
-      packageId: 4, // Business for root
+      userId: rootUser.id,
+      packageId: businessPackage.id,
       startDate: now,
       endDate: unlimitedYear,
       status: "active"
     },
     {
-      userId: 2,
-      packageId: 4, // Business for admin
+      userId: adminUser.id,
+      packageId: businessPackage.id,
       startDate: now,
       endDate: oneYearLater,
       status: "active"
     },
     {
-      userId: 3,
-      packageId: 1, // Basic for basic user
+      userId: basicUser.id,
+      packageId: basicPackage.id,
       startDate: now,
       endDate: oneYearLater,
       status: "active"
     },
     {
-      userId: 4,
-      packageId: 2, // Premium for premium user
+      userId: premiumUser.id,
+      packageId: premiumPackage.id,
       startDate: now,
       endDate: oneYearLater,
       status: "active"
     },
     {
-      userId: 5,
-      packageId: 1, // Basic for demo user
+      userId: demoUser.id,
+      packageId: basicPackage.id,
       startDate: now,
       endDate: oneYearLater,
       status: "active"
@@ -435,26 +458,61 @@ async function seedEnhancedUserSubscriptions() {
 async function seedEnhancedWorkspaces() {
   console.log("🏢 Seeding enhanced workspaces...");
 
+  // Get users dynamically
+  const allUsers = await db.select().from(users);
+  const rootUser = allUsers.find(u => u.email === 'root@financeflow.com');
+  const adminUser = allUsers.find(u => u.email === 'admin@financeflow.com');
+  const basicUser = allUsers.find(u => u.email === 'basic@financeflow.com');
+  const premiumUser = allUsers.find(u => u.email === 'premium@financeflow.com');
+  const demoUser = allUsers.find(u => u.email === 'demo@financeflow.com');
+
+  if (!rootUser || !adminUser || !basicUser || !premiumUser || !demoUser) {
+    console.log("⚠️ Skipping workspaces - missing required users");
+    return;
+  }
+
   await db.insert(workspaces).values([
     // Personal workspaces - every user must have their own Personal workspace
-    { id: 1, name: "Personal", type: "personal", ownerId: 1 },
-    { id: 2, name: "Personal", type: "personal", ownerId: 2 },
-    { id: 3, name: "Personal", type: "personal", ownerId: 3 },
-    { id: 4, name: "Personal", type: "personal", ownerId: 4 },
-    { id: 5, name: "Personal", type: "personal", ownerId: 5 },
+    { name: "Personal", type: "personal", ownerId: rootUser.id },
+    { name: "Personal", type: "personal", ownerId: adminUser.id },
+    { name: "Personal", type: "personal", ownerId: basicUser.id },
+    { name: "Personal", type: "personal", ownerId: premiumUser.id },
+    { name: "Personal", type: "personal", ownerId: demoUser.id },
   ]).onConflictDoNothing();
 }
 
 async function seedEnhancedWorkspaceMembers() {
   console.log("👥 Seeding enhanced workspace members...");
 
+  // Get users and workspaces dynamically
+  const allUsers = await db.select().from(users);
+  const allWorkspaces = await db.select().from(workspaces);
+
+  const rootUser = allUsers.find(u => u.email === 'root@financeflow.com');
+  const adminUser = allUsers.find(u => u.email === 'admin@financeflow.com');
+  const basicUser = allUsers.find(u => u.email === 'basic@financeflow.com');
+  const premiumUser = allUsers.find(u => u.email === 'premium@financeflow.com');
+  const demoUser = allUsers.find(u => u.email === 'demo@financeflow.com');
+
+  const rootWorkspace = allWorkspaces.find(w => w.ownerId === rootUser?.id && w.type === 'personal');
+  const adminWorkspace = allWorkspaces.find(w => w.ownerId === adminUser?.id && w.type === 'personal');
+  const basicWorkspace = allWorkspaces.find(w => w.ownerId === basicUser?.id && w.type === 'personal');
+  const premiumWorkspace = allWorkspaces.find(w => w.ownerId === premiumUser?.id && w.type === 'personal');
+  const demoWorkspace = allWorkspaces.find(w => w.ownerId === demoUser?.id && w.type === 'personal');
+
+  if (!rootUser || !adminUser || !basicUser || !premiumUser || !demoUser ||
+      !rootWorkspace || !adminWorkspace || !basicWorkspace || !premiumWorkspace || !demoWorkspace) {
+    console.log("⚠️ Skipping workspace members - missing required data");
+    return;
+  }
+
   await db.insert(workspaceMembers).values([
     // Personal workspace memberships (each user is owner of their Personal workspace)
-    { workspaceId: 1, userId: 1, role: 'owner' }, // Root - Personal
-    { workspaceId: 2, userId: 2, role: 'owner' }, // Admin - Personal  
-    { workspaceId: 3, userId: 3, role: 'owner' }, // Basic - Personal
-    { workspaceId: 4, userId: 4, role: 'owner' }, // Premium - Personal
-    { workspaceId: 5, userId: 5, role: 'owner' }, // Demo - Personal
+    { workspaceId: rootWorkspace.id, userId: rootUser.id, role: 'owner' },
+    { workspaceId: adminWorkspace.id, userId: adminUser.id, role: 'owner' },
+    { workspaceId: basicWorkspace.id, userId: basicUser.id, role: 'owner' },
+    { workspaceId: premiumWorkspace.id, userId: premiumUser.id, role: 'owner' },
+    { workspaceId: demoWorkspace.id, userId: demoUser.id, role: 'owner' },
   ]).onConflictDoNothing();
 }
 
