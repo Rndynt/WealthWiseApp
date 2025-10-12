@@ -11,7 +11,8 @@ import { useLocation } from 'wouter';
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: 'demo@financeflow.com', password: 'demo123' });
-  const [registerForm, setRegisterForm] = useState({ email: '', password: '', name: '' });
+  const [registerForm, setRegisterForm] = useState({ email: '', password: '', passwordConfirm: '', name: '' });
+  const [passwordError, setPasswordError] = useState('');
   const { login, register } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -30,6 +31,20 @@ export default function Login() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordError('');
+    
+    // Validate password confirmation
+    if (registerForm.password !== registerForm.passwordConfirm) {
+      setPasswordError('Password tidak cocok');
+      return;
+    }
+
+    // Validate password length
+    if (registerForm.password.length < 6) {
+      setPasswordError('Password minimal 6 karakter');
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register(registerForm.email, registerForm.password, registerForm.name);
@@ -107,6 +122,7 @@ export default function Login() {
                     onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                     placeholder="Enter your full name"
                     required
+                    data-testid="input-register-name"
                   />
                 </div>
                 <div className="form-field">
@@ -118,6 +134,7 @@ export default function Login() {
                     onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                     placeholder="Enter your email"
                     required
+                    data-testid="input-register-email"
                   />
                 </div>
                 <div className="form-field">
@@ -127,11 +144,29 @@ export default function Login() {
                     type="password"
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                    placeholder="Create a password"
+                    placeholder="Create a password (min. 6 characters)"
                     required
+                    data-testid="input-register-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <div className="form-field">
+                  <Label htmlFor="register-password-confirm">Confirm Password</Label>
+                  <Input
+                    id="register-password-confirm"
+                    type="password"
+                    value={registerForm.passwordConfirm}
+                    onChange={(e) => setRegisterForm({ ...registerForm, passwordConfirm: e.target.value })}
+                    placeholder="Re-enter your password"
+                    required
+                    data-testid="input-register-password-confirm"
+                  />
+                </div>
+                {passwordError && (
+                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded" data-testid="error-password">
+                    {passwordError}
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-register">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account
                 </Button>
