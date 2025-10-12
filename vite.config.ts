@@ -36,8 +36,8 @@ export default defineConfig(async () => {
     },
     root: path.resolve(__dirname, "client"),
     build: {
-      // Output static files ke dist/public
-      outDir: path.resolve(__dirname, "dist/public"),
+      // Output static files to server/public
+      outDir: path.resolve(__dirname, "server/public"),
       emptyOutDir: true,
 
       // Paksa menggunakan esbuild untuk JS & CSS minification

@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI only if API key is available
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 export interface GoalSuggestion {
   id: number;
@@ -39,6 +40,12 @@ export class AIGoalsService {
     monthlyExpenses: number;
   }): Promise<GoalSuggestion[]> {
     try {
+      // If OpenAI is not available, use fallback immediately
+      if (!openai) {
+        console.log('OpenAI API key not configured, using fallback suggestions');
+        return this.getFallbackSuggestions(financialData);
+      }
+
       const prompt = this.buildSuggestionsPrompt(financialData);
       
       const completion = await openai.chat.completions.create({
@@ -81,6 +88,12 @@ export class AIGoalsService {
     monthlyExpenses: number;
   }): Promise<GoalInsight[]> {
     try {
+      // If OpenAI is not available, use fallback immediately
+      if (!openai) {
+        console.log('OpenAI API key not configured, using fallback insights');
+        return this.getFallbackInsights(financialData);
+      }
+
       const prompt = this.buildInsightsPrompt(financialData);
       
       const completion = await openai.chat.completions.create({
