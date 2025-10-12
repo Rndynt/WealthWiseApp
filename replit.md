@@ -41,7 +41,10 @@ Development approach: Mobile-first UI/UX with ultra-compact designs for optimal 
 - **Monorepo Structure**: Shared TypeScript definitions between frontend and backend for type safety.
 - **PWA Support**: Implemented as a Progressive Web App (PWA) with manifest, service worker for offline caching, push notifications, and app shortcuts.
 
-### Recent Changes (August 2025)
+### Recent Changes (October 2025)
+- **Migration to Standard Replit Environment Completed (October 12, 2025)**: Successfully migrated FinanceFlow from Replit Agent to standard Replit environment. Fixed OpenAI API initialization to be optional with fallback logic when API key is unavailable. Configured Vite build output to server/public directory for proper static file serving. Application now fully operational with all features preserved including multi-workspace support, transaction tracking, budgets, goals, debts, and analytics.
+
+### Previous Changes (August 2025)
 - **Comprehensive Automation System**: Implemented all 9 improvement areas including persistent notifications database, automated recurring transactions, enhanced analytics with debt integration, and CRUD operations for accounts/budgets/categories
 - **Auto-Categorization Fixed**: Resolved category selection bug where category value would become unselected when editing rules by adding proper form state management
 - **Recurring Transaction Automation**: Added automatic execution system with scheduler, next execution date calculation, and success/error notifications
