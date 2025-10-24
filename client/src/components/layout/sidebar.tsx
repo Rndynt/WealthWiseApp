@@ -339,6 +339,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
       <AddWorkspaceModal
         open={showWorkspaceModal}
         onOpenChange={setShowWorkspaceModal}
+        setCurrentWorkspace={onWorkspaceChange}
       />
     </>
   );
