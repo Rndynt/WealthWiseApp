@@ -45,7 +45,7 @@ interface SidebarProps {
   open: boolean;
   onToggle: () => void;
   currentWorkspace: Workspace | null;
-  onWorkspaceChange: (workspace: Workspace) => void;
+  onWorkspaceChange: (workspace: Workspace | null) => void;
 }
 
 const navigationItems = [
@@ -212,10 +212,26 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
 
   // Set initial workspace
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && !currentWorkspace) {
-      const personalWorkspace = workspaces.find(w => w.type === 'personal') || workspaces[0];
-      onWorkspaceChange(personalWorkspace);
+    if (!workspaces || workspaces.length === 0) {
+      if (currentWorkspace) {
+        onWorkspaceChange(null);
+      }
+      return;
     }
+
+    const matchingWorkspace = currentWorkspace
+      ? workspaces.find((workspace) => workspace.id === currentWorkspace.id)
+      : undefined;
+
+    if (matchingWorkspace) {
+      if (matchingWorkspace !== currentWorkspace) {
+        onWorkspaceChange(matchingWorkspace);
+      }
+      return;
+    }
+
+    const personalWorkspace = workspaces.find((workspace) => workspace.type === 'personal') || workspaces[0];
+    onWorkspaceChange(personalWorkspace);
   }, [workspaces, currentWorkspace, onWorkspaceChange]);
 
   const handleWorkspaceChange = (workspaceId: string) => {

@@ -13,7 +13,7 @@ import type { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 interface AddWorkspaceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  setCurrentWorkspace: (workspace: Workspace) => void;
+  setCurrentWorkspace: (workspace: Workspace | null) => void;
 }
 
 export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorkspace }: AddWorkspaceModalProps) {

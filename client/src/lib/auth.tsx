@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest, queryClient } from './queryClient';
+import { useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
@@ -18,10 +19,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+  children: ReactNode;
+  onSessionReset?: () => void;
+}
+
+export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,12 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         await queryClient.cancelQueries();
         queryClient.clear();
+        onSessionReset?.();
         localStorage.removeItem('token');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       await queryClient.cancelQueries();
       queryClient.clear();
+      onSessionReset?.();
       localStorage.removeItem('token');
     } finally {
       setLoading(false);
@@ -60,14 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/login', { email, password });
       const data = await response.json();
-      
+
       await queryClient.cancelQueries();
       queryClient.clear();
+      onSessionReset?.();
       localStorage.setItem('token', data.token);
-      setUser(data.user);
-      
+      await checkAuthStatus();
+
       toast({
         title: "Login successful",
         description: "Welcome to FinanceFlow!",
@@ -78,20 +89,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login failed",
         description: error.message || "Invalid credentials",
       });
+      setLoading(false);
       throw error;
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
     try {
+      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/register', { email, password, name });
       const data = await response.json();
-      
+
       await queryClient.cancelQueries();
       queryClient.clear();
+      onSessionReset?.();
       localStorage.setItem('token', data.token);
-      setUser(data.user);
-      
+      await checkAuthStatus();
+
       toast({
         title: "Registration successful",
         description: "Welcome to FinanceFlow!",
@@ -102,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration failed",
         description: error.message || "Failed to create account",
       });
+      setLoading(false);
       throw error;
     }
   };
@@ -109,8 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
+    onSessionReset?.();
     localStorage.removeItem('token');
     setUser(null);
+    setLoading(false);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
