@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 import { 
   Settings as SettingsIcon, 
@@ -47,6 +47,7 @@ interface AppSettings {
 }
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { hasPermission, isRoot, isAdmin } = useEnhancedPermissions();
   const [formData, setFormData] = useState<Partial<AppSettings>>({});
