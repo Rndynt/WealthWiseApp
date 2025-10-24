@@ -409,6 +409,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/workspaces/:workspaceId/invite', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      if (workspace.type === 'personal') {
+        return res.status(403).json({ message: 'Collaboration is not available for personal workspaces' });
+      }
+
       const { email, role } = req.body as { email: string; role: 'editor' | 'viewer' };
       if (!email || !role) {
         return res.status(400).json({ message: 'Email and role are required' });

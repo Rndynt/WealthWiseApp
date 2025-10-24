@@ -5,18 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings } from 'lucide-react';
+import type { Workspace } from '@/types';
+import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings, AlertCircle } from 'lucide-react';
 
 interface WorkspaceMember {
   id: number;
@@ -37,22 +39,27 @@ interface InviteFormData {
 }
 
 interface CollaborationProps {
-  workspaceId: number | undefined;
+  workspace?: Workspace | null;
 }
 
-export default function CollaborationPage({ workspaceId }: CollaborationProps) {
+export default function CollaborationPage({ workspace }: CollaborationProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { hasPermission, hasFeatureAccess, isRoot } = useEnhancedPermissions();
+  const { hasFeatureAccess, isRoot } = useEnhancedPermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
     email: '',
     role: 'viewer'
   });
 
+  const workspaceId = workspace?.id;
+  const isPersonalWorkspace = workspace?.type === 'personal';
+
   // Check if user has collaboration permissions - root users get all permissions
-  const canManageCollaboration = isRoot || hasFeatureAccess('user.collaboration');
-  const canViewCollaboration = isRoot || hasFeatureAccess('user.collaboration');
+  const hasCollaborationAccess = isRoot || hasFeatureAccess('user.collaboration');
+  const collaborationDisabledForWorkspace = isPersonalWorkspace;
+  const canManageCollaboration = hasCollaborationAccess && !collaborationDisabledForWorkspace;
+  const canViewCollaboration = hasCollaborationAccess && !collaborationDisabledForWorkspace;
 
   const { data: members, isLoading } = useQuery<WorkspaceMember[]>({
     queryKey: [`/api/workspaces/${workspaceId}/members`],
@@ -65,6 +72,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const inviteMemberMutation = useMutation({
     mutationFn: async (data: InviteFormData) => {
+      if (!workspaceId) {
+        throw new Error('Workspace not selected');
+      }
       return apiRequest('POST', `/api/workspaces/${workspaceId}/invite`, data);
     },
     onSuccess: () => {
@@ -72,7 +82,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
         title: "Invitation Sent",
         description: "The invitation has been sent successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      if (workspaceId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      }
       setShowInviteModal(false);
       setInviteForm({ email: '', role: 'viewer' });
     },
@@ -87,6 +99,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const updateMemberRoleMutation = useMutation({
     mutationFn: async ({ memberId, role }: { memberId: number; role: string }) => {
+      if (!workspaceId) {
+        throw new Error('Workspace not selected');
+      }
       return apiRequest('PUT', `/api/workspaces/${workspaceId}/members/${memberId}`, { role });
     },
     onSuccess: () => {
@@ -94,7 +109,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
         title: "Role Updated",
         description: "Member role has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      if (workspaceId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -107,6 +124,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const removeMemberMutation = useMutation({
     mutationFn: async (memberId: number) => {
+      if (!workspaceId) {
+        throw new Error('Workspace not selected');
+      }
       return apiRequest('DELETE', `/api/workspaces/${workspaceId}/members/${memberId}`);
     },
     onSuccess: () => {
@@ -114,7 +134,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
         title: "Member Removed",
         description: "Member has been removed from the workspace.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      if (workspaceId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -127,6 +149,9 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!workspaceId) {
+      return;
+    }
     inviteMemberMutation.mutate(inviteForm);
   };
 
@@ -152,11 +177,26 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
     );
   }
 
-  if (!canViewCollaboration) {
+  if (!hasCollaborationAccess) {
     return (
       <div className="text-center py-8">
         <Shield size={48} className="mx-auto mb-4 text-gray-400" />
         <p className="text-gray-500">You don't have permission to view collaboration features</p>
+      </div>
+    );
+  }
+
+  if (collaborationDisabledForWorkspace) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <Alert>
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Collaboration disabled for personal workspaces</AlertTitle>
+          <AlertDescription>
+            Collaboration features are not available while you're working in a personal workspace. Create or switch to a shared
+            workspace from the selector in the sidebar to invite teammates and manage member access.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

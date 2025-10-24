@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/lib/auth';
 import { 
   useEnhancedPermissions, 
@@ -204,6 +205,7 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
   const { user, logout } = useAuth();
   const { hasPermission, isAdmin, isRoot, isLoading: permissionsLoading } = useEnhancedPermissions();
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const isPersonalWorkspace = currentWorkspace?.type === 'personal';
 
   const { data: workspaces, isLoading: workspacesLoading } = useQuery<Workspace[]>({
     queryKey: ['/api/workspaces'],
@@ -289,20 +291,43 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
         <div className="flex-1 overflow-y-auto">
           <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
-            // Skip item if user doesn't have page permission
             if (!hasPermission(item.pagePermission)) return null;
 
             const Icon = item.icon;
             const isActive = location === item.path || (item.path === '/dashboard' && location === '/');
+            const baseClasses = 'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors';
+            const activeClasses = isActive
+              ? 'bg-blue-50 text-primary'
+              : 'text-gray-700 hover:bg-gray-100';
+            const isCollaborationItem = item.path === '/collaboration';
+            const isWorkspaceCollaborationDisabled = isCollaborationItem && isPersonalWorkspace;
+
+            if (isWorkspaceCollaborationDisabled) {
+              return (
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`${baseClasses} text-gray-400 bg-gray-100 cursor-not-allowed pointer-events-none`}
+                      role="link"
+                      aria-disabled="true"
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center">
+                    <p>Collaboration is disabled for personal workspaces. Switch to a shared workspace to manage members.</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
 
             return (
-              <Link key={item.path} href={item.path} className={`
-                flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors
-                ${isActive
-                  ? 'bg-blue-50 text-primary'
-                  : 'text-gray-700 hover:bg-gray-100'
-                }
-              `}>
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`${baseClasses} ${activeClasses}`}
+              >
                 <Icon size={20} />
                 <span>{item.label}</span>
               </Link>

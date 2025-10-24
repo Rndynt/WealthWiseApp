@@ -126,9 +126,9 @@ function AppRouter() {
               </Route>
               <Route path="/automation" component={() => <Automation workspaceId={currentWorkspace?.id} />} />
               <Route path="/debts" component={() => <Debts workspaceId={currentWorkspace?.id} />} />
-              <Route path="/collaboration" component={() => 
+              <Route path="/collaboration" component={() =>
                 <ProtectedRoute requiredPermission="user.collaboration.pages">
-                  <Collaboration workspaceId={currentWorkspace?.id} />
+                  <Collaboration workspace={currentWorkspace} />
                 </ProtectedRoute>
               } />
             {/* Redirect '/login' to '/dashboard' when authenticated */}
