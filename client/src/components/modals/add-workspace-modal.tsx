@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import WorkspaceQuotaBanner from '@/features/workspaces/WorkspaceQuotaBanner';
+import type { WorkspaceSubscriptionLimits } from '@/types/subscription';
 
 interface AddWorkspaceModalProps {
   open: boolean;
@@ -23,9 +25,13 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
   const queryClient = useQueryClient();
 
   // Get user subscription limits
-  const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
+  const { data: limits } = useQuery<WorkspaceSubscriptionLimits | null>({
     queryKey: ['/api/user/subscription-limits'],
   });
+
+  const personalLimit = limits?.breakdown.personal.limit ?? null;
+  const personalUsed = limits?.breakdown.personal.used ?? 0;
+  const hasReachedPersonalLimit = personalLimit !== null && personalUsed >= personalLimit;
 
   const createWorkspaceMutation = useMutation({
     mutationFn: (data: { name: string; type: string }) =>
@@ -53,11 +59,11 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
     if (!form.name || !form.type) return;
     
     // Check if user can create more workspaces
-    if (limits && limits.currentWorkspaces >= limits.maxWorkspaces) {
+    if (hasReachedPersonalLimit) {
       toast({
         variant: "destructive",
         title: "Batas workspace tercapai",
-        description: `Anda sudah mencapai batas maksimal ${limits.maxWorkspaces} workspace. Upgrade ke paket premium untuk membuat lebih banyak workspace.`,
+        description: `Anda sudah mencapai batas maksimal ${personalLimit} workspace pribadi. Upgrade ke paket premium untuk membuat lebih banyak workspace.`,
       });
       return;
     }
@@ -73,18 +79,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
         </DialogHeader>
         
         {/* Subscription Status */}
-        {limits && (
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Status Langganan:</strong> {limits.currentWorkspaces}/{limits.maxWorkspaces} workspace terpakai
-            </p>
-            {limits.currentWorkspaces >= limits.maxWorkspaces && (
-              <p className="text-sm text-red-600 mt-1">
-                ⚠️ Anda telah mencapai batas maksimal. Upgrade ke premium untuk membuat lebih banyak workspace.
-              </p>
-            )}
-          </div>
-        )}
+        {limits && <WorkspaceQuotaBanner limits={limits} />}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-field">
@@ -124,7 +119,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
             <Button 
               type="submit" 
               className="flex-1"
-              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || (limits ? limits.currentWorkspaces >= limits.maxWorkspaces : false)}
+              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || hasReachedPersonalLimit}
             >
               {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
             </Button>

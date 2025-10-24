@@ -40,7 +40,7 @@ import {
   type InsertAppSettings,
   type Goal,
   type GoalContribution,
-  type GoalMilestone, 
+  type GoalMilestone,
   type GoalInsight,
   type InsertGoal,
   type InsertGoalContribution,
@@ -70,6 +70,29 @@ import {
   type WorkspaceMember,
   type InsertWorkspaceMember,
 } from "@shared/schema";
+
+export interface WorkspaceQuotaSection {
+  used: number;
+  limit: number | null;
+  remaining: number | null;
+}
+
+export interface WorkspaceQuotaBreakdown {
+  personal: WorkspaceQuotaSection;
+  shared: WorkspaceQuotaSection;
+  sharedInvitations: {
+    used: number;
+  };
+}
+
+export interface UserSubscriptionLimitSummary {
+  maxWorkspaces: number | null;
+  maxMembers: number;
+  maxSharedWorkspaces: number | null;
+  canCreateSharedWorkspace: boolean;
+  currentWorkspaces: number;
+  breakdown: WorkspaceQuotaBreakdown;
+}
 
 export interface IStorage {
   // Users
@@ -175,7 +198,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
 
   // Subscription validation
-  getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
+  getUserSubscriptionLimits(userId: number): Promise<UserSubscriptionLimitSummary | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
 
   // Account, Category & Budget Limits Validation
@@ -831,29 +854,74 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription validation
-  async getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null> {
-    // Get current user subscription with package details
+  async getUserSubscriptionLimits(userId: number): Promise<UserSubscriptionLimitSummary | null> {
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
-
-    // Count current workspaces for this user
     const userWorkspaces = await this.getUserWorkspaces(userId);
-    const currentWorkspaces = userWorkspaces.length;
+
+    const ownedWorkspaces = userWorkspaces.filter((workspace) => workspace.ownerId === userId);
+    const ownedPersonalWorkspaces = ownedWorkspaces.filter((workspace) => workspace.type !== 'shared').length;
+    const ownedSharedWorkspaces = ownedWorkspaces.filter((workspace) => workspace.type === 'shared').length;
+    const invitedSharedWorkspaces = userWorkspaces.filter((workspace) => workspace.type === 'shared' && workspace.ownerId !== userId).length;
 
     if (userSubResult) {
-      // User has active subscription
+      const personalLimit = userSubResult.package.maxWorkspaces ?? null;
+      const sharedLimit = userSubResult.package.canCreateSharedWorkspace
+        ? userSubResult.package.maxSharedWorkspaces ?? null
+        : 0;
+
+      const personalRemaining = personalLimit === null ? null : Math.max(personalLimit - ownedPersonalWorkspaces, 0);
+      const sharedRemaining = sharedLimit === null ? null : Math.max(sharedLimit - ownedSharedWorkspaces, 0);
+
       return {
-        maxWorkspaces: userSubResult.package.maxWorkspaces,
+        maxWorkspaces: personalLimit,
         maxMembers: userSubResult.package.maxMembers,
-        currentWorkspaces
-      };
-    } else {
-      // User has no subscription (free/basic user) - gets 1 workspace only
-      return {
-        maxWorkspaces: 1,
-        maxMembers: 1,
-        currentWorkspaces
+        maxSharedWorkspaces: sharedLimit,
+        canCreateSharedWorkspace: userSubResult.package.canCreateSharedWorkspace,
+        currentWorkspaces: ownedPersonalWorkspaces + ownedSharedWorkspaces,
+        breakdown: {
+          personal: {
+            used: ownedPersonalWorkspaces,
+            limit: personalLimit,
+            remaining: personalRemaining,
+          },
+          shared: {
+            used: ownedSharedWorkspaces,
+            limit: sharedLimit,
+            remaining: sharedLimit === 0 ? 0 : sharedRemaining,
+          },
+          sharedInvitations: {
+            used: invitedSharedWorkspaces,
+          },
+        },
       };
     }
+
+    const personalLimit = 1;
+    const sharedLimit = 0;
+    const personalRemaining = personalLimit - ownedPersonalWorkspaces;
+
+    return {
+      maxWorkspaces: personalLimit,
+      maxMembers: 1,
+      maxSharedWorkspaces: sharedLimit,
+      canCreateSharedWorkspace: false,
+      currentWorkspaces: ownedPersonalWorkspaces,
+      breakdown: {
+        personal: {
+          used: ownedPersonalWorkspaces,
+          limit: personalLimit,
+          remaining: Math.max(personalRemaining, 0),
+        },
+        shared: {
+          used: ownedSharedWorkspaces,
+          limit: sharedLimit,
+          remaining: 0,
+        },
+        sharedInvitations: {
+          used: invitedSharedWorkspaces,
+        },
+      },
+    };
   }
 
   // Account, Category & Budget Limits Validation
@@ -924,7 +992,12 @@ export class DatabaseStorage implements IStorage {
     const limits = await this.getUserSubscriptionLimits(userId);
     if (!limits) return false;
 
-    return limits.currentWorkspaces < limits.maxWorkspaces;
+    const personalLimit = limits.breakdown.personal.limit;
+    if (personalLimit === null) {
+      return true;
+    }
+
+    return limits.breakdown.personal.used < personalLimit;
   }
 
   // Workspace Subscriptions
