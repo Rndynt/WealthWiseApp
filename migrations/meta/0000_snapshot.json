@@ -513,6 +513,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "price": {
           "name": "price",
           "type": "numeric(10, 2)",
@@ -600,6 +606,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "name"
+          ]
+        },
+        "subscription_packages_slug_unique": {
+          "name": "subscription_packages_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
           ]
         }
       },

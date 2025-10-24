@@ -24,6 +24,7 @@ import { PageContainer } from '@/components/ui/page-container';
 interface SubscriptionPackage {
   id: number;
   name: string;
+  slug: string;
   price: string;
   features: string[];
   maxWorkspaces: number;

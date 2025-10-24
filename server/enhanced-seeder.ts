@@ -232,6 +232,7 @@ async function seedEnhancedSubscriptionPackages() {
   await db.insert(subscriptionPackages).values([
     {
       name: "basic",
+      slug: "basic",
       price: "0.00",
       features: [
         "1 workspace pribadi",
@@ -254,6 +255,7 @@ async function seedEnhancedSubscriptionPackages() {
     },
     {
       name: "premium",
+      slug: "premium",
       price: "15000.00",
       features: [
         "1 workspace pribadi",
@@ -278,6 +280,7 @@ async function seedEnhancedSubscriptionPackages() {
     },
     {
       name: "professional",
+      slug: "shared-default",
       price: "25000.00",
       features: [
         "1 workspace pribadi unlimited",
@@ -305,6 +308,7 @@ async function seedEnhancedSubscriptionPackages() {
     },
     {
       name: "business",
+      slug: "business",
       price: "50000.00",
       features: [
          "7 workspace pribadi",
