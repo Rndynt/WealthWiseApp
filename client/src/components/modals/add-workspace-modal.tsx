@@ -16,7 +16,7 @@ interface AddWorkspaceModalProps {
 export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceModalProps) {
   const [form, setForm] = useState({
     name: '',
-    type: '' as 'personal' | 'family' | 'business' | '',
+    type: '' as 'personal' | 'shared' | '',
   });
 
   const { toast } = useToast();
@@ -26,6 +26,9 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
   const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
     queryKey: ['/api/user/subscription-limits'],
   });
+
+  const sharedMemberLimit =
+    limits?.maxMembers && limits.maxMembers > 0 ? limits.maxMembers.toString() : 'beberapa';
 
   const createWorkspaceMutation = useMutation({
     mutationFn: (data: { name: string; type: string }) =>
@@ -93,11 +96,11 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
               id="workspace-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="mis. Budget Keluarga, Bisnis Kecil"
+              placeholder="mis. Anggaran Pribadi, Proyek Tim"
               required
             />
           </div>
-          
+
           <div className="form-field">
             <Label htmlFor="workspace-type">Tipe Workspace</Label>
             <Select value={form.type} onValueChange={(value: any) => setForm({ ...form, type: value })}>
@@ -105,11 +108,14 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
                 <SelectValue placeholder="Pilih tipe workspace..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="family">Keluarga</SelectItem>
-                <SelectItem value="business">Bisnis Kecil</SelectItem>
+                <SelectItem value="personal">Personal (Solo)</SelectItem>
+                <SelectItem value="shared">Shared (Kolaboratif)</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-gray-500 mt-2">
+              Personal cocok untuk penggunaan individu tanpa anggota tambahan. Shared memungkinkan kolaborasi dengan hingga{' '}
+              {sharedMemberLimit} anggota (termasuk Anda) sesuai paket langganan Anda.
+            </p>
           </div>
           
           <div className="flex space-x-3">
