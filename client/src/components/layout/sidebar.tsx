@@ -16,7 +16,7 @@ import {
   useEnhancedPermissions, 
   ENHANCED_PERMISSIONS
 } from '@/lib/enhanced-permissions';
-import { Workspace } from '@/types';
+import { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
 
 // UserSubscriptionBadge component
@@ -73,7 +73,7 @@ const adminNavigationItems = [
 
 // UserSubscriptionBadge Component
 function UserSubscriptionBadge() {
-  const { data: subscriptionLimits, isLoading } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
+  const { data: subscriptionLimits, isLoading } = useQuery<WorkspaceSubscriptionLimits>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
