@@ -33,6 +33,7 @@ export const rolePermissions = pgTable("role_permissions", {
 export const subscriptionPackages = pgTable("subscription_packages", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(), // 'basic', 'pro', 'professional', 'business'
+  slug: text("slug").notNull().unique(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   features: text("features").array().notNull(),
   maxWorkspaces: integer("max_workspaces").notNull(),

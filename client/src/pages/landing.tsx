@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 interface SubscriptionPackage {
   id: number;
   name: string;
+  slug: string;
   price: string;
   features: string[];
   maxWorkspaces: number;

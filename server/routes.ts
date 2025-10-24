@@ -36,6 +36,7 @@ const goalsEnhancedService = new GoalsEnhancedService();
 const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const DEFAULT_SHARED_PACKAGE_SLUG = "shared-default";
 
 // Smart notification triggers (excluding repayment processing to avoid double deduction)
 async function checkNonRepaymentNotifications(workspaceId: number, transaction: any) {
@@ -368,13 +369,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If shared workspace, create workspace subscription
       if (type === 'shared') {
+        const sharedWorkspacePackage = await storage.getSubscriptionPackageBySlug(DEFAULT_SHARED_PACKAGE_SLUG);
+
+        if (!sharedWorkspacePackage) {
+          console.error(`Default shared workspace package not found for slug: ${DEFAULT_SHARED_PACKAGE_SLUG}`);
+          return res.status(500).json({
+            message: "Paket default untuk shared workspace tidak ditemukan. Silakan hubungi administrator."
+          });
+        }
+
         const now = new Date();
         const oneMonthLater = new Date();
         oneMonthLater.setMonth(now.getMonth() + 1);
 
         await storage.createWorkspaceSubscription({
           workspaceId: workspace.id,
-          packageId: 3, // Professional package by default for shared workspaces
+          packageId: sharedWorkspacePackage.id,
           ownerId: req.user.userId,
           startDate: now,
           endDate: oneMonthLater,
@@ -996,9 +1006,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const packageData = insertSubscriptionPackageSchema.parse({
         ...req.body,
+        slug: typeof req.body.slug === "string" ? req.body.slug.trim() : "",
         price: req.body.price.toString(),
       });
-      const pkg = await storage.createSubscriptionPackage(packageData);
+
+      const normalizedData = {
+        ...packageData,
+        slug: packageData.slug.toLowerCase(),
+      };
+
+      if (!normalizedData.slug) {
+        return res.status(400).json({ message: "Slug paket wajib diisi." });
+      }
+
+      const pkg = await storage.createSubscriptionPackage(normalizedData);
       res.json(pkg);
     } catch (error) {
       console.error("Package creation error:", error);
@@ -1012,6 +1033,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       if (updates.price) {
         updates.price = updates.price.toString();
+      }
+      if (typeof updates.slug === "string") {
+        updates.slug = updates.slug.trim().toLowerCase();
+        if (!updates.slug) {
+          return res.status(400).json({ message: "Slug paket tidak boleh kosong." });
+        }
       }
       const pkg = await storage.updateSubscriptionPackage(id, updates);
       res.json(pkg);
