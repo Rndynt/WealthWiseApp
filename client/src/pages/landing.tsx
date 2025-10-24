@@ -24,7 +24,7 @@ interface SubscriptionPackage {
   features: string[];
   maxWorkspaces: number;
   maxMembers: number;
-  type: string;
+  type: 'personal' | 'shared';
   description: string;
   isActive: boolean;
 }
@@ -72,7 +72,7 @@ export default function LandingPage() {
     {
       icon: Users,
       title: "Team Collaboration",
-      description: "Share workspaces and collaborate with family or business partners"
+      description: "Share workspaces and collaborate seamlessly in shared workspaces"
     }
   ];
 

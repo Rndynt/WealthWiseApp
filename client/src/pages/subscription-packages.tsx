@@ -32,7 +32,7 @@ interface SubscriptionPackage {
   maxBudgets: number | null;
   maxSharedWorkspaces: number | null;
   canCreateSharedWorkspace: boolean;
-  type: string;
+  type: 'personal' | 'shared';
   description: string;
   isActive: boolean;
   createdAt: string;
@@ -48,7 +48,7 @@ interface PackageFormData {
   maxBudgets: number | null;
   maxSharedWorkspaces: number | null;
   canCreateSharedWorkspace: boolean;
-  type: string;
+  type: 'personal' | 'shared';
   description: string;
   isActive: boolean;
 }
@@ -186,7 +186,7 @@ export default function SubscriptionPackagesManagement() {
       maxBudgets: pkg.maxBudgets,
       maxSharedWorkspaces: pkg.maxSharedWorkspaces || 0,
       canCreateSharedWorkspace: pkg.canCreateSharedWorkspace,
-      type: pkg.type,
+      type: pkg.type === 'shared' ? 'shared' : 'personal',
       description: pkg.description,
       isActive: pkg.isActive
     });
@@ -387,14 +387,18 @@ export default function SubscriptionPackagesManagement() {
                 
                 <div>
                   <Label htmlFor="type">Tipe Paket</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, type: value as 'personal' | 'shared' })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tipe paket" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="personal">Personal</SelectItem>
-                      <SelectItem value="shared">Shared Only</SelectItem>
-                      <SelectItem value="hybrid">Hybrid (Personal + Shared)</SelectItem>
+                      <SelectItem value="shared">Shared</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

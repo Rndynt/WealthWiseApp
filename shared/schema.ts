@@ -1,7 +1,10 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const workspaceTypeEnum = pgEnum("workspace_type", ["personal", "shared"]);
+export const subscriptionTypeEnum = pgEnum("subscription_type", ["personal", "shared"]);
 
 // Roles table
 export const roles = pgTable("roles", {
@@ -42,7 +45,7 @@ export const subscriptionPackages = pgTable("subscription_packages", {
   maxBudgets: integer("max_budgets"), // null = unlimited
   maxSharedWorkspaces: integer("max_shared_workspaces").notNull().default(0), // New field
   canCreateSharedWorkspace: boolean("can_create_shared_workspace").notNull().default(false), // New field
-  type: text("type").notNull().default("personal"), // 'personal' | 'shared' | 'hybrid'
+  type: subscriptionTypeEnum("type").notNull().default("personal"), // 'personal' | 'shared'
   description: text("description"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -106,7 +109,7 @@ export const users = pgTable("users", {
 export const workspaces = pgTable("workspaces", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(), // 'personal' | 'family' | 'business'
+  type: workspaceTypeEnum("type").notNull().default("personal"), // 'personal' | 'shared'
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

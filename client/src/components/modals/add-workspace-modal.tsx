@@ -16,7 +16,7 @@ interface AddWorkspaceModalProps {
 export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceModalProps) {
   const [form, setForm] = useState({
     name: '',
-    type: '' as 'personal' | 'family' | 'business' | '',
+    type: '' as 'personal' | 'shared' | '',
   });
 
   const { toast } = useToast();
@@ -93,7 +93,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
               id="workspace-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="mis. Budget Keluarga, Bisnis Kecil"
+              placeholder="mis. Budget Pribadi, Proyek Tim"
               required
             />
           </div>
@@ -106,8 +106,7 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="family">Keluarga</SelectItem>
-                <SelectItem value="business">Bisnis Kecil</SelectItem>
+                <SelectItem value="shared">Shared / Kolaboratif</SelectItem>
               </SelectContent>
             </Select>
           </div>

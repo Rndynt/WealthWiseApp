@@ -299,7 +299,7 @@ async function seedEnhancedSubscriptionPackages() {
       maxBudgets: 10,
       maxSharedWorkspaces: 1,
       canCreateSharedWorkspace: true,
-      type: "hybrid",
+      type: "shared",
       description: "Paket professional dengan 1 shared workspace dan collaboration",
       isActive: true
     },
@@ -327,7 +327,7 @@ async function seedEnhancedSubscriptionPackages() {
       maxBudgets: 20,
       maxSharedWorkspaces: 10,
       canCreateSharedWorkspace: true,
-      type: "hybrid",
+      type: "shared",
       description: "Paket business untuk tim dan organisasi besar",
       isActive: true
     }

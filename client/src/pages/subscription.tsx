@@ -19,7 +19,7 @@ interface SubscriptionPackage {
   maxBudgets: number | null;
   maxSharedWorkspaces: number | null;
   canCreateSharedWorkspace: boolean;
-  type: string;
+  type: 'personal' | 'shared';
   description: string;
   isActive: boolean;
 }

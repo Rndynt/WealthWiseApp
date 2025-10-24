@@ -30,7 +30,7 @@ interface SubscriptionPackage {
   maxMembers: number;
   maxCategories: number | null;
   maxBudgets: number | null;
-  type: string;
+  type: 'personal' | 'shared';
   description: string;
   isActive: boolean;
 }
