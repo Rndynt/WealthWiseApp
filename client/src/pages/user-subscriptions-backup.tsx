@@ -53,6 +53,7 @@ interface User {
 interface SubscriptionPackage {
   id: number;
   name: string;
+  slug: string;
   price: string;
   description: string;
   maxWorkspaces: number;

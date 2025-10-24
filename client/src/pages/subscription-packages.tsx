@@ -24,6 +24,7 @@ import { PageContainer } from '@/components/ui/page-container';
 interface SubscriptionPackage {
   id: number;
   name: string;
+  slug: string;
   price: string;
   features: string[];
   maxWorkspaces: number;
@@ -40,6 +41,7 @@ interface SubscriptionPackage {
 
 interface PackageFormData {
   name: string;
+  slug: string;
   price: string;
   features: string[];
   maxWorkspaces: number;
@@ -58,6 +60,7 @@ export default function SubscriptionPackagesManagement() {
   const [editingPackage, setEditingPackage] = useState<SubscriptionPackage | null>(null);
   const [formData, setFormData] = useState<PackageFormData>({
     name: '',
+    slug: '',
     price: '0',
     features: [''],
     maxWorkspaces: 1,
@@ -145,6 +148,7 @@ export default function SubscriptionPackagesManagement() {
   const resetForm = () => {
     setFormData({
       name: '',
+      slug: '',
       price: '0',
       features: [''],
       maxWorkspaces: 1,
@@ -162,11 +166,15 @@ export default function SubscriptionPackagesManagement() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Filter out empty features
     const cleanedFeatures = formData.features.filter(feature => feature.trim() !== '');
-    const dataToSubmit = { ...formData, features: cleanedFeatures };
-    
+    const dataToSubmit = {
+      ...formData,
+      slug: formData.slug.trim(),
+      features: cleanedFeatures,
+    };
+
     if (editingPackage) {
       updatePackageMutation.mutate({ id: editingPackage.id, ...dataToSubmit });
     } else {
@@ -178,6 +186,7 @@ export default function SubscriptionPackagesManagement() {
     setEditingPackage(pkg);
     setFormData({
       name: pkg.name,
+      slug: pkg.slug,
       price: pkg.price,
       features: pkg.features.length > 0 ? pkg.features : [''],
       maxWorkspaces: pkg.maxWorkspaces || 1,
@@ -305,7 +314,7 @@ export default function SubscriptionPackagesManagement() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="price">Harga (IDR)</Label>
                   <Input
@@ -318,6 +327,20 @@ export default function SubscriptionPackagesManagement() {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="Contoh: shared-default"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Gunakan slug unik tanpa spasi untuk identifikasi paket secara konsisten.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

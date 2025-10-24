@@ -69,9 +69,10 @@ CREATE TABLE "roles" (
 );
 --> statement-breakpoint
 CREATE TABLE "subscription_packages" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"price" numeric(10, 2) NOT NULL,
+        "id" serial PRIMARY KEY NOT NULL,
+        "name" text NOT NULL,
+        "slug" text NOT NULL,
+        "price" numeric(10, 2) NOT NULL,
 	"features" text[] NOT NULL,
 	"max_workspaces" integer NOT NULL,
 	"max_members" integer NOT NULL,
@@ -82,8 +83,9 @@ CREATE TABLE "subscription_packages" (
 	"type" text DEFAULT 'personal' NOT NULL,
 	"description" text,
 	"is_active" boolean DEFAULT true NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "subscription_packages_name_unique" UNIQUE("name")
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        CONSTRAINT "subscription_packages_name_unique" UNIQUE("name"),
+        CONSTRAINT "subscription_packages_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
