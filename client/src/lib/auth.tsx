@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest } from './queryClient';
+import { apiRequest, queryClient } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
 }
 
@@ -44,10 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await response.json();
         setUser(userData);
       } else {
+        await queryClient.cancelQueries();
+        queryClient.clear();
         localStorage.removeItem('token');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      await queryClient.cancelQueries();
+      queryClient.clear();
       localStorage.removeItem('token');
     } finally {
       setLoading(false);
@@ -59,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRequest('POST', '/api/auth/login', { email, password });
       const data = await response.json();
       
+      await queryClient.cancelQueries();
+      queryClient.clear();
       localStorage.setItem('token', data.token);
       setUser(data.user);
       
@@ -81,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRequest('POST', '/api/auth/register', { email, password, name });
       const data = await response.json();
       
+      await queryClient.cancelQueries();
+      queryClient.clear();
       localStorage.setItem('token', data.token);
       setUser(data.user);
       
@@ -98,7 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     localStorage.removeItem('token');
     setUser(null);
     toast({
