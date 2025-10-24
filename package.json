@@ -13,7 +13,8 @@
     "check": "tsc",
     "test": "vitest",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx server/enhanced-seeder.ts"
+    "db:seed": "tsx server/enhanced-seeder.ts",
+    "db:reset": "tsx server/enhanced-seeder.ts --reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
