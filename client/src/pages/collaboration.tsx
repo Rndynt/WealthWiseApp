@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Dialog, 
-  DialogContent, 
+import {
+  Dialog,
+  DialogContent,
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
@@ -17,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 import { apiRequest } from '@/lib/queryClient';
 import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings } from 'lucide-react';
+import { CollaborationInviteForm } from '@/features/workspaces/CollaborationInviteForm';
 
 interface WorkspaceMember {
   id: number;
@@ -31,11 +31,6 @@ interface WorkspaceMember {
   };
 }
 
-interface InviteFormData {
-  email: string;
-  role: 'editor' | 'viewer';
-}
-
 interface CollaborationProps {
   workspaceId: number | undefined;
 }
@@ -45,10 +40,6 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
   const queryClient = useQueryClient();
   const { hasPermission, hasFeatureAccess, isRoot } = useEnhancedPermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState<InviteFormData>({
-    email: '',
-    role: 'viewer'
-  });
 
   // Check if user has collaboration permissions - root users get all permissions
   const canManageCollaboration = isRoot || hasFeatureAccess('user.collaboration');
@@ -61,28 +52,6 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const { data: userSubscription } = useQuery<{ subscription: any; package: { name: string; canCreateSharedWorkspace: boolean } } | null>({
     queryKey: ['/api/user/subscription'],
-  });
-
-  const inviteMemberMutation = useMutation({
-    mutationFn: async (data: InviteFormData) => {
-      return apiRequest('POST', `/api/workspaces/${workspaceId}/invite`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Invitation Sent",
-        description: "The invitation has been sent successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/members`] });
-      setShowInviteModal(false);
-      setInviteForm({ email: '', role: 'viewer' });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Invitation Failed",
-        description: error.message || "Failed to send invitation.",
-      });
-    },
   });
 
   const updateMemberRoleMutation = useMutation({
@@ -124,11 +93,6 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
       });
     },
   });
-
-  const handleInviteSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    inviteMemberMutation.mutate(inviteForm);
-  };
 
   const handleRoleChange = (memberId: number, newRole: string) => {
     updateMemberRoleMutation.mutate({ memberId, role: newRole });
@@ -207,50 +171,13 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
               <DialogHeader>
                 <DialogTitle>Invite New Member</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleInviteSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email Address</label>
-                  <Input
-                    type="email"
-                    value={inviteForm.email}
-                    onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                    placeholder="Enter member's email"
-                    required
-                    data-testid="input-invite-email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Role</label>
-                  <Select 
-                    value={inviteForm.role} 
-                    onValueChange={(value: 'editor' | 'viewer') => setInviteForm({ ...inviteForm, role: value })}
-                  >
-                    <SelectTrigger data-testid="select-invite-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewer">Viewer - Can view data only</SelectItem>
-                      <SelectItem value="editor">Editor - Can view and edit data</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowInviteModal(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={inviteMemberMutation.isPending}
-                    data-testid="button-send-invite"
-                  >
-                    {inviteMemberMutation.isPending ? 'Sending...' : 'Send Invite'}
-                  </Button>
-                </div>
-              </form>
+              {workspaceId && (
+                <CollaborationInviteForm
+                  workspaceId={workspaceId}
+                  onSuccess={() => setShowInviteModal(false)}
+                  onCancel={() => setShowInviteModal(false)}
+                />
+              )}
             </DialogContent>
           </Dialog>
         )}

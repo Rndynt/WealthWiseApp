@@ -30,8 +30,10 @@ const storage = new DatabaseStorage();
 import { goalsService } from './goals-service';
 import { aiGoalsService } from './ai-goals-service';
 import { GoalsEnhancedService } from './goals-enhanced-service';
+import { WorkspaceSubscriptionService } from './workspace-subscription-service';
 
 const goalsEnhancedService = new GoalsEnhancedService();
+const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -426,11 +428,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const member = await storage.addWorkspaceMember({ workspaceId, userId: user.id, role });
-      res.json({ ...member, user: { id: user.id, name: user.name, email: user.email } });
+      const existingMembers = await storage.getWorkspaceMembers(workspaceId);
+      const alreadyMember = existingMembers.some((member) => member.userId === user!.id);
+      if (alreadyMember) {
+        return res.status(400).json({ message: 'Pengguna tersebut sudah tergabung dalam workspace ini.' });
+      }
+
+      const limitValidation = await workspaceSubscriptionService.validateMemberLimit(
+        workspaceId,
+        existingMembers.length,
+      );
+
+      if (!limitValidation.canAdd) {
+        return res.status(403).json({
+          message: limitValidation.reason || 'Batas anggota workspace telah tercapai.',
+        });
+      }
+
+      const member = await storage.addWorkspaceMember({ workspaceId, userId: user!.id, role });
+      res.json({ ...member, user: { id: user!.id, name: user!.name, email: user!.email } });
     } catch (error) {
       console.error('Failed to invite member:', error);
-      res.status(400).json({ message: 'Failed to invite member' });
+      const message = error instanceof Error ? error.message : 'Failed to invite member';
+      res.status(400).json({ message });
     }
   });
 
