@@ -54,7 +54,7 @@ export default defineConfig(async () => {
       chunkSizeWarningLimit: 1000
     },
     server: {
-      allowedHosts: true,
+      allowedHosts: ['.replit.dev'],
       fs: {
         strict: true,
         deny: ["**/.*"],
