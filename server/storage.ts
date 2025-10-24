@@ -1,6 +1,11 @@
 import { eq, and, desc, asc, sql } from 'drizzle-orm';
 import { db } from './db';
 import {
+  deriveWorkspaceLimitBreakdown,
+  type WorkspaceLimitBreakdown,
+  type WorkspaceWithMembership,
+} from './utils/workspaceLimits';
+import {
   users,
   workspaces,
   workspaceMembers,
@@ -79,7 +84,7 @@ export interface IStorage {
 
   // Workspaces
   getWorkspace(id: number): Promise<Workspace | undefined>;
-  getUserWorkspaces(userId: number): Promise<Workspace[]>;
+  getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]>;
   createWorkspace(workspace: InsertWorkspace): Promise<Workspace>;
 
   // Workspace Members
@@ -175,7 +180,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
 
   // Subscription validation
-  getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
+  getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
 
   // Account, Category & Budget Limits Validation
@@ -260,7 +265,7 @@ export class DatabaseStorage implements IStorage {
     return workspace || undefined;
   }
 
-  async getUserWorkspaces(userId: number): Promise<Workspace[]> {
+  async getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]> {
     const results = await db
       .select({
         id: workspaces.id,
@@ -268,6 +273,7 @@ export class DatabaseStorage implements IStorage {
         type: workspaces.type,
         ownerId: workspaces.ownerId,
         createdAt: workspaces.createdAt,
+        membershipRole: workspaceMembers.role,
       })
       .from(workspaces)
       .innerJoin(workspaceMembers, eq(workspaces.id, workspaceMembers.workspaceId))
@@ -831,29 +837,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription validation
-  async getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null> {
-    // Get current user subscription with package details
+  async getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null> {
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
-
-    // Count current workspaces for this user
     const userWorkspaces = await this.getUserWorkspaces(userId);
-    const currentWorkspaces = userWorkspaces.length;
 
     if (userSubResult) {
-      // User has active subscription
-      return {
-        maxWorkspaces: userSubResult.package.maxWorkspaces,
-        maxMembers: userSubResult.package.maxMembers,
-        currentWorkspaces
-      };
-    } else {
-      // User has no subscription (free/basic user) - gets 1 workspace only
-      return {
-        maxWorkspaces: 1,
-        maxMembers: 1,
-        currentWorkspaces
-      };
+      return deriveWorkspaceLimitBreakdown({
+        userId,
+        workspaces: userWorkspaces,
+        personalLimit: userSubResult.package.maxWorkspaces,
+        sharedLimit: userSubResult.package.maxSharedWorkspaces,
+      });
     }
+
+    return deriveWorkspaceLimitBreakdown({
+      userId,
+      workspaces: userWorkspaces,
+      personalLimit: 1,
+      sharedLimit: 0,
+    });
   }
 
   // Account, Category & Budget Limits Validation
@@ -924,7 +926,11 @@ export class DatabaseStorage implements IStorage {
     const limits = await this.getUserSubscriptionLimits(userId);
     if (!limits) return false;
 
-    return limits.currentWorkspaces < limits.maxWorkspaces;
+    if (limits.personalLimit === null) {
+      return true;
+    }
+
+    return limits.personalOwned < limits.personalLimit;
   }
 
   // Workspace Subscriptions

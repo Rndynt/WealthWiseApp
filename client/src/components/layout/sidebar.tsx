@@ -73,7 +73,12 @@ const adminNavigationItems = [
 
 // UserSubscriptionBadge Component
 function UserSubscriptionBadge() {
-  const { data: subscriptionLimits, isLoading } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
+  const { data: subscriptionLimits, isLoading } = useQuery<{
+    personalOwned: number;
+    personalLimit: number | null;
+    sharedOwned: number;
+    sharedLimit: number | null;
+  }>({
     queryKey: ['/api/user/subscription-limits'],
   });
 

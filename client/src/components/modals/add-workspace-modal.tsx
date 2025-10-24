@@ -23,7 +23,12 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
   const queryClient = useQueryClient();
 
   // Get user subscription limits
-  const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
+  const { data: limits } = useQuery<{
+    personalOwned: number;
+    personalLimit: number | null;
+    sharedOwned: number;
+    sharedLimit: number | null;
+  }>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
@@ -52,14 +57,28 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
     e.preventDefault();
     if (!form.name || !form.type) return;
     
-    // Check if user can create more workspaces
-    if (limits && limits.currentWorkspaces >= limits.maxWorkspaces) {
-      toast({
-        variant: "destructive",
-        title: "Batas workspace tercapai",
-        description: `Anda sudah mencapai batas maksimal ${limits.maxWorkspaces} workspace. Upgrade ke paket premium untuk membuat lebih banyak workspace.`,
-      });
-      return;
+    if (limits) {
+      const isSharedWorkspace = form.type !== 'personal';
+
+      if (!isSharedWorkspace) {
+        if (limits.personalLimit !== null && limits.personalOwned >= limits.personalLimit) {
+          toast({
+            variant: "destructive",
+            title: "Batas workspace tercapai",
+            description: `Anda sudah mencapai batas maksimal ${limits.personalLimit} workspace personal. Upgrade ke paket premium untuk membuat lebih banyak workspace.`,
+          });
+          return;
+        }
+      } else {
+        if (limits.sharedLimit !== null && limits.sharedOwned >= limits.sharedLimit) {
+          toast({
+            variant: "destructive",
+            title: "Batas workspace kolaborasi tercapai",
+            description: `Anda sudah mencapai batas maksimal ${limits.sharedLimit} shared workspace. Upgrade paket Anda untuk membuka batas lebih tinggi.`,
+          });
+          return;
+        }
+      }
     }
     
     createWorkspaceMutation.mutate(form);
@@ -74,13 +93,18 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
         
         {/* Subscription Status */}
         {limits && (
-          <div className="bg-blue-50 p-3 rounded-lg">
+          <div className="bg-blue-50 p-3 rounded-lg space-y-1">
+            <p className="text-sm text-blue-800 font-semibold">Status Langganan:</p>
             <p className="text-sm text-blue-800">
-              <strong>Status Langganan:</strong> {limits.currentWorkspaces}/{limits.maxWorkspaces} workspace terpakai
+              <strong>Personal:</strong> {limits.personalOwned}/{limits.personalLimit ?? '∞'} workspace dimiliki
             </p>
-            {limits.currentWorkspaces >= limits.maxWorkspaces && (
+            <p className="text-sm text-blue-800">
+              <strong>Shared:</strong> {limits.sharedOwned}/{limits.sharedLimit ?? '∞'} workspace dimiliki
+            </p>
+            {((limits.personalLimit !== null && limits.personalOwned >= limits.personalLimit) ||
+              (limits.sharedLimit !== null && limits.sharedOwned >= limits.sharedLimit)) && (
               <p className="text-sm text-red-600 mt-1">
-                ⚠️ Anda telah mencapai batas maksimal. Upgrade ke premium untuk membuat lebih banyak workspace.
+                ⚠️ Anda telah mencapai batas pada salah satu jenis workspace. Upgrade paket untuk membuat lebih banyak workspace.
               </p>
             )}
           </div>
@@ -124,7 +148,16 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
             <Button 
               type="submit" 
               className="flex-1"
-              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || (limits ? limits.currentWorkspaces >= limits.maxWorkspaces : false)}
+              disabled={
+                createWorkspaceMutation.isPending ||
+                !form.name ||
+                !form.type ||
+                (limits
+                  ? form.type === 'personal'
+                    ? limits.personalLimit !== null && limits.personalOwned >= limits.personalLimit
+                    : limits.sharedLimit !== null && limits.sharedOwned >= limits.sharedLimit
+                  : false)
+              }
             >
               {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
             </Button>

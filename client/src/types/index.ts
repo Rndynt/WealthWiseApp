@@ -10,6 +10,7 @@ export interface Workspace {
   type: 'personal' | 'family' | 'business';
   ownerId: number;
   createdAt: string;
+  membershipRole: 'owner' | 'editor' | 'viewer';
 }
 
 export interface Category {
