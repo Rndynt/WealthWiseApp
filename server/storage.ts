@@ -864,8 +864,10 @@ export class DatabaseStorage implements IStorage {
 
       return {
         personalOwned: ownershipCounts.personalOwned,
+        personalMember: ownershipCounts.personalMember,
         personalLimit,
         sharedOwned: ownershipCounts.sharedOwned,
+        sharedMember: ownershipCounts.sharedMember,
         sharedLimit,
         maxMembers,
       };
@@ -874,8 +876,10 @@ export class DatabaseStorage implements IStorage {
     // User has no subscription (free/basic user) - gets 1 personal workspace only
     return {
       personalOwned: ownershipCounts.personalOwned,
+      personalMember: ownershipCounts.personalMember,
       personalLimit: 1,
       sharedOwned: ownershipCounts.sharedOwned,
+      sharedMember: ownershipCounts.sharedMember,
       sharedLimit: 0,
       maxMembers: 1,
     };

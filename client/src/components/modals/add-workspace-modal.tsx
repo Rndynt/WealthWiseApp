@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateWorkspace } from '@/hooks/useCreateWorkspace';
+import { WorkspaceQuotaBanner } from '@/features/workspaces/WorkspaceQuotaBanner';
 import type { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 
 interface AddWorkspaceModalProps {
@@ -27,13 +28,6 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
   const { data: limits } = useQuery<WorkspaceSubscriptionLimits>({
     queryKey: ['/api/user/subscription-limits'],
   });
-
-  const formatLimitValue = (limit: number | null | undefined) => {
-    if (limit === null || limit === undefined) {
-      return '∞';
-    }
-    return limit.toString();
-  };
 
   const personalLimitReached = limits?.personalLimit !== null && limits?.personalLimit !== undefined
     ? limits.personalOwned >= limits.personalLimit
@@ -103,32 +97,7 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
         </DialogHeader>
         
         {/* Subscription Status */}
-        {limits && (
-          <div className="bg-blue-50 p-3 rounded-lg space-y-1">
-            <p className="text-sm text-blue-800 font-semibold">Status Batas Workspace</p>
-            <p className="text-sm text-blue-800">
-              <strong>Personal:</strong> {limits.personalOwned}/{formatLimitValue(limits.personalLimit)} dimiliki
-            </p>
-            <p className="text-sm text-blue-800">
-              <strong>Shared:</strong> {limits.sharedOwned}/{formatLimitValue(limits.sharedLimit)} dimiliki
-            </p>
-            {personalLimitReached && (
-              <p className="text-sm text-red-600 mt-1">
-                ⚠️ Anda telah mencapai batas maksimal workspace pribadi. Upgrade paket untuk membuat lebih banyak workspace pribadi.
-              </p>
-            )}
-            {sharedLimitReached && (
-              <p className="text-sm text-red-600 mt-1">
-                ⚠️ Anda telah mencapai batas maksimal shared workspace yang dapat Anda buat.
-              </p>
-            )}
-            {limits.sharedLimit === 0 && (
-              <p className="text-sm text-amber-600 mt-1">
-                Paket Anda saat ini belum mendukung pembuatan shared workspace.
-              </p>
-            )}
-          </div>
-        )}
+        {limits && <WorkspaceQuotaBanner limits={limits} />}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-field">

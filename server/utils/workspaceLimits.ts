@@ -9,8 +9,10 @@ export interface WorkspaceOwnershipCounts {
 
 export interface WorkspaceLimitBreakdown {
   personalOwned: number;
+  personalMember: number;
   personalLimit: number | null;
   sharedOwned: number;
+  sharedMember: number;
   sharedLimit: number | null;
   maxMembers: number | null;
 }
