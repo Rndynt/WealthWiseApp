@@ -1,57 +1,41 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useCreateWorkspace } from '@/hooks/useCreateWorkspace';
+import type { Workspace } from '@/types';
 
 interface AddWorkspaceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onWorkspaceCreated?: (workspace: Workspace) => void;
 }
 
-export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceModalProps) {
+export default function AddWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }: AddWorkspaceModalProps) {
   const [form, setForm] = useState({
     name: '',
     type: '' as 'personal' | 'family' | 'business' | '',
   });
 
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Get user subscription limits
   const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
-  const createWorkspaceMutation = useMutation({
-    mutationFn: (data: { name: string; type: string }) =>
-      apiRequest('POST', '/api/workspaces', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/workspaces'] });
-      toast({
-        title: "Workspace created",
-        description: "Your new workspace has been created successfully.",
-      });
-      setForm({ name: '', type: '' });
-      onOpenChange(false);
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Gagal membuat workspace",
-        description: error.message || "Terjadi kesalahan",
-      });
-    },
+  const createWorkspaceMutation = useCreateWorkspace({
+    setCurrentWorkspace: onWorkspaceCreated,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.type) return;
-    
+
     // Check if user can create more workspaces
     if (limits && limits.currentWorkspaces >= limits.maxWorkspaces) {
       toast({
@@ -62,7 +46,25 @@ export default function AddWorkspaceModal({ open, onOpenChange }: AddWorkspaceMo
       return;
     }
     
-    createWorkspaceMutation.mutate(form);
+    try {
+      await createWorkspaceMutation.mutateAsync({
+        name: form.name,
+        type: form.type,
+      });
+
+      toast({
+        title: "Workspace created",
+        description: "Your new workspace has been created successfully.",
+      });
+      setForm({ name: '', type: '' });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal membuat workspace",
+        description: error?.message || "Terjadi kesalahan",
+      });
+    }
   };
 
   return (
