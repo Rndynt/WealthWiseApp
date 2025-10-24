@@ -7,7 +7,7 @@ export interface User {
 export interface Workspace {
   id: number;
   name: string;
-  type: 'personal' | 'family' | 'business';
+  type: 'personal' | 'shared';
   ownerId: number;
   createdAt: string;
 }

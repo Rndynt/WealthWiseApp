@@ -72,7 +72,7 @@ export default function LandingPage() {
     {
       icon: Users,
       title: "Team Collaboration",
-      description: "Share workspaces and collaborate with family or business partners"
+      description: "Bagikan workspace shared dan berkolaborasi dengan tim atau keluarga"
     }
   ];
 
