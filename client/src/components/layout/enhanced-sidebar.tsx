@@ -380,9 +380,10 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
         </div>
       </div>
 
-      <AddWorkspaceModal 
-        open={showWorkspaceModal} 
-        onOpenChange={setShowWorkspaceModal} 
+      <AddWorkspaceModal
+        open={showWorkspaceModal}
+        onOpenChange={setShowWorkspaceModal}
+        setCurrentWorkspace={onWorkspaceChange}
       />
     </>
   );
