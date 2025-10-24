@@ -151,6 +151,7 @@ export interface IStorage {
   // Subscription Packages
   getAllSubscriptionPackages(): Promise<SubscriptionPackage[]>;
   getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined>;
+  getSubscriptionPackageBySlug(slug: string): Promise<SubscriptionPackage | undefined>;
   createSubscriptionPackage(subscriptionPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
   updateSubscriptionPackage(id: number, subscriptionPackage: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage>;
   deleteSubscriptionPackage(id: number): Promise<void>;
@@ -737,6 +738,11 @@ export class DatabaseStorage implements IStorage {
 
   async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
     const [pkg] = await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.id, id));
+    return pkg || undefined;
+  }
+
+  async getSubscriptionPackageBySlug(slug: string): Promise<SubscriptionPackage | undefined> {
+    const [pkg] = await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.slug, slug));
     return pkg || undefined;
   }
 

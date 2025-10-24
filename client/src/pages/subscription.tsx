@@ -11,6 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 interface SubscriptionPackage {
   id: number;
   name: string;
+  slug: string;
   price: string;
   features: string[];
   maxWorkspaces: number | null;
