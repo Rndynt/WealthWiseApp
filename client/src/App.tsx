@@ -73,6 +73,11 @@ function AppRouter() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    // Reset workspace context whenever the authenticated user changes
+    setCurrentWorkspace(null);
+  }, [user?.id]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
