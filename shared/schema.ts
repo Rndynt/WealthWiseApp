@@ -106,7 +106,7 @@ export const users = pgTable("users", {
 export const workspaces = pgTable("workspaces", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(), // 'personal' | 'family' | 'business'
+  type: text("type").notNull(), // 'personal' | 'shared'
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
