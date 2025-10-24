@@ -475,14 +475,33 @@ async function seedEnhancedWorkspaces() {
     return;
   }
 
-  await db.insert(workspaces).values([
+  const existingWorkspaces = await db.select().from(workspaces);
+  const existingWorkspaceKeys = new Set(
+    existingWorkspaces.map(w => `${w.ownerId}:${w.name}:${w.type}`)
+  );
+
+  const workspaceSeedData = [
     // Personal workspaces - every user must have their own Personal workspace
-    { name: "Personal", type: "personal", ownerId: rootUser.id },
-    { name: "Personal", type: "personal", ownerId: adminUser.id },
-    { name: "Personal", type: "personal", ownerId: basicUser.id },
-    { name: "Personal", type: "personal", ownerId: premiumUser.id },
-    { name: "Personal", type: "personal", ownerId: demoUser.id },
-  ]).onConflictDoNothing();
+    { name: "Personal", type: "personal" as const, ownerId: rootUser.id },
+    { name: "Personal", type: "personal" as const, ownerId: adminUser.id },
+    { name: "Personal", type: "personal" as const, ownerId: basicUser.id },
+    { name: "Personal", type: "personal" as const, ownerId: premiumUser.id },
+    { name: "Personal", type: "personal" as const, ownerId: demoUser.id },
+    // Shared workspaces - aligned with new shared workflow
+    { name: "FinanceFlow HQ", type: "shared" as const, ownerId: adminUser.id },
+    { name: "Executive Ops", type: "shared" as const, ownerId: rootUser.id },
+  ];
+
+  const workspacesToInsert = workspaceSeedData.filter(
+    workspace => !existingWorkspaceKeys.has(`${workspace.ownerId}:${workspace.name}:${workspace.type}`)
+  );
+
+  if (workspacesToInsert.length === 0) {
+    console.log("ℹ️  Workspaces already seeded, skipping insert");
+    return;
+  }
+
+  await db.insert(workspaces).values(workspacesToInsert);
 }
 
 async function seedEnhancedWorkspaceMembers() {
@@ -503,6 +522,8 @@ async function seedEnhancedWorkspaceMembers() {
   const basicWorkspace = allWorkspaces.find(w => w.ownerId === basicUser?.id && w.type === 'personal');
   const premiumWorkspace = allWorkspaces.find(w => w.ownerId === premiumUser?.id && w.type === 'personal');
   const demoWorkspace = allWorkspaces.find(w => w.ownerId === demoUser?.id && w.type === 'personal');
+  const adminSharedWorkspace = allWorkspaces.find(w => w.ownerId === adminUser?.id && w.type === 'shared');
+  const rootSharedWorkspace = allWorkspaces.find(w => w.ownerId === rootUser?.id && w.type === 'shared');
 
   if (!rootUser || !adminUser || !basicUser || !premiumUser || !demoUser ||
       !rootWorkspace || !adminWorkspace || !basicWorkspace || !premiumWorkspace || !demoWorkspace) {
@@ -510,14 +531,103 @@ async function seedEnhancedWorkspaceMembers() {
     return;
   }
 
-  await db.insert(workspaceMembers).values([
+  const existingMembers = await db.select().from(workspaceMembers);
+  const memberKeys = new Set(existingMembers.map(member => `${member.workspaceId}:${member.userId}`));
+
+  const memberSeedData = [
     // Personal workspace memberships (each user is owner of their Personal workspace)
-    { workspaceId: rootWorkspace.id, userId: rootUser.id, role: 'owner' },
-    { workspaceId: adminWorkspace.id, userId: adminUser.id, role: 'owner' },
-    { workspaceId: basicWorkspace.id, userId: basicUser.id, role: 'owner' },
-    { workspaceId: premiumWorkspace.id, userId: premiumUser.id, role: 'owner' },
-    { workspaceId: demoWorkspace.id, userId: demoUser.id, role: 'owner' },
-  ]).onConflictDoNothing();
+    { workspaceId: rootWorkspace.id, userId: rootUser.id, role: 'owner' as const },
+    { workspaceId: adminWorkspace.id, userId: adminUser.id, role: 'owner' as const },
+    { workspaceId: basicWorkspace.id, userId: basicUser.id, role: 'owner' as const },
+    { workspaceId: premiumWorkspace.id, userId: premiumUser.id, role: 'owner' as const },
+    { workspaceId: demoWorkspace.id, userId: demoUser.id, role: 'owner' as const },
+    // Shared workspace memberships (collaboration scenarios)
+    ...(adminSharedWorkspace && adminUser ? [
+      { workspaceId: adminSharedWorkspace.id, userId: adminUser.id, role: 'owner' as const },
+      { workspaceId: adminSharedWorkspace.id, userId: premiumUser.id, role: 'editor' as const },
+      { workspaceId: adminSharedWorkspace.id, userId: basicUser.id, role: 'viewer' as const },
+    ] : []),
+    ...(rootSharedWorkspace && rootUser ? [
+      { workspaceId: rootSharedWorkspace.id, userId: rootUser.id, role: 'owner' as const },
+      { workspaceId: rootSharedWorkspace.id, userId: adminUser.id, role: 'editor' as const },
+      { workspaceId: rootSharedWorkspace.id, userId: premiumUser.id, role: 'editor' as const },
+    ] : []),
+  ];
+
+  const membersToInsert = memberSeedData.filter(member => !memberKeys.has(`${member.workspaceId}:${member.userId}`));
+
+  if (membersToInsert.length === 0) {
+    console.log("ℹ️  Workspace members already seeded, skipping insert");
+    return;
+  }
+
+  await db.insert(workspaceMembers).values(membersToInsert);
+}
+
+async function seedEnhancedWorkspaceSubscriptions() {
+  console.log("🧾 Seeding shared workspace subscriptions...");
+
+  const now = new Date();
+  const oneYearLater = new Date();
+  oneYearLater.setFullYear(now.getFullYear() + 1);
+
+  const allUsers = await db.select().from(users);
+  const allWorkspaces = await db.select().from(workspaces);
+  const allPackages = await db.select().from(subscriptionPackages);
+  const existingWorkspaceSubscriptions = await db.select().from(workspaceSubscriptions);
+
+  const rootUser = allUsers.find(u => u.email === 'root@financeflow.com');
+  const adminUser = allUsers.find(u => u.email === 'admin@financeflow.com');
+
+  const rootSharedWorkspace = allWorkspaces.find(w => w.ownerId === rootUser?.id && w.type === 'shared');
+  const adminSharedWorkspace = allWorkspaces.find(w => w.ownerId === adminUser?.id && w.type === 'shared');
+
+  if (!rootUser || !adminUser || !rootSharedWorkspace || !adminSharedWorkspace) {
+    console.log("⚠️ Skipping workspace subscriptions - missing shared workspaces or owners");
+    return;
+  }
+
+  const sharedDefaultPackage = allPackages.find(p => p.slug === 'shared-default');
+  const businessPackage = allPackages.find(p => p.slug === 'business');
+
+  if (!sharedDefaultPackage || !businessPackage) {
+    console.log("⚠️ Skipping workspace subscriptions - missing required packages");
+    return;
+  }
+
+  const existingSubscriptionKeys = new Set(
+    existingWorkspaceSubscriptions.map(subscription => `${subscription.workspaceId}:${subscription.packageId}`)
+  );
+
+  const subscriptionSeedData = [
+    {
+      workspaceId: adminSharedWorkspace.id,
+      packageId: sharedDefaultPackage.id,
+      ownerId: adminUser.id,
+      startDate: now,
+      endDate: oneYearLater,
+      status: 'active' as const,
+    },
+    {
+      workspaceId: rootSharedWorkspace.id,
+      packageId: businessPackage.id,
+      ownerId: rootUser.id,
+      startDate: now,
+      endDate: oneYearLater,
+      status: 'active' as const,
+    },
+  ];
+
+  const subscriptionsToInsert = subscriptionSeedData.filter(
+    subscription => !existingSubscriptionKeys.has(`${subscription.workspaceId}:${subscription.packageId}`)
+  );
+
+  if (subscriptionsToInsert.length === 0) {
+    console.log("ℹ️  Workspace subscriptions already seeded, skipping insert");
+    return;
+  }
+
+  await db.insert(workspaceSubscriptions).values(subscriptionsToInsert);
 }
 
 async function seedEnhancedCategories() {
@@ -696,6 +806,7 @@ async function main() {
     await seedEnhancedUsers();
     await seedEnhancedUserSubscriptions();
     await seedEnhancedWorkspaces();
+    await seedEnhancedWorkspaceSubscriptions();
     await seedEnhancedWorkspaceMembers();
     await seedEnhancedCategories();
     await seedEnhancedAccounts();
