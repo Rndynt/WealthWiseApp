@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useEnhancedPermissions } from '@/lib/enhanced-permissions';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings } from 'lucide-react';
+import { Users, UserPlus, Mail, Shield, Trash2, Crown, Settings, Lock, Info } from 'lucide-react';
 import { CollaborationInviteForm } from '@/features/workspaces/CollaborationInviteForm';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Workspace } from '@/types';
 
 interface WorkspaceMember {
   id: number;
@@ -32,14 +34,17 @@ interface WorkspaceMember {
 }
 
 interface CollaborationProps {
-  workspaceId: number | undefined;
+  workspace: Workspace | null;
 }
 
-export default function CollaborationPage({ workspaceId }: CollaborationProps) {
+export default function CollaborationPage({ workspace }: CollaborationProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { hasPermission, hasFeatureAccess, isRoot } = useEnhancedPermissions();
+  const { hasFeatureAccess, isRoot } = useEnhancedPermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
+
+  const workspaceId = workspace?.id;
+  const isPersonalWorkspace = workspace?.type === 'personal';
 
   // Check if user has collaboration permissions - root users get all permissions
   const canManageCollaboration = isRoot || hasFeatureAccess('user.collaboration');
@@ -47,7 +52,7 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
 
   const { data: members, isLoading } = useQuery<WorkspaceMember[]>({
     queryKey: [`/api/workspaces/${workspaceId}/members`],
-    enabled: !!workspaceId && canViewCollaboration,
+    enabled: !!workspaceId && canViewCollaboration && !isPersonalWorkspace,
   });
 
   const { data: userSubscription } = useQuery<{ subscription: any; package: { name: string; canCreateSharedWorkspace: boolean } } | null>({
@@ -122,6 +127,40 @@ export default function CollaborationPage({ workspaceId }: CollaborationProps) {
         <Shield size={48} className="mx-auto mb-4 text-gray-400" />
         <p className="text-gray-500">You don't have permission to view collaboration features</p>
       </div>
+    );
+  }
+
+  if (isPersonalWorkspace) {
+    return (
+      <Card className="max-w-xl mx-auto text-center">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-center gap-2">
+            <Lock size={20} />
+            Collaboration Unavailable
+          </CardTitle>
+          <CardDescription className="flex items-center justify-center gap-1 text-gray-600">
+            Personal workspaces are limited to single-user access.
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center cursor-help text-gray-500">
+                  <Info size={14} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Convert this workspace to a shared workspace from the workspace settings to invite collaborators.
+              </TooltipContent>
+            </Tooltip>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Upgrade to a shared workspace to manage members, assign roles, and collaborate with your team.
+          </p>
+          <Button variant="outline" className="w-full max-w-xs mx-auto" disabled>
+            Collaboration Disabled
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 

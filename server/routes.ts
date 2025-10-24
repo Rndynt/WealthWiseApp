@@ -426,6 +426,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Email and role are required' });
       }
 
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace tidak ditemukan.' });
+      }
+
+      if (workspace.type === 'personal') {
+        return res.status(403).json({ message: 'Kolaborasi tidak tersedia untuk workspace personal.' });
+      }
+
       let user = await storage.getUserByEmail(email);
       if (!user) {
         const name = email.split('@')[0];
