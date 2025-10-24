@@ -10,6 +10,16 @@ export interface Workspace {
   type: 'personal' | 'shared';
   ownerId: number;
   createdAt: string;
+  membershipRole?: string;
+  membershipType?: 'owned' | 'member';
+}
+
+export interface WorkspaceSubscriptionLimits {
+  personalOwned: number;
+  personalLimit: number | null;
+  sharedOwned: number;
+  sharedLimit: number | null;
+  maxMembers: number | null;
 }
 
 export interface Category {
