@@ -70,6 +70,12 @@ import {
   type WorkspaceMember,
   type InsertWorkspaceMember,
 } from "@shared/schema";
+import { calculateWorkspaceOwnershipCounts, type WorkspaceLimitBreakdown } from './utils/workspaceLimits';
+
+export type WorkspaceWithMembership = Workspace & {
+  membershipRole?: string;
+  membershipType: 'owned' | 'member';
+};
 
 export interface IStorage {
   // Users
@@ -79,7 +85,7 @@ export interface IStorage {
 
   // Workspaces
   getWorkspace(id: number): Promise<Workspace | undefined>;
-  getUserWorkspaces(userId: number): Promise<Workspace[]>;
+  getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]>;
   createWorkspace(workspace: InsertWorkspace): Promise<Workspace>;
 
   // Workspace Members
@@ -175,7 +181,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
 
   // Subscription validation
-  getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null>;
+  getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null>;
   canCreateWorkspace(userId: number): Promise<boolean>;
 
   // Account, Category & Budget Limits Validation
@@ -260,7 +266,7 @@ export class DatabaseStorage implements IStorage {
     return workspace || undefined;
   }
 
-  async getUserWorkspaces(userId: number): Promise<Workspace[]> {
+  async getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]> {
     const results = await db
       .select({
         id: workspaces.id,
@@ -268,12 +274,16 @@ export class DatabaseStorage implements IStorage {
         type: workspaces.type,
         ownerId: workspaces.ownerId,
         createdAt: workspaces.createdAt,
+        membershipRole: workspaceMembers.role,
       })
       .from(workspaces)
       .innerJoin(workspaceMembers, eq(workspaces.id, workspaceMembers.workspaceId))
       .where(eq(workspaceMembers.userId, userId));
 
-    return results;
+    return results.map((workspace) => ({
+      ...workspace,
+      membershipType: workspace.ownerId === userId ? 'owned' : 'member',
+    }));
   }
 
   async createWorkspace(insertWorkspace: InsertWorkspace): Promise<Workspace> {
@@ -831,29 +841,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription validation
-  async getUserSubscriptionLimits(userId: number): Promise<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number } | null> {
+  async getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null> {
     // Get current user subscription with package details
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
-    // Count current workspaces for this user
+    // Count current workspaces for this user with ownership breakdown
     const userWorkspaces = await this.getUserWorkspaces(userId);
-    const currentWorkspaces = userWorkspaces.length;
+    const ownershipCounts = calculateWorkspaceOwnershipCounts(userId, userWorkspaces);
 
     if (userSubResult) {
-      // User has active subscription
+      const personalLimit: number | null = userSubResult.package.maxWorkspaces;
+      const sharedLimit: number | null = userSubResult.package.canCreateSharedWorkspace
+        ? userSubResult.package.maxSharedWorkspaces
+        : 0;
+      const maxMembers: number | null = userSubResult.package.maxMembers;
+
       return {
-        maxWorkspaces: userSubResult.package.maxWorkspaces,
-        maxMembers: userSubResult.package.maxMembers,
-        currentWorkspaces
-      };
-    } else {
-      // User has no subscription (free/basic user) - gets 1 workspace only
-      return {
-        maxWorkspaces: 1,
-        maxMembers: 1,
-        currentWorkspaces
+        personalOwned: ownershipCounts.personalOwned,
+        personalLimit,
+        sharedOwned: ownershipCounts.sharedOwned,
+        sharedLimit,
+        maxMembers,
       };
     }
+
+    // User has no subscription (free/basic user) - gets 1 personal workspace only
+    return {
+      personalOwned: ownershipCounts.personalOwned,
+      personalLimit: 1,
+      sharedOwned: ownershipCounts.sharedOwned,
+      sharedLimit: 0,
+      maxMembers: 1,
+    };
   }
 
   // Account, Category & Budget Limits Validation
@@ -924,7 +943,11 @@ export class DatabaseStorage implements IStorage {
     const limits = await this.getUserSubscriptionLimits(userId);
     if (!limits) return false;
 
-    return limits.currentWorkspaces < limits.maxWorkspaces;
+    if (limits.personalLimit === null) {
+      return true;
+    }
+
+    return limits.personalOwned < limits.personalLimit;
   }
 
   // Workspace Subscriptions

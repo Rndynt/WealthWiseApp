@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateWorkspace } from '@/hooks/useCreateWorkspace';
-import type { Workspace } from '@/types';
+import type { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 
 interface AddWorkspaceModalProps {
   open: boolean;
@@ -24,12 +24,27 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
   const { toast } = useToast();
 
   // Get user subscription limits
-  const { data: limits } = useQuery<{ maxWorkspaces: number; maxMembers: number; currentWorkspaces: number }>({
+  const { data: limits } = useQuery<WorkspaceSubscriptionLimits>({
     queryKey: ['/api/user/subscription-limits'],
   });
 
+  const formatLimitValue = (limit: number | null | undefined) => {
+    if (limit === null || limit === undefined) {
+      return '∞';
+    }
+    return limit.toString();
+  };
+
+  const personalLimitReached = limits?.personalLimit !== null && limits?.personalLimit !== undefined
+    ? limits.personalOwned >= limits.personalLimit
+    : false;
+
+  const sharedLimitReached = limits?.sharedLimit !== null && limits?.sharedLimit !== undefined
+    ? limits.sharedOwned >= limits.sharedLimit
+    : false;
+
   const sharedMemberLimit =
-    limits?.maxMembers && limits.maxMembers > 0 ? limits.maxMembers.toString() : 'beberapa';
+    limits?.maxMembers && limits.maxMembers > 0 ? limits.maxMembers.toString() : 'tak terbatas';
 
   const createWorkspaceMutation = useCreateWorkspace({ setCurrentWorkspace });
 
@@ -38,13 +53,36 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
     if (!form.name || !form.type) return;
     
     // Check if user can create more workspaces
-    if (limits && limits.currentWorkspaces >= limits.maxWorkspaces) {
-      toast({
-        variant: "destructive",
-        title: "Batas workspace tercapai",
-        description: `Anda sudah mencapai batas maksimal ${limits.maxWorkspaces} workspace. Upgrade ke paket premium untuk membuat lebih banyak workspace.`,
-      });
-      return;
+    if (limits) {
+      if (
+        form.type === 'personal' &&
+        limits.personalLimit !== null &&
+        limits.personalLimit !== undefined &&
+        limits.personalOwned >= limits.personalLimit
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Batas workspace pribadi tercapai",
+          description: `Anda sudah mencapai batas maksimal ${limits.personalLimit} workspace pribadi. Upgrade paket untuk membuat lebih banyak workspace pribadi.`,
+        });
+        return;
+      }
+
+      if (
+        form.type === 'shared' &&
+        limits.sharedLimit !== null &&
+        limits.sharedLimit !== undefined &&
+        limits.sharedOwned >= limits.sharedLimit
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Batas shared workspace tercapai",
+          description: limits.sharedLimit === 0
+            ? 'Paket Anda saat ini belum mendukung pembuatan shared workspace. Pertimbangkan upgrade paket.'
+            : `Anda sudah mencapai batas maksimal ${limits.sharedLimit} shared workspace yang dapat Anda buat. Upgrade paket untuk membuat lebih banyak shared workspace.`,
+        });
+        return;
+      }
     }
     
     const payload = { name: form.name, type: form.type as 'personal' | 'shared' };
@@ -66,13 +104,27 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
         
         {/* Subscription Status */}
         {limits && (
-          <div className="bg-blue-50 p-3 rounded-lg">
+          <div className="bg-blue-50 p-3 rounded-lg space-y-1">
+            <p className="text-sm text-blue-800 font-semibold">Status Batas Workspace</p>
             <p className="text-sm text-blue-800">
-              <strong>Status Langganan:</strong> {limits.currentWorkspaces}/{limits.maxWorkspaces} workspace terpakai
+              <strong>Personal:</strong> {limits.personalOwned}/{formatLimitValue(limits.personalLimit)} dimiliki
             </p>
-            {limits.currentWorkspaces >= limits.maxWorkspaces && (
+            <p className="text-sm text-blue-800">
+              <strong>Shared:</strong> {limits.sharedOwned}/{formatLimitValue(limits.sharedLimit)} dimiliki
+            </p>
+            {personalLimitReached && (
               <p className="text-sm text-red-600 mt-1">
-                ⚠️ Anda telah mencapai batas maksimal. Upgrade ke premium untuk membuat lebih banyak workspace.
+                ⚠️ Anda telah mencapai batas maksimal workspace pribadi. Upgrade paket untuk membuat lebih banyak workspace pribadi.
+              </p>
+            )}
+            {sharedLimitReached && (
+              <p className="text-sm text-red-600 mt-1">
+                ⚠️ Anda telah mencapai batas maksimal shared workspace yang dapat Anda buat.
+              </p>
+            )}
+            {limits.sharedLimit === 0 && (
+              <p className="text-sm text-amber-600 mt-1">
+                Paket Anda saat ini belum mendukung pembuatan shared workspace.
               </p>
             )}
           </div>
@@ -97,8 +149,12 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
                 <SelectValue placeholder="Pilih tipe workspace..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal (Solo)</SelectItem>
-                <SelectItem value="shared">Shared (Kolaboratif)</SelectItem>
+                <SelectItem value="personal" disabled={personalLimitReached}>
+                  Personal (Solo)
+                </SelectItem>
+                <SelectItem value="shared" disabled={sharedLimitReached || limits?.sharedLimit === 0}>
+                  Shared (Kolaboratif)
+                </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-2">
@@ -119,7 +175,13 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
             <Button 
               type="submit" 
               className="flex-1"
-              disabled={createWorkspaceMutation.isPending || !form.name || !form.type || (limits ? limits.currentWorkspaces >= limits.maxWorkspaces : false)}
+              disabled={
+                createWorkspaceMutation.isPending ||
+                !form.name ||
+                !form.type ||
+                (form.type === 'personal' && personalLimitReached) ||
+                (form.type === 'shared' && (sharedLimitReached || limits?.sharedLimit === 0))
+              }
             >
               {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
             </Button>
