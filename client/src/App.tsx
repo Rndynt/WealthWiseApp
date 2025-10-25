@@ -58,6 +58,7 @@ function AppRouter() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const previousUserIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
