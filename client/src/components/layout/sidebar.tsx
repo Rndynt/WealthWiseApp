@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@/lib/enhanced-permissions';
 import { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
+import { usePersistentWorkspaceSelection } from '@/hooks/usePersistentWorkspaceSelection';
 
 // UserSubscriptionBadge component
 function UserSubscriptionBadge1({ packageName }: { packageName?: string }) {
@@ -136,51 +137,12 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
     enabled: !!user,
   });
 
-  const workspacePreferenceKey = user ? `workspacePreference:${user.id}` : null;
-
-  // Set initial workspace
-  useEffect(() => {
-    if (!workspaces || workspaces.length === 0) {
-      if (currentWorkspace) {
-        onWorkspaceChange(null);
-      }
-      if (workspacePreferenceKey) {
-        localStorage.removeItem(workspacePreferenceKey);
-      }
-      return;
-    }
-
-    const matchingWorkspace = currentWorkspace
-      ? workspaces.find((workspace) => workspace.id === currentWorkspace.id)
-      : undefined;
-
-    if (matchingWorkspace) {
-      if (matchingWorkspace !== currentWorkspace) {
-        onWorkspaceChange(matchingWorkspace);
-      }
-      return;
-    }
-
-    let preferredWorkspace: Workspace | undefined;
-
-    if (workspacePreferenceKey) {
-      const storedWorkspaceId = localStorage.getItem(workspacePreferenceKey);
-      if (storedWorkspaceId) {
-        preferredWorkspace = workspaces.find((workspace) => workspace.id.toString() === storedWorkspaceId);
-        if (!preferredWorkspace) {
-          localStorage.removeItem(workspacePreferenceKey);
-        }
-      }
-    }
-
-    const nextWorkspace = preferredWorkspace
-      || workspaces.find((workspace) => workspace.type === 'personal')
-      || workspaces[0];
-
-    if (nextWorkspace) {
-      onWorkspaceChange(nextWorkspace);
-    }
-  }, [workspaces, currentWorkspace, onWorkspaceChange, workspacePreferenceKey]);
+  usePersistentWorkspaceSelection({
+    userId: user?.id,
+    workspaces,
+    currentWorkspace,
+    onWorkspaceChange,
+  });
 
   const handleWorkspaceChange = (workspaceId: string) => {
     const workspace = workspaces?.find(w => w.id === parseInt(workspaceId));
