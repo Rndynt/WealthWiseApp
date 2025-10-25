@@ -78,20 +78,6 @@ function AppRouter() {
     setCurrentWorkspace(null);
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    const storageKey = `workspacePreference:${user.id}`;
-
-    if (currentWorkspace?.id) {
-      localStorage.setItem(storageKey, currentWorkspace.id.toString());
-    } else {
-      localStorage.removeItem(storageKey);
-    }
-  }, [user?.id, currentWorkspace?.id]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
