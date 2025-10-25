@@ -17,6 +17,11 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
 }
 
+interface AuthProviderProps {
+  children: ReactNode;
+  onSessionReset?: () => void;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -39,6 +44,12 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
     }
   }, []);
 
+  const resetSession = useCallback(async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    onSessionReset?.();
+  }, [onSessionReset, queryClient]);
+
   const checkAuthStatus = async () => {
     try {
       const response = await fetch('/api/user', {
@@ -55,6 +66,7 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         queryClient.clear();
         onSessionReset?.();
         localStorage.removeItem('token');
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -62,6 +74,7 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
       queryClient.clear();
       onSessionReset?.();
       localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }

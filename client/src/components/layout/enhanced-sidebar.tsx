@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/lib/enhanced-permissions';
 import { Workspace, WorkspaceSubscriptionLimits } from '@/types';
 import AddWorkspaceModal from '@/components/modals/add-workspace-modal';
+import { usePersistentWorkspaceSelection } from '@/hooks/usePersistentWorkspaceSelection';
 
 // UserSubscriptionBadge component
 function UserSubscriptionBadge1({ packageName }: { packageName?: string }) {
