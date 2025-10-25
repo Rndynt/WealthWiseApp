@@ -31,7 +31,7 @@ import SettingsPage from './pages/settings';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { useLocation } from "wouter";
 import { PWAInstallButton } from "@/components/pwa-install-button";
@@ -58,6 +58,7 @@ function AppRouter() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const previousUserIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -73,10 +74,24 @@ function AppRouter() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const userId = user?.id ?? null;
+
   useEffect(() => {
-    // Reset workspace context whenever the authenticated user changes
-    setCurrentWorkspace(null);
-  }, [user?.id]);
+    if (userId === null) {
+      previousUserIdRef.current = null;
+      if (currentWorkspace !== null) {
+        setCurrentWorkspace(null);
+      }
+      return;
+    }
+
+    if (previousUserIdRef.current !== userId) {
+      previousUserIdRef.current = userId;
+      if (currentWorkspace !== null) {
+        setCurrentWorkspace(null);
+      }
+    }
+  }, [userId, currentWorkspace]);
 
   if (loading) {
     return (
