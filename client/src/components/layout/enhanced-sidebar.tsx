@@ -211,12 +211,29 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
     enabled: !!user,
   });
 
-  usePersistentWorkspaceSelection({
-    userId: user?.id,
-    workspaces,
-    currentWorkspace,
-    onWorkspaceChange,
-  });
+  // Set initial workspace
+  useEffect(() => {
+    if (!workspaces || workspaces.length === 0) {
+      if (currentWorkspace) {
+        onWorkspaceChange(null);
+      }
+      return;
+    }
+
+    const matchingWorkspace = currentWorkspace
+      ? workspaces.find((workspace) => workspace.id === currentWorkspace.id)
+      : undefined;
+
+    if (matchingWorkspace) {
+      if (matchingWorkspace !== currentWorkspace) {
+        onWorkspaceChange(matchingWorkspace);
+      }
+      return;
+    }
+
+    const personalWorkspace = workspaces.find((workspace) => workspace.type === 'personal') || workspaces[0];
+    onWorkspaceChange(personalWorkspace);
+  }, [workspaces, currentWorkspace, onWorkspaceChange]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
     const workspace = workspaces?.find(w => w.id === parseInt(workspaceId));
