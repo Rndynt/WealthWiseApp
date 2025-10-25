@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -17,12 +17,12 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 interface AuthProviderProps {
   children: ReactNode;
   onSessionReset?: () => void;
 }
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,6 +39,12 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
     }
   }, []);
 
+  const resetSession = useCallback(async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    onSessionReset?.();
+  }, [onSessionReset, queryClient]);
+
   const checkAuthStatus = async () => {
     try {
       const response = await fetch('/api/user', {
@@ -51,17 +57,15 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        await queryClient.cancelQueries();
-        queryClient.clear();
-        onSessionReset?.();
+        await resetSession();
         localStorage.removeItem('token');
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      onSessionReset?.();
+      await resetSession();
       localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -69,15 +73,12 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/login', { email, password });
       const data = await response.json();
 
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      onSessionReset?.();
+      await resetSession();
       localStorage.setItem('token', data.token);
-      await checkAuthStatus();
+      setUser(data.user);
 
       toast({
         title: "Login successful",
@@ -89,22 +90,18 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         title: "Login failed",
         description: error.message || "Invalid credentials",
       });
-      setLoading(false);
       throw error;
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
     try {
-      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/register', { email, password, name });
       const data = await response.json();
 
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      onSessionReset?.();
+      await resetSession();
       localStorage.setItem('token', data.token);
-      await checkAuthStatus();
+      setUser(data.user);
 
       toast({
         title: "Registration successful",
@@ -116,18 +113,14 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         title: "Registration failed",
         description: error.message || "Failed to create account",
       });
-      setLoading(false);
       throw error;
     }
   };
 
   const logout = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    onSessionReset?.();
+    await resetSession();
     localStorage.removeItem('token');
     setUser(null);
-    setLoading(false);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",

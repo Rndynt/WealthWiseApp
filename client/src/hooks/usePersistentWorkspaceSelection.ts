@@ -1,17 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import type { Workspace } from '@/types';
 
-const PREFERENCE_PREFIX = 'workspacePreference';
-
-function getPreferenceKey(userId?: number | null) {
-  if (!userId) {
-    return null;
-  }
-  return `${PREFERENCE_PREFIX}:${userId}`;
-}
+const buildStorageKey = (userId: number) => `workspace-preference:${userId}`;
 
 interface Options {
-  userId?: number | null;
+  userId?: number;
   workspaces?: Workspace[];
   currentWorkspace: Workspace | null;
   onWorkspaceChange: (workspace: Workspace | null) => void;
@@ -23,75 +16,76 @@ export function usePersistentWorkspaceSelection({
   currentWorkspace,
   onWorkspaceChange,
 }: Options) {
-  const preferenceKey = useMemo(() => getPreferenceKey(userId), [userId]);
+  const storageKey = useMemo(() => {
+    if (typeof userId !== 'number') {
+      return null;
+    }
+    return buildStorageKey(userId);
+  }, [userId]);
+
+  const currentWorkspaceId = currentWorkspace?.id ?? null;
 
   useEffect(() => {
-    if (!preferenceKey) {
+    if (!storageKey) {
+      if (currentWorkspaceId !== null) {
+        onWorkspaceChange(null);
+      }
       return;
     }
 
-    if (currentWorkspace?.id) {
-      localStorage.setItem(preferenceKey, currentWorkspace.id.toString());
-    } else {
-      localStorage.removeItem(preferenceKey);
-    }
-  }, [preferenceKey, currentWorkspace?.id]);
-
-  useEffect(() => {
     if (!workspaces) {
       return;
     }
 
-    if (!workspaces.length) {
-      if (currentWorkspace) {
+    if (workspaces.length === 0) {
+      localStorage.removeItem(storageKey);
+      if (currentWorkspaceId !== null) {
         onWorkspaceChange(null);
       }
-      if (preferenceKey) {
-        localStorage.removeItem(preferenceKey);
+      return;
+    }
+
+    const storedId = localStorage.getItem(storageKey);
+    const parsedStoredId = storedId ? Number(storedId) : NaN;
+
+    const storedWorkspace =
+      storedId && !Number.isNaN(parsedStoredId)
+        ? workspaces.find((workspace) => workspace.id === parsedStoredId)
+        : undefined;
+
+    if (storedWorkspace) {
+      if (currentWorkspaceId !== storedWorkspace.id) {
+        onWorkspaceChange(storedWorkspace);
       }
       return;
     }
 
-    const matchingWorkspace = currentWorkspace
-      ? workspaces.find((workspace) => workspace.id === currentWorkspace.id)
-      : undefined;
+    if (storedId) {
+      localStorage.removeItem(storageKey);
+    }
 
-    if (matchingWorkspace) {
-      if (matchingWorkspace !== currentWorkspace) {
-        onWorkspaceChange(matchingWorkspace);
+    const fallbackWorkspace =
+      workspaces.find((workspace) => workspace.type === 'personal') ?? workspaces[0];
+
+    if (!fallbackWorkspace) {
+      if (currentWorkspaceId !== null) {
+        onWorkspaceChange(null);
       }
       return;
     }
 
-    let preferredWorkspace: Workspace | undefined;
-
-    if (preferenceKey) {
-      const storedWorkspaceId = localStorage.getItem(preferenceKey);
-      if (storedWorkspaceId) {
-        preferredWorkspace = workspaces.find(
-          (workspace) => workspace.id.toString() === storedWorkspaceId,
-        );
-
-        if (!preferredWorkspace) {
-          localStorage.removeItem(preferenceKey);
-        }
-      }
+    if (currentWorkspaceId !== fallbackWorkspace.id) {
+      onWorkspaceChange(fallbackWorkspace);
     }
 
-    const nextWorkspace = preferredWorkspace
-      || workspaces.find((workspace) => workspace.type === 'personal')
-      || workspaces[0];
-
-    onWorkspaceChange(nextWorkspace ?? null);
-  }, [workspaces, currentWorkspace, onWorkspaceChange, preferenceKey]);
+    localStorage.setItem(storageKey, String(fallbackWorkspace.id));
+  }, [storageKey, workspaces, currentWorkspaceId, onWorkspaceChange]);
 
   useEffect(() => {
-    if (userId) {
+    if (!storageKey || currentWorkspaceId === null) {
       return;
     }
 
-    if (currentWorkspace) {
-      onWorkspaceChange(null);
-    }
-  }, [userId, currentWorkspace, onWorkspaceChange]);
+    localStorage.setItem(storageKey, String(currentWorkspaceId));
+  }, [storageKey, currentWorkspaceId]);
 }
