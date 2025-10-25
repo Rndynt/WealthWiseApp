@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,11 @@ interface AuthProviderProps {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+  onSessionReset?: () => void;
+}
 
 export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -57,13 +62,17 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        await resetSession();
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        onSessionReset?.();
         localStorage.removeItem('token');
         setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await resetSession();
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      onSessionReset?.();
       localStorage.removeItem('token');
       setUser(null);
     } finally {
@@ -73,12 +82,15 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/login', { email, password });
       const data = await response.json();
 
-      await resetSession();
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      onSessionReset?.();
       localStorage.setItem('token', data.token);
-      setUser(data.user);
+      await checkAuthStatus();
 
       toast({
         title: "Login successful",
@@ -90,18 +102,22 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         title: "Login failed",
         description: error.message || "Invalid credentials",
       });
+      setLoading(false);
       throw error;
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
     try {
+      setLoading(true);
       const response = await apiRequest('POST', '/api/auth/register', { email, password, name });
       const data = await response.json();
 
-      await resetSession();
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      onSessionReset?.();
       localStorage.setItem('token', data.token);
-      setUser(data.user);
+      await checkAuthStatus();
 
       toast({
         title: "Registration successful",
@@ -113,14 +129,18 @@ export function AuthProvider({ children, onSessionReset }: AuthProviderProps) {
         title: "Registration failed",
         description: error.message || "Failed to create account",
       });
+      setLoading(false);
       throw error;
     }
   };
 
   const logout = async () => {
-    await resetSession();
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    onSessionReset?.();
     localStorage.removeItem('token');
     setUser(null);
+    setLoading(false);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
