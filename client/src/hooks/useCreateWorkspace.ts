@@ -9,7 +9,7 @@ type CreateWorkspaceInput = {
 };
 
 interface UseCreateWorkspaceOptions {
-  setCurrentWorkspace: (workspace: Workspace) => void;
+  setCurrentWorkspace: (workspace: Workspace | null) => void;
 }
 
 export function useCreateWorkspace({ setCurrentWorkspace }: UseCreateWorkspaceOptions): UseMutationResult<Workspace, Error, CreateWorkspaceInput> {

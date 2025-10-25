@@ -46,7 +46,7 @@ interface SidebarProps {
   open: boolean;
   onToggle: () => void;
   currentWorkspace: Workspace | null;
-  onWorkspaceChange: (workspace: Workspace) => void;
+  onWorkspaceChange: (workspace: Workspace | null) => void;
 }
 
 const navigationItems = [
@@ -136,13 +136,51 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
     enabled: !!user,
   });
 
+  const workspacePreferenceKey = user ? `workspacePreference:${user.id}` : null;
+
   // Set initial workspace
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && !currentWorkspace) {
-      const personalWorkspace = workspaces.find(w => w.type === 'personal') || workspaces[0];
-      onWorkspaceChange(personalWorkspace);
+    if (!workspaces || workspaces.length === 0) {
+      if (currentWorkspace) {
+        onWorkspaceChange(null);
+      }
+      if (workspacePreferenceKey) {
+        localStorage.removeItem(workspacePreferenceKey);
+      }
+      return;
     }
-  }, [workspaces, currentWorkspace, onWorkspaceChange]);
+
+    const matchingWorkspace = currentWorkspace
+      ? workspaces.find((workspace) => workspace.id === currentWorkspace.id)
+      : undefined;
+
+    if (matchingWorkspace) {
+      if (matchingWorkspace !== currentWorkspace) {
+        onWorkspaceChange(matchingWorkspace);
+      }
+      return;
+    }
+
+    let preferredWorkspace: Workspace | undefined;
+
+    if (workspacePreferenceKey) {
+      const storedWorkspaceId = localStorage.getItem(workspacePreferenceKey);
+      if (storedWorkspaceId) {
+        preferredWorkspace = workspaces.find((workspace) => workspace.id.toString() === storedWorkspaceId);
+        if (!preferredWorkspace) {
+          localStorage.removeItem(workspacePreferenceKey);
+        }
+      }
+    }
+
+    const nextWorkspace = preferredWorkspace
+      || workspaces.find((workspace) => workspace.type === 'personal')
+      || workspaces[0];
+
+    if (nextWorkspace) {
+      onWorkspaceChange(nextWorkspace);
+    }
+  }, [workspaces, currentWorkspace, onWorkspaceChange, workspacePreferenceKey]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
     const workspace = workspaces?.find(w => w.id === parseInt(workspaceId));
