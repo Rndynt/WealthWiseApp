@@ -35,7 +35,7 @@ export interface Category {
 }
 
 export interface Account {
-  id: number;
+  id: string;
   name: string;
   type: 'transaction' | 'asset';
   currency: string;
@@ -51,16 +51,16 @@ export interface Transaction {
   amount: string;
   description: string;
   date: string;
-  accountId: number;
+  accountId: string;
   categoryId?: string;
-  toAccountId?: number;
+  toAccountId?: string | null;
   debtId?: number;
   workspaceId: string;
   createdAt: string;
 }
 
 export interface Budget {
-  id: number;
+  id: string;
   categoryId: string;
   amount: string;
   period: 'monthly' | 'yearly';

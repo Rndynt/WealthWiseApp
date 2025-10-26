@@ -103,25 +103,25 @@ export interface IStorage {
 
   // Accounts
   getWorkspaceAccounts(workspaceId: string): Promise<Account[]>;
-  getAccount(id: number): Promise<Account | undefined>;
+  getAccount(id: string): Promise<Account | undefined>;
   createAccount(account: InsertAccount): Promise<Account>;
-  updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account>;
-  deleteAccount(id: number): Promise<void>;
-  accountHasTransactions(accountId: number): Promise<boolean>;
+  updateAccount(id: string, account: Partial<InsertAccount>): Promise<Account>;
+  deleteAccount(id: string): Promise<void>;
+  accountHasTransactions(accountId: string): Promise<boolean>;
 
   // Transactions
   getWorkspaceTransactions(workspaceId: string, limit?: number): Promise<Transaction[]>;
-  getAccountTransactions(accountId: number): Promise<Transaction[]>;
+  getAccountTransactions(accountId: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
 
   // Budgets
   getWorkspaceBudgets(workspaceId: string, year: number, month?: number): Promise<Budget[]>;
-  getBudget(id: number): Promise<Budget | undefined>;
+  getBudget(id: string): Promise<Budget | undefined>;
   createBudget(budget: InsertBudget): Promise<Budget>;
-  updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget>;
-  deleteBudget(id: number): Promise<void>;
+  updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget>;
+  deleteBudget(id: string): Promise<void>;
 
   // Debts
   getWorkspaceDebts(workspaceId: string): Promise<Debt[]>;
@@ -417,7 +417,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAccount(id: number): Promise<Account | undefined> {
+  async getAccount(id: string): Promise<Account | undefined> {
     const [account] = await db.select().from(accounts).where(eq(accounts.id, id));
     return account || undefined;
   }
@@ -427,7 +427,7 @@ export class DatabaseStorage implements IStorage {
     return newAccount;
   }
 
-  async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account> {
+  async updateAccount(id: string, account: Partial<InsertAccount>): Promise<Account> {
     const allowedUpdates: Partial<InsertAccount> = {};
     const fields: (keyof InsertAccount)[] = ['name', 'type', 'currency', 'notes'];
     for (const field of fields) {
@@ -454,11 +454,11 @@ export class DatabaseStorage implements IStorage {
     return updatedAccount;
   }
 
-  async deleteAccount(id: number): Promise<void> {
+  async deleteAccount(id: string): Promise<void> {
     await db.delete(accounts).where(eq(accounts.id, id));
   }
 
-  async accountHasTransactions(accountId: number): Promise<boolean> {
+  async accountHasTransactions(accountId: string): Promise<boolean> {
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(transactions)
@@ -482,7 +482,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getAccountTransactions(accountId: number): Promise<Transaction[]> {
+  async getAccountTransactions(accountId: string): Promise<Transaction[]> {
     return await db
       .select()
       .from(transactions)
@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(...conditions));
   }
 
-  async getBudget(id: number): Promise<Budget | undefined> {
+  async getBudget(id: string): Promise<Budget | undefined> {
     const [budget] = await db.select().from(budgets).where(eq(budgets.id, id));
     return budget || undefined;
   }
@@ -557,7 +557,7 @@ export class DatabaseStorage implements IStorage {
     return newBudget;
   }
 
-  async updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget> {
+  async updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget> {
     const allowedUpdates: Partial<InsertBudget> = {};
     const fields: (keyof InsertBudget)[] = ['amount', 'period', 'month', 'year', 'categoryId'];
     for (const field of fields) {
@@ -579,7 +579,7 @@ export class DatabaseStorage implements IStorage {
     return updatedBudget;
   }
 
-  async deleteBudget(id: number): Promise<void> {
+  async deleteBudget(id: string): Promise<void> {
     await db.delete(budgets).where(eq(budgets.id, id));
   }
 

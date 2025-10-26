@@ -25,7 +25,7 @@ const recurringTransactionSchema = z.object({
   type: z.enum(['income', 'expense', 'transfer']),
   amount: z.string().min(1, 'Amount is required'),
   categoryId: z.string().uuid({ message: 'Category is required' }),
-  accountId: z.number().min(1, 'Account is required'),
+  accountId: z.string().uuid({ message: 'Account is required' }),
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
@@ -49,7 +49,7 @@ interface RecurringTransaction {
   type: string;
   amount: string;
   categoryId: string;
-  accountId: number;
+  accountId: string;
   frequency: string;
   startDate: string;
   endDate?: string;
@@ -91,7 +91,7 @@ export default function Automation({ workspaceId }: AutomationProps) {
       type: 'expense',
       amount: '',
       categoryId: '',
-      accountId: 0,
+      accountId: '',
       frequency: 'monthly',
       startDate: '',
       endDate: '',
@@ -389,13 +389,13 @@ export default function Automation({ workspaceId }: AutomationProps) {
                       </div>
                       <div>
                         <Label htmlFor="accountId">Account</Label>
-                        <Select onValueChange={(value) => recurringForm.setValue('accountId', parseInt(value))}>
+                        <Select onValueChange={(value) => recurringForm.setValue('accountId', value)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select account" />
                           </SelectTrigger>
                           <SelectContent>
                             {accounts?.map((account) => (
-                              <SelectItem key={account.id} value={account.id.toString()}>
+                              <SelectItem key={account.id} value={account.id}>
                                 {account.name}
                               </SelectItem>
                             ))}

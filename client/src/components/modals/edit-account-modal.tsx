@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 interface Account {
-  id: number;
+  id: string;
   name: string;
   type: string;
   balance: string;

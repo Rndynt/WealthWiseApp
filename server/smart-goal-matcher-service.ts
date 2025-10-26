@@ -37,7 +37,7 @@ export interface TransactionContext {
   description: string;
   amount: string;
   type: string;
-  accountId: number | null;
+  accountId: string | null;
   debtId: number | null;
   category: string | null;
   date: Date;

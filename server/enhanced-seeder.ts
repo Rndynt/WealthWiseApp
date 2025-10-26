@@ -833,8 +833,7 @@ async function seedEnhancedAccounts() {
     return;
   }
 
-  // Create accounts for root user (balance calculated from transactions)
-  await db.insert(accounts).values([
+  const rootAccounts: Omit<typeof accounts.$inferInsert, "id">[] = [
     {
       name: "Main Checking",
       type: "transaction",
@@ -867,10 +866,9 @@ async function seedEnhancedAccounts() {
       notes: "Physical cash on hand",
       workspaceId: rootWorkspace.id,
     },
-  ]).onConflictDoNothing();
+  ];
 
-  // Create accounts for admin user (balance calculated from transactions)
-  await db.insert(accounts).values([
+  const adminAccounts: Omit<typeof accounts.$inferInsert, "id">[] = [
     {
       name: "Business Account",
       type: "transaction",
@@ -887,10 +885,9 @@ async function seedEnhancedAccounts() {
       notes: "Company investments",
       workspaceId: adminWorkspace.id,
     },
-  ]).onConflictDoNothing();
+  ];
 
-  // Create account for basic user (balance calculated from transactions)
-  await db.insert(accounts).values([
+  const basicAccounts: Omit<typeof accounts.$inferInsert, "id">[] = [
     {
       name: "Checking Account",
       type: "transaction",
@@ -899,10 +896,9 @@ async function seedEnhancedAccounts() {
       notes: "Primary personal account",
       workspaceId: basicWorkspace.id,
     },
-  ]).onConflictDoNothing();
+  ];
 
-  // Create accounts for premium user (balance calculated from transactions)
-  await db.insert(accounts).values([
+  const premiumAccounts: Omit<typeof accounts.$inferInsert, "id">[] = [
     {
       name: "Primary Checking",
       type: "transaction",
@@ -927,10 +923,9 @@ async function seedEnhancedAccounts() {
       notes: "Personal investment account",
       workspaceId: premiumWorkspace.id,
     },
-  ]).onConflictDoNothing();
+  ];
 
-  // Create demo accounts for demo user (balance calculated from transactions)
-  await db.insert(accounts).values([
+  const demoAccounts: Omit<typeof accounts.$inferInsert, "id">[] = [
     {
       name: "Student Account",
       type: "transaction",
@@ -947,7 +942,16 @@ async function seedEnhancedAccounts() {
       notes: "Cash for daily expenses",
       workspaceId: demoWorkspace.id,
     },
-  ]).onConflictDoNothing();
+  ];
+
+  const assignAccountIds = (accountList: Omit<typeof accounts.$inferInsert, "id">[]) =>
+    accountList.map(account => ({ id: randomUUID(), ...account }));
+
+  await db.insert(accounts).values(assignAccountIds(rootAccounts)).onConflictDoNothing();
+  await db.insert(accounts).values(assignAccountIds(adminAccounts)).onConflictDoNothing();
+  await db.insert(accounts).values(assignAccountIds(basicAccounts)).onConflictDoNothing();
+  await db.insert(accounts).values(assignAccountIds(premiumAccounts)).onConflictDoNothing();
+  await db.insert(accounts).values(assignAccountIds(demoAccounts)).onConflictDoNothing();
 }
 
 async function main() {

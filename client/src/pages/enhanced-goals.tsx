@@ -48,7 +48,7 @@ const enhancedGoalSchema = z.object({
   targetDate: z.string().min(1, 'Target date is required'),
   priority: z.enum(['low', 'medium', 'high', 'critical']),
   isAutoTracking: z.boolean().default(false),
-  linkedAccountId: z.number().optional(),
+  linkedAccountId: z.string().uuid().optional(),
   linkedDebtId: z.number().optional(),
   createMilestones: z.boolean().default(true),
 });
@@ -78,7 +78,7 @@ interface Goal {
   priority: string;
   status: string;
   isAutoTracking: boolean;
-  linkedAccountId?: number;
+  linkedAccountId?: string;
   linkedDebtId?: number;
   createdAt: string;
   updatedAt: string;
@@ -108,7 +108,7 @@ interface GoalInsight {
 }
 
 interface Account {
-  id: number;
+  id: string;
   name: string;
   type: string;
   balance: string;
@@ -484,7 +484,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Linked Account (Optional)</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}>
+                        <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}>
                           <FormControl>
                             <SelectTrigger data-testid="select-linked-account">
                               <SelectValue placeholder="Select account" />
@@ -493,7 +493,7 @@ export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: Enha
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
                             {accounts.map((account: any) => (
-                              <SelectItem key={account.id} value={account.id.toString()}>
+                              <SelectItem key={account.id} value={account.id}>
                                 {account.name}
                               </SelectItem>
                             ))}
