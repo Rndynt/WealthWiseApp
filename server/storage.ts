@@ -99,6 +99,7 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
   deleteCategory(id: number): Promise<void>;
+  categoryHasTransactions(categoryId: number): Promise<boolean>;
 
   // Accounts
   getWorkspaceAccounts(workspaceId: number): Promise<Account[]>;
@@ -117,6 +118,7 @@ export interface IStorage {
 
   // Budgets
   getWorkspaceBudgets(workspaceId: number, year: number, month?: number): Promise<Budget[]>;
+  getBudget(id: number): Promise<Budget | undefined>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget>;
   deleteBudget(id: number): Promise<void>;
@@ -338,9 +340,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category> {
+    const allowedUpdates: Partial<InsertCategory> = {};
+    const fields: (keyof InsertCategory)[] = ['name', 'type', 'icon', 'description'];
+    for (const field of fields) {
+      const value = category[field];
+      if (value !== undefined) {
+        (allowedUpdates as Record<string, unknown>)[field as string] = value;
+      }
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      throw new Error('No valid category fields provided for update');
+    }
+
     const [updatedCategory] = await db
       .update(categories)
-      .set(category)
+      .set(allowedUpdates)
       .where(eq(categories.id, id))
       .returning();
     return updatedCategory;
@@ -348,6 +363,15 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCategory(id: number): Promise<void> {
     await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  async categoryHasTransactions(categoryId: number): Promise<boolean> {
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(transactions)
+      .where(eq(transactions.categoryId, categoryId));
+
+    return Number(count ?? 0) > 0;
   }
 
   // Accounts
@@ -365,8 +389,7 @@ export class DatabaseStorage implements IStorage {
           COALESCE(SUM(
             CASE
               WHEN t.account_id = a.id AND t.type IN ('income', 'debt') THEN t.amount
-              WHEN t.account_id = a.id AND t.type IN ('expense', 'repayment') THEN -t.amount
-              WHEN t.account_id = a.id AND t.type = 'transfer' THEN -t.amount
+              WHEN t.account_id = a.id AND t.type IN ('expense', 'repayment', 'transfer', 'saving') THEN -t.amount
               ELSE 0
             END
           ), 0)
@@ -375,7 +398,7 @@ export class DatabaseStorage implements IStorage {
             FROM transactions t_in
             WHERE t_in.to_account_id = a.id
               AND t_in.workspace_id = ${workspaceId}
-              AND t_in.type = 'transfer'
+              AND t_in.type IN ('transfer', 'saving')
           ), 0)
         )::text AS balance
       FROM accounts a
@@ -523,15 +546,33 @@ export class DatabaseStorage implements IStorage {
       .where(and(...conditions));
   }
 
+  async getBudget(id: number): Promise<Budget | undefined> {
+    const [budget] = await db.select().from(budgets).where(eq(budgets.id, id));
+    return budget || undefined;
+  }
+
   async createBudget(budget: InsertBudget): Promise<Budget> {
     const [newBudget] = await db.insert(budgets).values(budget).returning();
     return newBudget;
   }
 
   async updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget> {
+    const allowedUpdates: Partial<InsertBudget> = {};
+    const fields: (keyof InsertBudget)[] = ['amount', 'period', 'month', 'year', 'categoryId'];
+    for (const field of fields) {
+      const value = budget[field];
+      if (value !== undefined) {
+        (allowedUpdates as Record<string, unknown>)[field as string] = value;
+      }
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      throw new Error('No valid budget fields provided for update');
+    }
+
     const [updatedBudget] = await db
       .update(budgets)
-      .set(budget)
+      .set(allowedUpdates)
       .where(eq(budgets.id, id))
       .returning();
     return updatedBudget;
@@ -1055,12 +1096,12 @@ export class DatabaseStorage implements IStorage {
 
   // Analytics methods
   async getAnalyticsData(workspaceId: number, timeframe: string): Promise<any> {
+    const now = new Date();
     const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
     const categories = await this.getWorkspaceCategories(workspaceId);
-    const budgets = await this.getWorkspaceBudgets(workspaceId);
-    
+    const budgets = await this.getWorkspaceBudgets(workspaceId, now.getFullYear());
+
     // Calculate timeframe boundaries
-    const now = new Date();
     let months = 6;
     if (timeframe === '12months') months = 12;
     if (timeframe === '3months') months = 3;
