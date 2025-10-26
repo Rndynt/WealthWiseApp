@@ -610,13 +610,10 @@ export class DatabaseStorage implements IStorage {
     netWorth: string;
     recentTransactions: Transaction[];
   }> {
-    // Get total balance from all accounts
-    const accountsResult = await db
-      .select({ balance: accounts.balance })
-      .from(accounts)
-      .where(eq(accounts.workspaceId, workspaceId));
+    // Get total balance from all accounts using transactional aggregates
+    const accountsResult = await this.getWorkspaceAccounts(workspaceId);
 
-    const totalBalance = accountsResult.reduce((sum: number, account: any) => sum + parseFloat(account.balance), 0);
+    const totalBalance = accountsResult.reduce((sum: number, account) => sum + parseFloat(account.balance), 0);
 
     // Get current month's income and expenses
     const currentDate = new Date();
