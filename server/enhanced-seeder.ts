@@ -1,10 +1,10 @@
 import { db } from "./db";
-import { 
-  roles, 
-  permissions, 
-  rolePermissions, 
-  subscriptionPackages, 
-  users, 
+import {
+  roles,
+  permissions,
+  rolePermissions,
+  subscriptionPackages,
+  users,
   userSubscriptions,
   workspaces,
   workspaceMembers,
@@ -17,6 +17,9 @@ import {
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
+
+type CategorySeed = typeof categories.$inferInsert;
 
 async function resetDatabase() {
   console.log("🔄 Resetting database for enhanced RBAC...");
@@ -655,33 +658,152 @@ async function seedEnhancedCategories() {
   }
 
   // Categories for each personal workspace
-  const categoryData = [
+  const categoryData: CategorySeed[] = [
     // Root user categories
-    { name: "Salary", type: "income", icon: "briefcase", description: "Monthly salary", workspaceId: rootWorkspace.id },
-    { name: "Food & Dining", type: "needs", icon: "utensils", description: "Food expenses", workspaceId: rootWorkspace.id },
-    { name: "Entertainment", type: "wants", icon: "gamepad", description: "Entertainment expenses", workspaceId: rootWorkspace.id },
+    {
+      id: randomUUID(),
+      name: "Salary",
+      type: "income",
+      icon: "briefcase",
+      description: "Monthly salary",
+      workspaceId: rootWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Food & Dining",
+      type: "needs",
+      icon: "utensils",
+      description: "Food expenses",
+      workspaceId: rootWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Entertainment",
+      type: "wants",
+      icon: "gamepad",
+      description: "Entertainment expenses",
+      workspaceId: rootWorkspace.id,
+    },
 
     // Admin user categories
-    { name: "Freelance Income", type: "income", icon: "briefcase", description: "Freelance work", workspaceId: adminWorkspace.id },
-    { name: "Utilities", type: "needs", icon: "bolt", description: "Electricity, water, etc", workspaceId: adminWorkspace.id },
-    { name: "Shopping", type: "wants", icon: "shopping-cart", description: "Non-essential shopping", workspaceId: adminWorkspace.id },
+    {
+      id: randomUUID(),
+      name: "Freelance Income",
+      type: "income",
+      icon: "briefcase",
+      description: "Freelance work",
+      workspaceId: adminWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Utilities",
+      type: "needs",
+      icon: "bolt",
+      description: "Electricity, water, etc",
+      workspaceId: adminWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Shopping",
+      type: "wants",
+      icon: "shopping-cart",
+      description: "Non-essential shopping",
+      workspaceId: adminWorkspace.id,
+    },
 
     // Basic user categories - LIMITED TO 3
-    { name: "Job Income", type: "income", icon: "briefcase", description: "Primary job income", workspaceId: basicWorkspace.id },
-    { name: "Groceries", type: "needs", icon: "shopping-cart", description: "Food and groceries", workspaceId: basicWorkspace.id },
-    { name: "Transport", type: "needs", icon: "bus", description: "Transportation costs", workspaceId: basicWorkspace.id },
+    {
+      id: randomUUID(),
+      name: "Job Income",
+      type: "income",
+      icon: "briefcase",
+      description: "Primary job income",
+      workspaceId: basicWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Groceries",
+      type: "needs",
+      icon: "shopping-cart",
+      description: "Food and groceries",
+      workspaceId: basicWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Transport",
+      type: "needs",
+      icon: "bus",
+      description: "Transportation costs",
+      workspaceId: basicWorkspace.id,
+    },
 
     // Premium user categories - UNLIMITED
-    { name: "Business Income", type: "income", icon: "briefcase", description: "Business revenue", workspaceId: premiumWorkspace.id },
-    { name: "Housing", type: "needs", icon: "home", description: "Rent and housing costs", workspaceId: premiumWorkspace.id },
-    { name: "Healthcare", type: "needs", icon: "stethoscope", description: "Medical expenses", workspaceId: premiumWorkspace.id },
-    { name: "Travel", type: "wants", icon: "plane", description: "Travel and vacation", workspaceId: premiumWorkspace.id },
-    { name: "Gadgets", type: "wants", icon: "phone", description: "Technology purchases", workspaceId: premiumWorkspace.id },
+    {
+      id: randomUUID(),
+      name: "Business Income",
+      type: "income",
+      icon: "briefcase",
+      description: "Business revenue",
+      workspaceId: premiumWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Housing",
+      type: "needs",
+      icon: "home",
+      description: "Rent and housing costs",
+      workspaceId: premiumWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Healthcare",
+      type: "needs",
+      icon: "stethoscope",
+      description: "Medical expenses",
+      workspaceId: premiumWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Travel",
+      type: "wants",
+      icon: "plane",
+      description: "Travel and vacation",
+      workspaceId: premiumWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Gadgets",
+      type: "wants",
+      icon: "phone",
+      description: "Technology purchases",
+      workspaceId: premiumWorkspace.id,
+    },
 
     // Demo user categories - LIMITED TO 3
-    { name: "Part-time Work", type: "income", icon: "briefcase", description: "Part-time income", workspaceId: demoWorkspace.id },
-    { name: "Education", type: "needs", icon: "graduation-cap", description: "Education costs", workspaceId: demoWorkspace.id },
-    { name: "Coffee", type: "wants", icon: "coffee", description: "Coffee and treats", workspaceId: demoWorkspace.id },
+    {
+      id: randomUUID(),
+      name: "Part-time Work",
+      type: "income",
+      icon: "briefcase",
+      description: "Part-time income",
+      workspaceId: demoWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Education",
+      type: "needs",
+      icon: "graduation-cap",
+      description: "Education costs",
+      workspaceId: demoWorkspace.id,
+    },
+    {
+      id: randomUUID(),
+      name: "Coffee",
+      type: "wants",
+      icon: "coffee",
+      description: "Coffee and treats",
+      workspaceId: demoWorkspace.id,
+    },
   ];
 
   await db.insert(categories).values(categoryData).onConflictDoNothing();
