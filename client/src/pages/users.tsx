@@ -87,10 +87,16 @@ export default function UsersManagement() {
     }
 
     const defaultRoleId = getDefaultRoleId(roles);
+    if (!defaultRoleId) {
+      return;
+    }
+
     setFormData(prev => {
-      if (!defaultRoleId || prev.roleId === defaultRoleId) {
+      const hasValidRole = !!prev.roleId && roles?.some(role => role.id === prev.roleId);
+      if (hasValidRole) {
         return prev;
       }
+
       return { ...prev, roleId: defaultRoleId };
     });
   }, [roles, editingUser]);
