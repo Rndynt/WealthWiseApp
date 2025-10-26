@@ -84,7 +84,7 @@ export default function UpgradePage() {
 
   // Fetch available packages
   const { data: packages, isLoading } = useQuery<SubscriptionPackage[]>({
-    queryKey: ['/api/subscription-packages'],
+    queryKey: ['/api/public/subscription-packages'],
     retry: false,
   });
 
