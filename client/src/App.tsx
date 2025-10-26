@@ -31,7 +31,7 @@ import SettingsPage from './pages/settings';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import NotFound from "@/pages/not-found";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { useLocation } from "wouter";
 import { PWAInstallButton } from "@/components/pwa-install-button";
