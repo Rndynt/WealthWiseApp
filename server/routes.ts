@@ -79,6 +79,19 @@ function validateWorkspaceIdParam(req: Request, res: any): string | undefined {
   return result.data.workspaceId;
 }
 
+const categoryIdParamsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid category id' }),
+});
+
+function validateCategoryIdParam(req: Request, res: any): string | undefined {
+  const result = categoryIdParamsSchema.safeParse(req.params);
+  if (!result.success) {
+    res.status(400).json({ message: 'Invalid category id' });
+    return;
+  }
+  return result.data.id;
+}
+
 async function loadRequestAccessContext(req: Request): Promise<RequestAccessContext | null> {
   if (req.accessContext) {
     return req.accessContext;
@@ -122,7 +135,7 @@ const updateTransactionSchema = z.object({
   description: z.string().min(1, 'Description is required').optional(),
   date: z.coerce.date().optional(),
   accountId: z.number().int().positive().optional(),
-  categoryId: z.union([z.number().int().positive(), z.null()]).optional(),
+  categoryId: z.union([z.string().uuid(), z.null()]).optional(),
   toAccountId: z.union([z.number().int().positive(), z.null()]).optional(),
   debtId: z.union([z.number().int().positive(), z.null()]).optional(),
 }).strict().refine((data) => Object.keys(data).length > 0, {
@@ -143,7 +156,7 @@ const updateBudgetSchema = z.object({
   period: z.enum(['monthly', 'yearly']).optional(),
   month: z.union([z.coerce.number().int().min(1).max(12), z.null()]).optional(),
   year: z.coerce.number().int().optional(),
-  categoryId: z.coerce.number().int().positive().optional(),
+  categoryId: z.string().uuid().optional(),
 }).strict().refine((data) => Object.keys(data).length > 0, {
   message: 'No budget updates provided',
 });
@@ -182,11 +195,11 @@ async function checkNonRepaymentNotifications(workspaceId: string, transaction: 
 
 
 
-async function calculateCategorySpending(workspaceId: string, categoryId: number): Promise<number> {
+async function calculateCategorySpending(workspaceId: string, categoryId: string): Promise<number> {
   const currentMonth = new Date();
   const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const transactions = await storage.getWorkspaceTransactions(workspaceId, 1000);
-  
+
   return transactions
     .filter(t => t.type === 'expense' && 
                  t.categoryId === categoryId && 
@@ -695,9 +708,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/categories/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: 'Invalid category id' });
+      const id = validateCategoryIdParam(req, res);
+      if (!id) {
+        return;
       }
 
       const existingCategory = await storage.getCategory(id);
@@ -748,9 +761,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/categories/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: 'Invalid category id' });
+      const id = validateCategoryIdParam(req, res);
+      if (!id) {
+        return;
       }
 
       const existingCategory = await storage.getCategory(id);

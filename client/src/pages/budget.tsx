@@ -84,7 +84,8 @@ export default function Budget({ workspaceId }: BudgetProps) {
     enabled: !!workspaceId,
   });
 
-  const getCategoryName = (categoryId: number) => {
+  const getCategoryName = (categoryId?: string | null) => {
+    if (!categoryId) return 'Unknown Category';
     const category = categories?.find(cat => cat.id === categoryId);
     if (!category) return 'Unknown Category';
     const displayIcon = iconMap[category.icon] || category.icon;

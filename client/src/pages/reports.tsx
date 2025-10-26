@@ -103,13 +103,13 @@ export default function Reports({ workspaceId }: ReportsProps) {
     const periodTransactions = getCurrentPeriodTransactions();
     const expenses = periodTransactions.filter(t => t.type === 'expense');
 
-    const categoryExpenses: Record<number, { amount: number; count: number; name: string; icon: string }> = {};
+    const categoryExpenses: Record<string, { amount: number; count: number; name: string; icon: string }> = {};
 
     expenses.forEach(expense => {
       if (!expense.categoryId) return;
       const category = categories?.find(c => c.id === expense.categoryId);
       if (category) {
-        const key = expense.categoryId as number;
+        const key = expense.categoryId;
         if (!categoryExpenses[key]) {
           categoryExpenses[key] = {
             amount: 0,
@@ -124,7 +124,7 @@ export default function Reports({ workspaceId }: ReportsProps) {
     });
 
     return Object.entries(categoryExpenses)
-      .map(([categoryId, data]) => ({ categoryId: parseInt(categoryId), ...data }))
+      .map(([categoryId, data]) => ({ categoryId, ...data }))
       .sort((a, b) => b.amount - a.amount);
   };
 
