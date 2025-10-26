@@ -24,7 +24,7 @@ const recurringTransactionSchema = z.object({
   description: z.string().optional(),
   type: z.enum(['income', 'expense', 'transfer']),
   amount: z.string().min(1, 'Amount is required'),
-  categoryId: z.number().min(1, 'Category is required'),
+  categoryId: z.string().uuid({ message: 'Category is required' }),
   accountId: z.number().min(1, 'Account is required'),
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   startDate: z.string().min(1, 'Start date is required'),
@@ -35,7 +35,7 @@ const recurringTransactionSchema = z.object({
 const categoryRuleSchema = z.object({
   name: z.string().min(1, 'Rule name is required'),
   pattern: z.string().min(1, 'Pattern is required'),
-  categoryId: z.number().min(1, 'Category is required'),
+  categoryId: z.string().uuid({ message: 'Category is required' }),
   isActive: z.boolean().default(true),
 });
 
@@ -48,7 +48,7 @@ interface RecurringTransaction {
   description?: string;
   type: string;
   amount: string;
-  categoryId: number;
+  categoryId: string;
   accountId: number;
   frequency: string;
   startDate: string;
@@ -64,7 +64,7 @@ interface CategoryRule {
   id: number;
   name: string;
   pattern: string;
-  categoryId: number;
+  categoryId: string;
   isActive: boolean;
   workspaceId: string;
   timesUsed: number;
@@ -90,7 +90,7 @@ export default function Automation({ workspaceId }: AutomationProps) {
       description: '',
       type: 'expense',
       amount: '',
-      categoryId: 0,
+      categoryId: '',
       accountId: 0,
       frequency: 'monthly',
       startDate: '',
@@ -104,7 +104,7 @@ export default function Automation({ workspaceId }: AutomationProps) {
     defaultValues: {
       name: '',
       pattern: '',
-      categoryId: 0,
+      categoryId: '',
       isActive: true,
     },
   });
@@ -371,13 +371,16 @@ export default function Automation({ workspaceId }: AutomationProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="categoryId">Category</Label>
-                        <Select onValueChange={(value) => recurringForm.setValue('categoryId', parseInt(value))}>
+                        <Select
+                          value={recurringForm.watch('categoryId') || ''}
+                          onValueChange={(value) => recurringForm.setValue('categoryId', value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
                             {categories?.map((category) => (
-                              <SelectItem key={category.id} value={category.id.toString()}>
+                              <SelectItem key={category.id} value={category.id}>
                                 {category.name}
                               </SelectItem>
                             ))}
@@ -592,16 +595,16 @@ export default function Automation({ workspaceId }: AutomationProps) {
 
                     <div>
                       <Label htmlFor="categoryId">Category</Label>
-                      <Select 
-                        value={ruleForm.watch('categoryId')?.toString() || ''} 
-                        onValueChange={(value) => ruleForm.setValue('categoryId', parseInt(value))}
+                      <Select
+                        value={ruleForm.watch('categoryId') || ''}
+                        onValueChange={(value) => ruleForm.setValue('categoryId', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories?.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
+                            <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>
                           ))}
