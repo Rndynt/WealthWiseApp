@@ -12,7 +12,7 @@ import { apiRequest } from '@/lib/queryClient';
 interface AddAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspaceId: number;
+  workspaceId?: number;
 }
 
 export default function AddAccountModal({ open, onOpenChange, workspaceId }: AddAccountModalProps) {

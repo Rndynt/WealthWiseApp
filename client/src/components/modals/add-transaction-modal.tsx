@@ -17,7 +17,7 @@ import { Account, Category, Debt } from '@/types';
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspaceId: number;
+  workspaceId?: number;
 }
 
 type TransactionType = 'income' | 'expense' | 'transfer' | 'saving' | 'debt' | 'repayment';
