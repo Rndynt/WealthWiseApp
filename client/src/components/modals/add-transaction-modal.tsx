@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -54,8 +53,12 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
   });
 
   const createTransactionMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest('POST', `/api/workspaces/${workspaceId}/transactions`, data),
+    mutationFn: (data: any) => {
+      if (!workspaceId) {
+        throw new Error('Workspace is not selected');
+      }
+      return apiRequest('POST', `/api/workspaces/${workspaceId}/transactions`, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/transactions`] });
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
@@ -98,6 +101,26 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
     e.preventDefault();
     // Validation
     if (!form.type || !form.amount || !form.description || !form.accountId) return;
+
+    if (!workspaceId) {
+      toast({
+        variant: "destructive",
+        title: "Workspace required",
+        description: "Please select a workspace before adding transactions.",
+      });
+      return;
+    }
+
+    const fromAccount = accounts?.find(acc => acc.id === parseInt(form.accountId));
+    if (!fromAccount) {
+      toast({
+        variant: "destructive",
+        title: "Account not found",
+        description: "Please choose a valid source account.",
+      });
+      return;
+    }
+
     if (form.type === 'repayment' && !form.debtId) {
       toast({
         variant: "destructive",
@@ -106,7 +129,37 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       });
       return;
     }
-    
+
+    if (isTransfer) {
+      if (!form.toAccountId) {
+        toast({
+          variant: "destructive",
+          title: "Transfer account missing",
+          description: "Select a destination account for this transfer.",
+        });
+        return;
+      }
+
+      const destinationAccount = accounts?.find(acc => acc.id === parseInt(form.toAccountId));
+      if (!destinationAccount) {
+        toast({
+          variant: "destructive",
+          title: "Destination account not found",
+          description: "Please choose a valid destination account.",
+        });
+        return;
+      }
+
+      if (destinationAccount.currency !== fromAccount.currency) {
+        toast({
+          variant: "destructive",
+          title: "Currency mismatch",
+          description: "Transfers can only occur between accounts with the same currency.",
+        });
+        return;
+      }
+    }
+
     const transactionData = {
       ...form,
       amount: parseFloat(form.amount),
@@ -116,7 +169,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       debtId: form.debtId ? parseInt(form.debtId) : undefined,
       workspaceId,
     };
-    
+
     createTransactionMutation.mutate(transactionData);
   };
 
@@ -141,8 +194,15 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
     return debts?.filter(debt => debt.status === 'active' && parseFloat(debt.remainingAmount) > 0) || [];
   };
 
+  const handleDialogChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      resetForm();
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Transaction</DialogTitle>
@@ -285,11 +345,11 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
           )}
           
           <div className="flex space-x-3">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className="flex-1"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleDialogChange(false)}
             >
               Cancel
             </Button>

@@ -3,13 +3,14 @@ import { createServer, type Server } from "http";
 import { DatabaseStorage } from "./storage";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { 
-  insertUserSchema, insertWorkspaceSchema, insertCategorySchema, 
+import {
+  insertUserSchema, insertWorkspaceSchema, insertCategorySchema,
   insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema,
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
   insertSubscriptionPackageSchema, insertUserSubscriptionSchema,
   insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema
 } from "@shared/schema";
+import type { Account, InsertTransaction } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -48,6 +49,21 @@ const updateAccountSchema = z.object({
   notes: z.string().optional(),
 }).strict().partial().refine((data) => Object.keys(data).length > 0, {
   message: 'No account updates provided',
+});
+
+const transactionTypeSchema = z.enum(['income', 'expense', 'transfer', 'saving', 'debt', 'repayment']);
+
+const updateTransactionSchema = z.object({
+  type: transactionTypeSchema.optional(),
+  amount: z.union([z.number(), z.string()]).optional(),
+  description: z.string().min(1, 'Description is required').optional(),
+  date: z.coerce.date().optional(),
+  accountId: z.number().int().positive().optional(),
+  categoryId: z.union([z.number().int().positive(), z.null()]).optional(),
+  toAccountId: z.union([z.number().int().positive(), z.null()]).optional(),
+  debtId: z.union([z.number().int().positive(), z.null()]).optional(),
+}).strict().refine((data) => Object.keys(data).length > 0, {
+  message: 'No transaction updates provided',
 });
 
 // Smart notification triggers (excluding repayment processing to avoid double deduction)
@@ -695,48 +711,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get("/api/workspaces/:workspaceId/transactions", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have access to this workspace' });
+      }
+
+      const limit = req.query.limit ? Number.parseInt(req.query.limit as string, 10) : undefined;
       const transactions = await storage.getWorkspaceTransactions(workspaceId, limit);
       res.json(transactions);
     } catch (error) {
+      console.error('Get transactions error:', error);
       res.status(500).json({ message: "Failed to get transactions" });
     }
   });
 
   app.post("/api/workspaces/:workspaceId/transactions", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to create transactions in this workspace' });
+      }
+
+      if (!req.body || typeof req.body.amount === 'undefined') {
+        return res.status(400).json({ message: 'Amount is required' });
+      }
+
       const transactionData = insertTransactionSchema.parse({
         ...req.body,
         workspaceId,
-        amount: req.body.amount.toString(), // Convert amount to string
-        date: new Date(req.body.date), // Ensure date is properly formatted
+        amount: req.body.amount.toString(),
+        date: new Date(req.body.date),
       });
 
+      if (parseFloat(transactionData.amount) <= 0) {
+        return res.status(400).json({ message: 'Amount must be greater than zero' });
+      }
+
+      const sourceAccount = await storage.getAccount(transactionData.accountId);
+      if (!sourceAccount || sourceAccount.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Account not found in this workspace' });
+      }
+
+      let destinationAccount = null;
+      if (transactionData.toAccountId) {
+        destinationAccount = await storage.getAccount(transactionData.toAccountId);
+        if (!destinationAccount || destinationAccount.workspaceId !== workspaceId) {
+          return res.status(400).json({ message: 'Destination account not found in this workspace' });
+        }
+      }
+
+      if (transactionData.type === 'transfer') {
+        if (!transactionData.toAccountId) {
+          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
+        }
+
+        if (transactionData.toAccountId === transactionData.accountId) {
+          return res.status(400).json({ message: 'Destination account must be different from the source account' });
+        }
+
+        if (destinationAccount && destinationAccount.currency !== sourceAccount.currency) {
+          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+        }
+      }
+
+      if (transactionData.type === 'repayment') {
+        if (!transactionData.debtId) {
+          return res.status(400).json({ message: 'Repayment transactions require an associated debt' });
+        }
+
+        const debt = await storage.getDebtById(transactionData.debtId);
+        if (!debt || debt.workspaceId !== workspaceId) {
+          return res.status(400).json({ message: 'Debt not found in this workspace' });
+        }
+      }
+
+      if (transactionData.categoryId) {
+        const category = await storage.getCategory(transactionData.categoryId);
+        if (!category || category.workspaceId !== workspaceId) {
+          return res.status(400).json({ message: 'Category not found in this workspace' });
+        }
+      }
+
+      if (transactionData.type !== 'income' && transactionData.type !== 'expense') {
+        transactionData.categoryId = undefined;
+      }
+
+      if (transactionData.type !== 'transfer') {
+        transactionData.toAccountId = undefined;
+      }
+
+      if (transactionData.type !== 'repayment') {
+        transactionData.debtId = undefined;
+      }
+
       const transaction = await storage.createTransaction(transactionData);
-      
-      // Only process debt repayment if it's a repayment transaction
+
       if (transaction.type === 'repayment' && transaction.debtId) {
         await storage.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
         console.log(`Debt payment processed: ${transaction.amount} for debt ID: ${transaction.debtId}`);
       }
-      
-      // Process Goals Auto-Tracking for all transactions
+
       try {
         await goalsEnhancedService.processTransactionForGoals(transaction.id, workspaceId);
         console.log(`Goals auto-tracking processed for transaction ID: ${transaction.id}`);
       } catch (error) {
         console.error('Goals auto-tracking failed:', error);
-        // Don't fail the transaction creation if goals tracking fails
       }
-      
-      // Check for other smart notifications triggers (excluding repayment processing)
+
       await checkNonRepaymentNotifications(workspaceId, transaction);
-      
+
       res.json(transaction);
     } catch (error) {
       console.error("Transaction creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid transaction data' });
+      }
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {
@@ -747,44 +858,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/transactions/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      if (updates.date) {
-        updates.date = new Date(updates.date);
-      }
-      if (updates.amount) {
-        updates.amount = updates.amount.toString();
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid transaction id' });
       }
 
-      const transaction = await storage.updateTransaction(id, updates);
-      res.json(transaction);
+      const existingTransaction = await storage.getTransaction(id);
+      if (!existingTransaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+
+      const workspace = await storage.getWorkspace(existingTransaction.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this transaction' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingTransaction.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to update this transaction' });
+      }
+
+      const parsedUpdates = updateTransactionSchema.parse(req.body ?? {});
+
+      const updates: Partial<InsertTransaction> = {};
+
+      if (parsedUpdates.type) {
+        updates.type = parsedUpdates.type;
+      }
+
+      if (parsedUpdates.description !== undefined) {
+        updates.description = parsedUpdates.description;
+      }
+
+      if (parsedUpdates.date) {
+        updates.date = parsedUpdates.date;
+      }
+
+      if (parsedUpdates.accountId !== undefined) {
+        updates.accountId = parsedUpdates.accountId;
+      }
+
+      if (parsedUpdates.amount !== undefined) {
+        const numericAmount = typeof parsedUpdates.amount === 'number'
+          ? parsedUpdates.amount
+          : Number.parseFloat(parsedUpdates.amount);
+
+        if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+          return res.status(400).json({ message: 'Amount must be greater than zero' });
+        }
+
+        updates.amount = numericAmount.toString();
+      }
+
+      const hasCategoryUpdate = Object.prototype.hasOwnProperty.call(parsedUpdates, 'categoryId');
+      if (hasCategoryUpdate) {
+        updates.categoryId = parsedUpdates.categoryId ?? null;
+      }
+
+      const hasToAccountUpdate = Object.prototype.hasOwnProperty.call(parsedUpdates, 'toAccountId');
+      if (hasToAccountUpdate) {
+        updates.toAccountId = parsedUpdates.toAccountId ?? null;
+      }
+
+      const hasDebtUpdate = Object.prototype.hasOwnProperty.call(parsedUpdates, 'debtId');
+      if (hasDebtUpdate) {
+        updates.debtId = parsedUpdates.debtId ?? null;
+      }
+
+      const nextType = updates.type ?? existingTransaction.type;
+      const nextAccountId = updates.accountId ?? existingTransaction.accountId;
+      const nextToAccountId = hasToAccountUpdate ? (parsedUpdates.toAccountId ?? null) : existingTransaction.toAccountId;
+      const nextDebtId = hasDebtUpdate ? (parsedUpdates.debtId ?? null) : existingTransaction.debtId;
+      const nextCategoryId = hasCategoryUpdate ? (parsedUpdates.categoryId ?? null) : existingTransaction.categoryId;
+
+      const account = await storage.getAccount(nextAccountId);
+      if (!account || account.workspaceId !== existingTransaction.workspaceId) {
+        return res.status(400).json({ message: 'Account not found in this workspace' });
+      }
+
+      let destinationAccount: Account | null = null;
+      if (nextToAccountId) {
+        const candidate = await storage.getAccount(nextToAccountId);
+        destinationAccount = candidate ?? null;
+        if (!destinationAccount || destinationAccount.workspaceId !== existingTransaction.workspaceId) {
+          return res.status(400).json({ message: 'Destination account not found in this workspace' });
+        }
+      }
+
+      if (nextType === 'transfer') {
+        if (!nextToAccountId) {
+          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
+        }
+
+        if (nextToAccountId === nextAccountId) {
+          return res.status(400).json({ message: 'Destination account must be different from the source account' });
+        }
+
+        if (destinationAccount && destinationAccount.currency !== account.currency) {
+          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+        }
+      } else if (hasToAccountUpdate || existingTransaction.toAccountId) {
+        updates.toAccountId = null;
+      }
+
+      if (nextType === 'repayment') {
+        if (!nextDebtId) {
+          return res.status(400).json({ message: 'Repayment transactions require an associated debt' });
+        }
+
+        const debt = await storage.getDebtById(nextDebtId);
+        if (!debt || debt.workspaceId !== existingTransaction.workspaceId) {
+          return res.status(400).json({ message: 'Debt not found in this workspace' });
+        }
+      } else if (hasDebtUpdate || existingTransaction.debtId) {
+        updates.debtId = null;
+      }
+
+      if (nextType !== 'income' && nextType !== 'expense') {
+        if (hasCategoryUpdate || existingTransaction.categoryId) {
+          updates.categoryId = null;
+        }
+      } else if (nextCategoryId) {
+        const category = await storage.getCategory(nextCategoryId);
+        if (!category || category.workspaceId !== existingTransaction.workspaceId) {
+          return res.status(400).json({ message: 'Category not found in this workspace' });
+        }
+      }
+
+      const updatedTransaction = await storage.updateTransaction(id, updates);
+
+      if (existingTransaction.type === 'repayment' && existingTransaction.debtId) {
+        await storage.updateDebtRepayment(existingTransaction.debtId, -parseFloat(existingTransaction.amount));
+      }
+
+      if (updatedTransaction.type === 'repayment' && updatedTransaction.debtId) {
+        await storage.updateDebtRepayment(updatedTransaction.debtId, parseFloat(updatedTransaction.amount));
+      }
+
+      res.json(updatedTransaction);
     } catch (error) {
       console.error("Transaction update error:", error);
-      res.status(400).json({ message: "Failed to update transaction" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid transaction update' });
+      }
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update transaction" });
     }
   });
 
   app.delete("/api/transactions/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      
-      if (isNaN(id)) {
+      const id = Number.parseInt(req.params.id, 10);
+
+      if (Number.isNaN(id)) {
         return res.status(400).json({ message: "Invalid transaction ID" });
       }
 
-      // Check if transaction exists and belongs to user's workspace
       const transaction = await storage.getTransaction(id);
       if (!transaction) {
         return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      const workspace = await storage.getWorkspace(transaction.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this transaction' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(transaction.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to delete this transaction' });
+      }
+
+      if (transaction.type === 'repayment' && transaction.debtId) {
+        await storage.updateDebtRepayment(transaction.debtId, -parseFloat(transaction.amount));
       }
 
       await storage.deleteTransaction(id);
       res.json({ message: "Transaction deleted successfully", success: true });
     } catch (error) {
       console.error("Transaction delete error:", error);
-      res.status(500).json({ 
-        message: "Failed to delete transaction", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(500).json({
+        message: "Failed to delete transaction",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
