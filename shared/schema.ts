@@ -134,7 +134,7 @@ export const categories = pgTable("categories", {
 
 // Accounts table
 export const accounts = pgTable("accounts", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'transaction' | 'asset'
   currency: text("currency").notNull(),
@@ -151,9 +151,9 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
-  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  accountId: uuid("account_id").references(() => accounts.id).notNull(),
   categoryId: uuid("category_id").references(() => categories.id),
-  toAccountId: integer("to_account_id").references(() => accounts.id), // For transfers
+  toAccountId: uuid("to_account_id").references(() => accounts.id), // For transfers
   debtId: integer("debt_id").references(() => debts.id), // Link to debt record for repayments
   workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -161,7 +161,7 @@ export const transactions = pgTable("transactions", {
 
 // Budget table
 export const budgets = pgTable("budgets", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   categoryId: uuid("category_id").references(() => categories.id).notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   period: text("period").notNull(), // 'monthly' | 'yearly'
@@ -203,7 +203,7 @@ export const goals = pgTable("goals", {
   targetDate: date("target_date").notNull(),
   
   // Enhanced tracking fields
-  linkedAccountId: integer("linked_account_id").references(() => accounts.id), // Primary account for this goal
+  linkedAccountId: uuid("linked_account_id").references(() => accounts.id), // Primary account for this goal
   linkedDebtId: integer("linked_debt_id").references(() => debts.id), // For debt payment goals
   linkedBudgetIds: text("linked_budget_ids").array(), // Array of budget category IDs that contribute
   
@@ -298,7 +298,7 @@ export const recurringTransactions = pgTable("recurring_transactions", {
   type: text("type").notNull(), // 'income' | 'expense' | 'transfer'
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   categoryId: uuid("category_id").references(() => categories.id).notNull(),
-  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  accountId: uuid("account_id").references(() => accounts.id).notNull(),
   frequency: text("frequency").notNull(), // 'daily' | 'weekly' | 'monthly' | 'yearly'
   startDate: date("start_date").notNull(),
   endDate: date("end_date"),
@@ -610,13 +610,17 @@ export const insertCategorySchema = createInsertSchema(categories, {
   createdAt: true,
 });
 
-export const insertAccountSchema = createInsertSchema(accounts).omit({
+export const insertAccountSchema = createInsertSchema(accounts, {
+  workspaceId: z.string().uuid(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions, {
+  accountId: z.string().uuid(),
   categoryId: z.union([z.string().uuid(), z.null()]).optional(),
+  toAccountId: z.union([z.string().uuid(), z.null()]).optional(),
   workspaceId: z.string().uuid(),
 }).omit({
   id: true,
@@ -667,6 +671,7 @@ export const insertGoalMatchAuditSchema = createInsertSchema(goalMatchAudits).om
 
 export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions, {
   categoryId: z.string().uuid(),
+  accountId: z.string().uuid(),
   workspaceId: z.string().uuid(),
 }).omit({
   id: true,

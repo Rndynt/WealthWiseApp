@@ -92,6 +92,32 @@ function validateCategoryIdParam(req: Request, res: any): string | undefined {
   return result.data.id;
 }
 
+const accountIdParamsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid account id' }),
+});
+
+function validateAccountIdParam(req: Request, res: any): string | undefined {
+  const result = accountIdParamsSchema.safeParse(req.params);
+  if (!result.success) {
+    res.status(400).json({ message: 'Invalid account id' });
+    return;
+  }
+  return result.data.id;
+}
+
+const budgetIdParamsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid budget id' }),
+});
+
+function validateBudgetIdParam(req: Request, res: any): string | undefined {
+  const result = budgetIdParamsSchema.safeParse(req.params);
+  if (!result.success) {
+    res.status(400).json({ message: 'Invalid budget id' });
+    return;
+  }
+  return result.data.id;
+}
+
 async function loadRequestAccessContext(req: Request): Promise<RequestAccessContext | null> {
   if (req.accessContext) {
     return req.accessContext;
@@ -134,9 +160,9 @@ const updateTransactionSchema = z.object({
   amount: z.union([z.number(), z.string()]).optional(),
   description: z.string().min(1, 'Description is required').optional(),
   date: z.coerce.date().optional(),
-  accountId: z.number().int().positive().optional(),
+  accountId: z.string().uuid().optional(),
   categoryId: z.union([z.string().uuid(), z.null()]).optional(),
-  toAccountId: z.union([z.number().int().positive(), z.null()]).optional(),
+  toAccountId: z.union([z.string().uuid(), z.null()]).optional(),
   debtId: z.union([z.number().int().positive(), z.null()]).optional(),
 }).strict().refine((data) => Object.keys(data).length > 0, {
   message: 'No transaction updates provided',
@@ -841,9 +867,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/accounts/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: "Invalid account id" });
+      const accountId = validateAccountIdParam(req, res);
+      if (!accountId) {
+        return;
       }
 
       if (req.body && typeof req.body === 'object') {
@@ -859,7 +885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const existingAccount = await storage.getAccount(id);
+      const existingAccount = await storage.getAccount(accountId);
       if (!existingAccount) {
         return res.status(404).json({ message: "Account not found" });
       }
@@ -876,7 +902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updates = updateAccountSchema.parse(req.body);
-      const account = await storage.updateAccount(id, updates);
+      const account = await storage.updateAccount(accountId, updates);
       res.json(account);
     } catch (error) {
       console.error("Account update error:", error);
@@ -891,12 +917,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/accounts/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: "Invalid account id" });
+      const accountId = validateAccountIdParam(req, res);
+      if (!accountId) {
+        return;
       }
 
-      const account = await storage.getAccount(id);
+      const account = await storage.getAccount(accountId);
       if (!account) {
         return res.status(404).json({ message: "Account not found" });
       }
@@ -912,13 +938,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You do not have permission to delete this account" });
       }
 
-      if (await storage.accountHasTransactions(id)) {
+      if (await storage.accountHasTransactions(accountId)) {
         return res.status(409).json({
           message: 'Account cannot be deleted while transactions or transfers still reference it. Please move or delete those entries first.',
         });
       }
 
-      await storage.deleteAccount(id);
+      await storage.deleteAccount(accountId);
       res.json({ message: "Account deleted successfully" });
     } catch (error) {
       console.error('Account delete error:', error);
@@ -1393,12 +1419,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/budgets/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: 'Invalid budget id' });
+      const budgetId = validateBudgetIdParam(req, res);
+      if (!budgetId) {
+        return;
       }
 
-      const existingBudget = await storage.getBudget(id);
+      const existingBudget = await storage.getBudget(budgetId);
       if (!existingBudget) {
         return res.status(404).json({ message: 'Budget not found' });
       }
@@ -1469,7 +1495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Category not found in this workspace' });
       }
 
-      const budget = await storage.updateBudget(id, updates);
+      const budget = await storage.updateBudget(budgetId, updates);
       res.json(budget);
     } catch (error) {
       console.error("Budget update error:", error);
@@ -1482,12 +1508,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/budgets/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: 'Invalid budget id' });
+      const budgetId = validateBudgetIdParam(req, res);
+      if (!budgetId) {
+        return;
       }
 
-      const existingBudget = await storage.getBudget(id);
+      const existingBudget = await storage.getBudget(budgetId);
       if (!existingBudget) {
         return res.status(404).json({ message: 'Budget not found' });
       }
@@ -1503,7 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'You do not have permission to delete this budget' });
       }
 
-      await storage.deleteBudget(id);
+      await storage.deleteBudget(budgetId);
       res.json({ message: "Budget deleted successfully" });
     } catch (error) {
       console.error("Budget delete error:", error);

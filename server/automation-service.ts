@@ -29,7 +29,7 @@ export class AutomationService {
         and(
           eq(recurringTransactions.isActive, true),
           or(
-            lte(recurringTransactions.nextExecution, now.toISOString()),
+            lte(recurringTransactions.nextExecution, now),
             isNull(recurringTransactions.nextExecution)
           )
         )
@@ -45,7 +45,7 @@ export class AutomationService {
           type: recurring.type as 'income' | 'expense' | 'transfer',
           amount: recurring.amount,
           description: `${recurring.name} - Automated`,
-          date: now.toISOString(),
+          date: now,
         };
 
         const [newTransaction] = await db
@@ -78,8 +78,8 @@ export class AutomationService {
         await db
           .update(recurringTransactions)
           .set({
-            lastExecuted: now.toISOString(),
-            nextExecution: nextExecution.toISOString(),
+            lastExecuted: now,
+            nextExecution,
           })
           .where(eq(recurringTransactions.id, recurring.id));
 
@@ -128,9 +128,9 @@ export class AutomationService {
 
     for (const goal of workspaceGoals) {
       // Update goal progress if this is a savings transaction to goal account
-      if (goal.type === 'savings' && 
+      if (goal.type === 'savings' &&
           (transaction.type === 'income' || transaction.type === 'transfer') &&
-          transaction.accountId === goal.targetAccountId) {
+          goal.linkedAccountId && transaction.accountId === goal.linkedAccountId) {
         
         const progressAmount = parseFloat(transaction.amount);
         const currentProgress = parseFloat(goal.currentAmount);
