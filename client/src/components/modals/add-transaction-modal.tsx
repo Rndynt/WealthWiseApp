@@ -164,7 +164,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       ...form,
       amount: parseFloat(form.amount),
       accountId: parseInt(form.accountId),
-      categoryId: form.categoryId ? parseInt(form.categoryId) : undefined,
+      categoryId: form.categoryId ? form.categoryId : undefined,
       toAccountId: form.toAccountId ? parseInt(form.toAccountId) : undefined,
       debtId: form.debtId ? parseInt(form.debtId) : undefined,
       workspaceId,
@@ -314,7 +314,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
                 </SelectTrigger>
                 <SelectContent>
                   {getFilteredCategories().map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem key={category.id} value={category.id}>
                       {category.icon} {category.name}
                     </SelectItem>
                   ))}
