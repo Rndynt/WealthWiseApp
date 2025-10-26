@@ -191,17 +191,17 @@ function AppRouter() {
         <AddTransactionModal 
           open={showTransactionModal} 
           onOpenChange={setShowTransactionModal}
-          workspaceId={currentWorkspace?.id}
+          workspaceId={currentWorkspace?.id ?? undefined}
         />
         <AddAccountModal 
           open={showAccountModal} 
           onOpenChange={setShowAccountModal}
-          workspaceId={currentWorkspace?.id}
+          workspaceId={currentWorkspace?.id ?? undefined}
         />
         <AddDebtModal 
           open={showDebtModal} 
           onOpenChange={setShowDebtModal}
-          workspaceId={currentWorkspace?.id}
+          workspaceId={currentWorkspace?.id ?? undefined}
         />
       </div>
     </div>

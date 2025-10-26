@@ -16,7 +16,7 @@ import { apiRequest } from '@/lib/queryClient';
 interface AddDebtModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspaceId: number;
+  workspaceId?: number;
 }
 
 export default function AddDebtModal({ open, onOpenChange, workspaceId }: AddDebtModalProps) {
