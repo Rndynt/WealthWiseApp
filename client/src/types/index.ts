@@ -5,7 +5,7 @@ export interface User {
 }
 
 export interface Workspace {
-  id: number;
+  id: string;
   name: string;
   type: 'personal' | 'shared';
   ownerId: string;
@@ -30,7 +30,7 @@ export interface Category {
   type: 'income' | 'needs' | 'wants';
   icon: string;
   description?: string;
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
 }
 
@@ -41,7 +41,7 @@ export interface Account {
   currency: string;
   balance: string;
   notes?: string;
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
 }
 
@@ -55,7 +55,7 @@ export interface Transaction {
   categoryId?: number;
   toAccountId?: number;
   debtId?: number;
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
 }
 
@@ -66,7 +66,7 @@ export interface Budget {
   period: 'monthly' | 'yearly';
   month?: number;
   year: number;
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
 }
 
@@ -85,7 +85,7 @@ export interface Debt {
   minimumPaymentAmount?: string;
   paymentReminder: boolean;
   status: 'active' | 'paid' | 'overdue';
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
 }
 

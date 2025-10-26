@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
 interface CollaborationInviteFormProps {
-  workspaceId: number;
+  workspaceId: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }

@@ -84,17 +84,17 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 
   // Workspaces
-  getWorkspace(id: number): Promise<Workspace | undefined>;
+  getWorkspace(id: string): Promise<Workspace | undefined>;
   getUserWorkspaces(userId: string): Promise<WorkspaceWithMembership[]>;
   createWorkspace(workspace: InsertWorkspace): Promise<Workspace>;
 
   // Workspace Members
-  getWorkspaceMembers(workspaceId: number): Promise<WorkspaceMember[]>;
+  getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]>;
   addWorkspaceMember(member: InsertWorkspaceMember): Promise<WorkspaceMember>;
-  getWorkspaceMembership(workspaceId: number, userId: string): Promise<WorkspaceMember | undefined>;
+  getWorkspaceMembership(workspaceId: string, userId: string): Promise<WorkspaceMember | undefined>;
 
   // Categories
-  getWorkspaceCategories(workspaceId: number): Promise<Category[]>;
+  getWorkspaceCategories(workspaceId: string): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
@@ -102,7 +102,7 @@ export interface IStorage {
   categoryHasTransactions(categoryId: number): Promise<boolean>;
 
   // Accounts
-  getWorkspaceAccounts(workspaceId: number): Promise<Account[]>;
+  getWorkspaceAccounts(workspaceId: string): Promise<Account[]>;
   getAccount(id: number): Promise<Account | undefined>;
   createAccount(account: InsertAccount): Promise<Account>;
   updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account>;
@@ -110,28 +110,28 @@ export interface IStorage {
   accountHasTransactions(accountId: number): Promise<boolean>;
 
   // Transactions
-  getWorkspaceTransactions(workspaceId: number, limit?: number): Promise<Transaction[]>;
+  getWorkspaceTransactions(workspaceId: string, limit?: number): Promise<Transaction[]>;
   getAccountTransactions(accountId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
 
   // Budgets
-  getWorkspaceBudgets(workspaceId: number, year: number, month?: number): Promise<Budget[]>;
+  getWorkspaceBudgets(workspaceId: string, year: number, month?: number): Promise<Budget[]>;
   getBudget(id: number): Promise<Budget | undefined>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget>;
   deleteBudget(id: number): Promise<void>;
 
   // Debts
-  getWorkspaceDebts(workspaceId: number): Promise<Debt[]>;
+  getWorkspaceDebts(workspaceId: string): Promise<Debt[]>;
   createDebt(debt: InsertDebt): Promise<Debt>;
   updateDebt(id: number, debt: Partial<InsertDebt>): Promise<Debt>;
   deleteDebt(id: number): Promise<void>;
   getDebtRepayments(debtId: number): Promise<Transaction[]>;
 
   // Dashboard data
-  getDashboardData(workspaceId: number): Promise<{
+  getDashboardData(workspaceId: string): Promise<{
     totalBalance: string;
     monthlyIncome: string;
     monthlyExpenses: string;
@@ -175,8 +175,8 @@ export interface IStorage {
   updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription>;
 
   // Workspace Subscriptions
-  getWorkspaceSubscription(workspaceId: number): Promise<WorkspaceSubscription | undefined>;
-  getWorkspaceSubscriptionWithPackage(workspaceId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
+  getWorkspaceSubscription(workspaceId: string): Promise<WorkspaceSubscription | undefined>;
+  getWorkspaceSubscriptionWithPackage(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
   createWorkspaceSubscription(subscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription>;
   updateWorkspaceSubscription(id: number, subscription: Partial<InsertWorkspaceSubscription>): Promise<WorkspaceSubscription>;
   getUserOwnedWorkspaceSubscriptions(userId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]>;
@@ -192,16 +192,16 @@ export interface IStorage {
   canCreateWorkspace(userId: string): Promise<boolean>;
 
   // Account, Category & Budget Limits Validation
-  checkAccountLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
-  checkCategoryLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
-  checkBudgetLimit(workspaceId: number, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkAccountLimit(workspaceId: string, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkCategoryLimit(workspaceId: string, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkBudgetLimit(workspaceId: string, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
 
   // Settings
   getAppSettings(): Promise<AppSettings>;
   updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
 
   // Goals (Enhanced)
-  getGoalsByWorkspace(workspaceId: number): Promise<Goal[]>;
+  getGoalsByWorkspace(workspaceId: string): Promise<Goal[]>;
   getGoalWithDetails(goalId: number): Promise<Goal & {
     linkedAccount?: Account;
     linkedDebt?: Debt;
@@ -224,18 +224,18 @@ export interface IStorage {
   markGoalInsightAsRead(id: number): Promise<void>;
   
   // Goal Analytics & AI Features
-  getGoalPerformanceMetrics(workspaceId: number): Promise<any>;
-  getSmartGoalSuggestions(workspaceId: number): Promise<any[]>;
-  getWorkspaceFinancialHealth(workspaceId: number): Promise<any>;
+  getGoalPerformanceMetrics(workspaceId: string): Promise<any>;
+  getSmartGoalSuggestions(workspaceId: string): Promise<any[]>;
+  getWorkspaceFinancialHealth(workspaceId: string): Promise<any>;
 
   // Recurring Transactions
-  getRecurringTransactionsByWorkspace(workspaceId: number): Promise<RecurringTransaction[]>;
+  getRecurringTransactionsByWorkspace(workspaceId: string): Promise<RecurringTransaction[]>;
   createRecurringTransaction(transaction: InsertRecurringTransaction): Promise<RecurringTransaction>;
   updateRecurringTransaction(id: number, transaction: Partial<InsertRecurringTransaction>): Promise<RecurringTransaction>;
   deleteRecurringTransaction(id: number): Promise<void>;
 
   // Category Rules
-  getCategoryRulesByWorkspace(workspaceId: number): Promise<CategoryRule[]>;
+  getCategoryRulesByWorkspace(workspaceId: string): Promise<CategoryRule[]>;
   createCategoryRule(rule: InsertCategoryRule): Promise<CategoryRule>;
   updateCategoryRule(id: number, rule: Partial<InsertCategoryRule>): Promise<CategoryRule>;
   deleteCategoryRule(id: number): Promise<void>;
@@ -244,10 +244,10 @@ export interface IStorage {
   getActiveSubscriptionPackages(): Promise<SubscriptionPackage[]>;
 
   // Analytics methods
-  getAnalyticsData(workspaceId: number, timeframe: string): Promise<any>;
-  getFinancialHealthData(workspaceId: number): Promise<any>;
-  checkDebtReminders(workspaceId: number): Promise<any[]>;
-  checkBudgetAlerts(workspaceId: number): Promise<any[]>;
+  getAnalyticsData(workspaceId: string, timeframe: string): Promise<any>;
+  getFinancialHealthData(workspaceId: string): Promise<any>;
+  checkDebtReminders(workspaceId: string): Promise<any[]>;
+  checkBudgetAlerts(workspaceId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -268,7 +268,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Workspaces
-  async getWorkspace(id: number): Promise<Workspace | undefined> {
+  async getWorkspace(id: string): Promise<Workspace | undefined> {
     const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, id));
     return workspace || undefined;
   }
@@ -307,7 +307,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Workspace Members
-  async getWorkspaceMembers(workspaceId: number): Promise<WorkspaceMember[]> {
+  async getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {
     return await db.select().from(workspaceMembers).where(eq(workspaceMembers.workspaceId, workspaceId));
   }
 
@@ -316,7 +316,7 @@ export class DatabaseStorage implements IStorage {
     return workspaceMember;
   }
 
-  async getWorkspaceMembership(workspaceId: number, userId: string): Promise<WorkspaceMember | undefined> {
+  async getWorkspaceMembership(workspaceId: string, userId: string): Promise<WorkspaceMember | undefined> {
     const [member] = await db
       .select()
       .from(workspaceMembers)
@@ -326,7 +326,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Categories
-  async getWorkspaceCategories(workspaceId: number): Promise<Category[]> {
+  async getWorkspaceCategories(workspaceId: string): Promise<Category[]> {
     return await db.select().from(categories).where(eq(categories.workspaceId, workspaceId));
   }
 
@@ -376,7 +376,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Accounts
-  async getWorkspaceAccounts(workspaceId: number): Promise<Account[]> {
+  async getWorkspaceAccounts(workspaceId: string): Promise<Account[]> {
     const result = await db.execute(sql`
       SELECT
         a.id,
@@ -473,7 +473,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Transactions
-  async getWorkspaceTransactions(workspaceId: number, limit = 50): Promise<Transaction[]> {
+  async getWorkspaceTransactions(workspaceId: string, limit = 50): Promise<Transaction[]> {
     return await db
       .select()
       .from(transactions)
@@ -534,7 +534,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Budgets
-  async getWorkspaceBudgets(workspaceId: number, year: number, month?: number): Promise<Budget[]> {
+  async getWorkspaceBudgets(workspaceId: string, year: number, month?: number): Promise<Budget[]> {
     let conditions = [eq(budgets.workspaceId, workspaceId), eq(budgets.year, year)];
 
     if (month) {
@@ -584,7 +584,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Debts
-  async getWorkspaceDebts(workspaceId: number): Promise<Debt[]> {
+  async getWorkspaceDebts(workspaceId: string): Promise<Debt[]> {
     return await db.select().from(debts).where(eq(debts.workspaceId, workspaceId));
   }
 
@@ -645,7 +645,7 @@ export class DatabaseStorage implements IStorage {
 
 
   // Dashboard data
-  async getDashboardData(workspaceId: number): Promise<{
+  async getDashboardData(workspaceId: string): Promise<{
     totalBalance: string;
     monthlyIncome: string;
     monthlyExpenses: string;
@@ -932,7 +932,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Account, Category & Budget Limits Validation
-  async checkAccountLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkAccountLimit(workspaceId: string, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -953,7 +953,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async checkCategoryLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkCategoryLimit(workspaceId: string, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -974,7 +974,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async checkBudgetLimit(workspaceId: number, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkBudgetLimit(workspaceId: string, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -1007,12 +1007,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Workspace Subscriptions
-  async getWorkspaceSubscription(workspaceId: number): Promise<WorkspaceSubscription | undefined> {
+  async getWorkspaceSubscription(workspaceId: string): Promise<WorkspaceSubscription | undefined> {
     const [subscription] = await db.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId, workspaceId));
     return subscription || undefined;
   }
 
-  async getWorkspaceSubscriptionWithPackage(workspaceId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined> {
+  async getWorkspaceSubscriptionWithPackage(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined> {
     const [result] = await db
       .select({
         subscription: workspaceSubscriptions,
@@ -1101,7 +1101,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics methods
-  async getAnalyticsData(workspaceId: number, timeframe: string): Promise<any> {
+  async getAnalyticsData(workspaceId: string, timeframe: string): Promise<any> {
     const now = new Date();
     const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
     const categories = await this.getWorkspaceCategories(workspaceId);
@@ -1191,7 +1191,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getFinancialHealthData(workspaceId: number): Promise<any> {
+  async getFinancialHealthData(workspaceId: string): Promise<any> {
     // Get all transactions for the workspace
     const transactions = await this.getWorkspaceTransactions(workspaceId, 1000);
     const accounts = await this.getWorkspaceAccounts(workspaceId);
@@ -1274,7 +1274,7 @@ export class DatabaseStorage implements IStorage {
 
   // Notification methods
   // Notifications methods  
-  async getNotificationsByWorkspace(workspaceId: number): Promise<Notification[]> {
+  async getNotificationsByWorkspace(workspaceId: string): Promise<Notification[]> {
     return await db.select().from(notifications)
       .where(eq(notifications.workspaceId, workspaceId))
       .orderBy(desc(notifications.createdAt));
@@ -1346,7 +1346,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async checkDebtReminders(workspaceId: number): Promise<any[]> {
+  async checkDebtReminders(workspaceId: string): Promise<any[]> {
     const debts = await this.getWorkspaceDebts(workspaceId);
     const reminders = [];
     const now = new Date();
@@ -1373,7 +1373,7 @@ export class DatabaseStorage implements IStorage {
     return reminders;
   }
 
-  async checkBudgetAlerts(workspaceId: number): Promise<any[]> {
+  async checkBudgetAlerts(workspaceId: string): Promise<any[]> {
     const budgets = await this.getWorkspaceBudgets(workspaceId, new Date().getFullYear(), new Date().getMonth() + 1);
     const alerts = [];
     
@@ -1414,7 +1414,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Enhanced Goals methods with AI integration
-  async getGoalsByWorkspace(workspaceId: number): Promise<Goal[]> {
+  async getGoalsByWorkspace(workspaceId: string): Promise<Goal[]> {
     return await db
       .select()
       .from(goals)
@@ -1563,7 +1563,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(goalInsights.createdAt));
   }
 
-  async getWorkspaceGoalInsights(workspaceId: number, limit: number = 50): Promise<GoalInsight[]> {
+  async getWorkspaceGoalInsights(workspaceId: string, limit: number = 50): Promise<GoalInsight[]> {
     return await db
       .select()
       .from(goalInsights)
@@ -1587,7 +1587,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Advanced Goals Analytics
-  async getGoalPerformanceMetrics(workspaceId: number): Promise<any> {
+  async getGoalPerformanceMetrics(workspaceId: string): Promise<any> {
     const workspaceGoals = await db
       .select()
       .from(goals)
@@ -1629,7 +1629,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Smart Goal Recommendations
-  async getSmartGoalSuggestions(workspaceId: number): Promise<any[]> {
+  async getSmartGoalSuggestions(workspaceId: string): Promise<any[]> {
     const financialHealth = await this.getWorkspaceFinancialHealth(workspaceId);
     const existingGoals = await this.getGoalsByWorkspace(workspaceId);
     const suggestions = [];
@@ -1681,7 +1681,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Financial Health Analysis for Goals
-  async getWorkspaceFinancialHealth(workspaceId: number): Promise<any> {
+  async getWorkspaceFinancialHealth(workspaceId: string): Promise<any> {
     const accounts = await this.getWorkspaceAccounts(workspaceId);
     const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = new Date();
@@ -1722,7 +1722,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Recurring Transactions methods
-  async getRecurringTransactionsByWorkspace(workspaceId: number): Promise<RecurringTransaction[]> {
+  async getRecurringTransactionsByWorkspace(workspaceId: string): Promise<RecurringTransaction[]> {
     return await db.select().from(recurringTransactions)
       .where(eq(recurringTransactions.workspaceId, workspaceId))
       .orderBy(desc(recurringTransactions.createdAt));
@@ -1747,7 +1747,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Category Rules methods
-  async getCategoryRulesByWorkspace(workspaceId: number): Promise<CategoryRule[]> {
+  async getCategoryRulesByWorkspace(workspaceId: string): Promise<CategoryRule[]> {
     return await db.select().from(categoryRules)
       .where(eq(categoryRules.workspaceId, workspaceId))
       .orderBy(desc(categoryRules.createdAt));

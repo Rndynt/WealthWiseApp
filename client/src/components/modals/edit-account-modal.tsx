@@ -18,7 +18,7 @@ interface Account {
   balance: string;
   currency: string;
   notes?: string | null;
-  workspaceId: number;
+  workspaceId: string;
 }
 import { notificationService } from '@/lib/notification-service';
 
@@ -35,7 +35,7 @@ interface EditAccountModalProps {
   account: Account | null;
   isOpen: boolean;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 export default function EditAccountModal({ account, isOpen, onClose, workspaceId }: EditAccountModalProps) {

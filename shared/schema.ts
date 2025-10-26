@@ -63,7 +63,7 @@ export const userSubscriptions = pgTable("user_subscriptions", {
 // Workspace subscriptions table (for shared workspaces)
 export const workspaceSubscriptions = pgTable("workspace_subscriptions", {
   id: serial("id").primaryKey(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
   ownerId: uuid("owner_id").references(() => users.id).notNull(), // Who pays for this
   startDate: timestamp("start_date").notNull(),
@@ -105,7 +105,7 @@ export const users = pgTable("users", {
 
 // Workspaces table
 export const workspaces = pgTable("workspaces", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'personal' | 'shared'
   ownerId: uuid("owner_id").references(() => users.id).notNull(),
@@ -115,7 +115,7 @@ export const workspaces = pgTable("workspaces", {
 // Workspace members table for collaboration
 export const workspaceMembers = pgTable("workspace_members", {
   id: serial("id").primaryKey(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   userId: uuid("user_id").references(() => users.id).notNull(),
   role: text("role").notNull(), // 'owner' | 'editor' | 'viewer'
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
@@ -128,7 +128,7 @@ export const categories = pgTable("categories", {
   type: text("type").notNull(), // 'income' | 'needs' | 'wants'
   icon: text("icon").notNull(),
   description: text("description"),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -140,7 +140,7 @@ export const accounts = pgTable("accounts", {
   currency: text("currency").notNull(),
   balance: decimal("balance", { precision: 15, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -155,7 +155,7 @@ export const transactions = pgTable("transactions", {
   categoryId: integer("category_id").references(() => categories.id),
   toAccountId: integer("to_account_id").references(() => accounts.id), // For transfers
   debtId: integer("debt_id").references(() => debts.id), // Link to debt record for repayments
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -167,7 +167,7 @@ export const budgets = pgTable("budgets", {
   period: text("period").notNull(), // 'monthly' | 'yearly'
   month: integer("month"), // 1-12
   year: integer("year").notNull(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -187,7 +187,7 @@ export const debts = pgTable("debts", {
   minimumPaymentAmount: decimal("minimum_payment_amount", { precision: 15, scale: 2 }),
   paymentReminder: boolean("payment_reminder").notNull().default(true),
   status: text("status").notNull(), // 'active' | 'paid' | 'overdue'
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -228,7 +228,7 @@ export const goals = pgTable("goals", {
   tags: text("tags").array(), // User-defined tags for better organization
   
   // Metadata
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -242,7 +242,7 @@ export const goalContributions = pgTable("goal_contributions", {
   contributionType: text("contribution_type").notNull(), // 'transaction' | 'manual' | 'auto_transfer' | 'interest'
   source: text("source"), // Description of contribution source
   date: timestamp("date").notNull(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -250,7 +250,7 @@ export const goalContributions = pgTable("goal_contributions", {
 export const goalMatchAudits = pgTable("goal_match_audits", {
   id: serial("id").primaryKey(),
   transactionId: integer("transaction_id").references(() => transactions.id).notNull(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   selectedGoalId: integer("selected_goal_id").references(() => goals.id),
   matchedGoalsData: json("matched_goals_data").notNull(), // All scored goals and criteria
   decision: text("decision").notNull(), // 'matched' | 'no_match' | 'multiple_ties'
@@ -286,7 +286,7 @@ export const goalInsights = pgTable("goal_insights", {
   actionRequired: boolean("action_required").notNull().default(false),
   data: json("data"), // Additional structured data
   isRead: boolean("is_read").notNull().default(false),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -305,7 +305,7 @@ export const recurringTransactions = pgTable("recurring_transactions", {
   nextExecution: timestamp("next_execution").notNull(),
   lastExecuted: timestamp("last_executed"),
   isActive: boolean("is_active").notNull().default(true),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -318,7 +318,7 @@ export const categoryRules = pgTable("category_rules", {
   categoryId: integer("category_id").references(() => categories.id).notNull(),
   isActive: boolean("is_active").notNull().default(true),
   timesUsed: integer("times_used").notNull().default(0),
-  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -675,7 +675,7 @@ export const insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
 // Notifications table for persistent notifications
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
-  workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull(), // 'info', 'success', 'warning', 'error'
   title: text('title').notNull(),

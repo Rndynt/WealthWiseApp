@@ -46,12 +46,9 @@ export function usePersistentWorkspaceSelection({
     }
 
     const storedId = localStorage.getItem(storageKey);
-    const parsedStoredId = storedId ? Number(storedId) : NaN;
 
     const storedWorkspace =
-      storedId && !Number.isNaN(parsedStoredId)
-        ? workspaces.find((workspace) => workspace.id === parsedStoredId)
-        : undefined;
+      storedId ? workspaces.find((workspace) => workspace.id === storedId) : undefined;
 
     if (storedWorkspace) {
       if (currentWorkspaceId !== storedWorkspace.id) {

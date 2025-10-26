@@ -10,7 +10,7 @@ import { PageContainer } from '@/components/ui/page-container';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface CategoriesProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 const categoryTypeConfig = {

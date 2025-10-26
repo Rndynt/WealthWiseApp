@@ -23,7 +23,7 @@ import type { Workspace } from '@/types';
 interface WorkspaceMember {
   id: number;
   userId: string;
-  workspaceId: number;
+  workspaceId: string;
   role: 'owner' | 'editor' | 'viewer';
   joinedAt: string;
   user: {

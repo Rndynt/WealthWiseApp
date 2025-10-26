@@ -10,7 +10,7 @@ import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from
 import { PageContainer } from '@/components/ui/page-container';
 
 interface AnalyticsProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 // Colors for charts

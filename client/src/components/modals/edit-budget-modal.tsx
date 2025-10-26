@@ -15,7 +15,7 @@ interface Budget {
   amount: string;
   year: number;
   month: number;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 interface Category {
@@ -39,7 +39,7 @@ interface EditBudgetModalProps {
   budget: Budget | null;
   isOpen: boolean;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 export default function EditBudgetModal({ budget, isOpen, onClose, workspaceId }: EditBudgetModalProps) {

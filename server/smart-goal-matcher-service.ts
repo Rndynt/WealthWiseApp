@@ -47,7 +47,7 @@ export class SmartGoalMatcherService {
   
   async findBestGoalMatch(
     transaction: TransactionContext, 
-    workspaceId: number
+    workspaceId: string
   ): Promise<GoalMatchResult> {
     
     // Get all eligible goals for auto-tracking

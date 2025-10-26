@@ -162,7 +162,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
   }, [workspaces, currentWorkspace, onWorkspaceChange]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
-    const workspace = workspaces?.find(w => w.id === parseInt(workspaceId));
+    const workspace = workspaces?.find(w => w.id === workspaceId);
     if (workspace) {
       onWorkspaceChange(workspace);
     }
@@ -216,7 +216,7 @@ export default function Sidebar({ open, onToggle, currentWorkspace, onWorkspaceC
               </SelectTrigger>
               <SelectContent>
                 {workspaces?.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id.toString()}>
+                <SelectItem key={workspace.id} value={workspace.id}>
                     {workspace.name}
                   </SelectItem>
                 ))}
