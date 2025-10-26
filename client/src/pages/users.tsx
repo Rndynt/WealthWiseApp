@@ -26,7 +26,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { PageContainer } from '@/components/ui/page-container';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   roleId: number;
@@ -118,7 +118,7 @@ export default function UsersManagement() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, ...userData }: { id: number } & Partial<UserFormData>) => {
+    mutationFn: async ({ id, ...userData }: { id: string } & Partial<UserFormData>) => {
       return apiRequest('PUT', `/api/users/${id}`, userData);
     },
     onSuccess: () => {
@@ -140,7 +140,7 @@ export default function UsersManagement() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       return apiRequest('DELETE', `/api/users/${id}`);
     },
     onSuccess: () => {
@@ -217,7 +217,7 @@ export default function UsersManagement() {
     setShowUserModal(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
       deleteUserMutation.mutate(id);
     }

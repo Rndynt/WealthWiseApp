@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
 }
@@ -8,7 +8,7 @@ export interface Workspace {
   id: number;
   name: string;
   type: 'personal' | 'shared';
-  ownerId: number;
+  ownerId: string;
   createdAt: string;
   membershipRole?: string;
   membershipType?: 'owned' | 'member';

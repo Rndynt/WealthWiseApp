@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -102,8 +104,8 @@ CREATE TABLE "transactions" (
 );
 --> statement-breakpoint
 CREATE TABLE "user_subscriptions" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+        "id" serial PRIMARY KEY NOT NULL,
+        "user_id" uuid NOT NULL,
 	"package_id" integer NOT NULL,
 	"start_date" timestamp NOT NULL,
 	"end_date" timestamp NOT NULL,
@@ -112,7 +114,7 @@ CREATE TABLE "user_subscriptions" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text NOT NULL,
 	"password" text NOT NULL,
 	"name" text NOT NULL,
@@ -122,18 +124,18 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 CREATE TABLE "workspace_members" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"workspace_id" integer NOT NULL,
-	"user_id" integer NOT NULL,
+        "id" serial PRIMARY KEY NOT NULL,
+        "workspace_id" integer NOT NULL,
+        "user_id" uuid NOT NULL,
 	"role" text NOT NULL,
 	"joined_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "workspace_subscriptions" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"workspace_id" integer NOT NULL,
-	"package_id" integer NOT NULL,
-	"owner_id" integer NOT NULL,
+        "id" serial PRIMARY KEY NOT NULL,
+        "workspace_id" integer NOT NULL,
+        "package_id" integer NOT NULL,
+        "owner_id" uuid NOT NULL,
 	"start_date" timestamp NOT NULL,
 	"end_date" timestamp NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
@@ -142,11 +144,11 @@ CREATE TABLE "workspace_subscriptions" (
 );
 --> statement-breakpoint
 CREATE TABLE "workspaces" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"type" text NOT NULL,
-	"owner_id" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" serial PRIMARY KEY NOT NULL,
+        "name" text NOT NULL,
+        "type" text NOT NULL,
+        "owner_id" uuid NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -26,7 +26,7 @@ describe('useCreateWorkspace', () => {
       id: 1,
       name: 'Test Workspace',
       type: 'personal',
-      ownerId: 1,
+      ownerId: 'user-1',
       createdAt: new Date().toISOString(),
     };
 
