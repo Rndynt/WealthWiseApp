@@ -95,6 +95,7 @@ export interface IStorage {
 
   // Categories
   getWorkspaceCategories(workspaceId: number): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
   deleteCategory(id: number): Promise<void>;
@@ -326,6 +327,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).where(eq(categories.workspaceId, workspaceId));
   }
 
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category || undefined;
+  }
+
   async createCategory(category: InsertCategory): Promise<Category> {
     const [newCategory] = await db.insert(categories).values(category).returning();
     return newCategory;
@@ -462,7 +468,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     let transactionToCreate = { ...transaction };
-    
+
     // Auto-create debt record if this is a new debt transaction and no debtId provided
     if (transaction.type === 'debt' && !transaction.debtId) {
       const newDebt = await this.createDebt({
@@ -475,38 +481,8 @@ export class DatabaseStorage implements IStorage {
       });
       transactionToCreate.debtId = newDebt.id;
     }
-    
+
     const [newTransaction] = await db.insert(transactions).values(transactionToCreate).returning();
-
-    // Update account balance
-    const account = await this.getAccount(transaction.accountId);
-    if (account) {
-      const currentBalance = parseFloat(account.balance);
-      let newBalance = currentBalance;
-
-      if (transaction.type === 'income') {
-        newBalance += parseFloat(transaction.amount);
-      } else if (transaction.type === 'expense') {
-        newBalance -= parseFloat(transaction.amount);
-      } else if (transaction.type === 'debt') {
-        // For new debt: money comes into account
-        newBalance += parseFloat(transaction.amount);
-      } else if (transaction.type === 'repayment') {
-        // For repayment: money goes out of account
-        newBalance -= parseFloat(transaction.amount);
-        
-        // Update debt remaining amount if debtId is provided
-        if (transaction.debtId) {
-          await this.updateDebtRepayment(transaction.debtId, parseFloat(transaction.amount));
-        }
-      } else if (transaction.type === 'transfer' && transaction.toAccountId) {
-        // For transfer, only subtract from source account
-        // The destination account balance will be calculated by getWorkspaceAccounts
-        newBalance -= parseFloat(transaction.amount);
-      }
-
-      await this.updateAccount(transaction.accountId, { balance: newBalance.toString() });
-    }
 
     return newTransaction;
   }
