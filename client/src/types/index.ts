@@ -25,7 +25,7 @@ export interface WorkspaceSubscriptionLimits {
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   type: 'income' | 'needs' | 'wants';
   icon: string;
@@ -52,7 +52,7 @@ export interface Transaction {
   description: string;
   date: string;
   accountId: number;
-  categoryId?: number;
+  categoryId?: string;
   toAccountId?: number;
   debtId?: number;
   workspaceId: string;
@@ -61,7 +61,7 @@ export interface Transaction {
 
 export interface Budget {
   id: number;
-  categoryId: number;
+  categoryId: string;
   amount: string;
   period: 'monthly' | 'yearly';
   month?: number;

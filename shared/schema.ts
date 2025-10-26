@@ -123,7 +123,7 @@ export const workspaceMembers = pgTable("workspace_members", {
 
 // Categories table
 export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'income' | 'needs' | 'wants'
   icon: text("icon").notNull(),
@@ -152,7 +152,7 @@ export const transactions = pgTable("transactions", {
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
   accountId: integer("account_id").references(() => accounts.id).notNull(),
-  categoryId: integer("category_id").references(() => categories.id),
+  categoryId: uuid("category_id").references(() => categories.id),
   toAccountId: integer("to_account_id").references(() => accounts.id), // For transfers
   debtId: integer("debt_id").references(() => debts.id), // Link to debt record for repayments
   workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
@@ -162,7 +162,7 @@ export const transactions = pgTable("transactions", {
 // Budget table
 export const budgets = pgTable("budgets", {
   id: serial("id").primaryKey(),
-  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id).notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   period: text("period").notNull(), // 'monthly' | 'yearly'
   month: integer("month"), // 1-12
@@ -297,7 +297,7 @@ export const recurringTransactions = pgTable("recurring_transactions", {
   description: text("description"),
   type: text("type").notNull(), // 'income' | 'expense' | 'transfer'
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id).notNull(),
   accountId: integer("account_id").references(() => accounts.id).notNull(),
   frequency: text("frequency").notNull(), // 'daily' | 'weekly' | 'monthly' | 'yearly'
   startDate: date("start_date").notNull(),
@@ -315,7 +315,7 @@ export const categoryRules = pgTable("category_rules", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   pattern: text("pattern").notNull(), // Comma-separated keywords
-  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id).notNull(),
   isActive: boolean("is_active").notNull().default(true),
   timesUsed: integer("times_used").notNull().default(0),
   workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
@@ -604,6 +604,7 @@ export const insertCategorySchema = createInsertSchema(categories, {
   name: z.string().min(1, 'Category name is required'),
   icon: z.string().min(1, 'Category icon is required'),
   description: z.union([z.string(), z.null()]).optional(),
+  workspaceId: z.string().uuid(),
 }).omit({
   id: true,
   createdAt: true,
@@ -614,12 +615,18 @@ export const insertAccountSchema = createInsertSchema(accounts).omit({
   createdAt: true,
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
+export const insertTransactionSchema = createInsertSchema(transactions, {
+  categoryId: z.union([z.string().uuid(), z.null()]).optional(),
+  workspaceId: z.string().uuid(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertBudgetSchema = createInsertSchema(budgets).omit({
+export const insertBudgetSchema = createInsertSchema(budgets, {
+  categoryId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+}).omit({
   id: true,
   createdAt: true,
 });
@@ -658,7 +665,10 @@ export const insertGoalMatchAuditSchema = createInsertSchema(goalMatchAudits).om
   createdAt: true,
 });
 
-export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions).omit({
+export const insertRecurringTransactionSchema = createInsertSchema(recurringTransactions, {
+  categoryId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -666,7 +676,10 @@ export const insertRecurringTransactionSchema = createInsertSchema(recurringTran
   lastExecuted: true,
 });
 
-export const insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
+export const insertCategoryRuleSchema = createInsertSchema(categoryRules, {
+  categoryId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+}).omit({
   id: true,
   createdAt: true,
   timesUsed: true,
