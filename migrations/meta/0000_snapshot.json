@@ -4,16 +4,17 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-      "public.accounts": {
-        "name": "accounts",
-        "schema": "",
-        "columns": {
-          "id": {
-            "name": "id",
-            "type": "serial",
-            "primaryKey": true,
-            "notNull": true
-          },
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -87,9 +88,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "category_id": {
           "name": "category_id",
@@ -170,17 +172,17 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-      "public.categories": {
-        "name": "categories",
-        "schema": "",
-        "columns": {
-          "id": {
-            "name": "id",
-            "type": "uuid",
-            "primaryKey": true,
-            "notNull": true,
-            "default": "gen_random_uuid()"
-          },
+    "public.categories": {
+      "name": "categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -205,12 +207,12 @@
           "primaryKey": false,
           "notNull": false
         },
-          "workspace_id": {
-            "name": "workspace_id",
-            "type": "uuid",
-            "primaryKey": false,
-            "notNull": true
-          },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -627,9 +629,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "type": {
           "name": "type",
@@ -657,7 +660,7 @@
         },
         "account_id": {
           "name": "account_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -669,6 +672,12 @@
         },
         "to_account_id": {
           "name": "to_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "debt_id": {
+          "name": "debt_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -708,6 +717,19 @@
           "tableTo": "categories",
           "columnsFrom": [
             "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "transactions_debt_id_debts_id_fk": {
+          "name": "transactions_debt_id_debts_id_fk",
+          "tableFrom": "transactions",
+          "tableTo": "debts",
+          "columnsFrom": [
+            "debt_id"
           ],
           "columnsTo": [
             "id"
@@ -760,7 +782,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -838,9 +860,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "email": {
           "name": "email",
@@ -917,13 +940,13 @@
         },
         "workspace_id": {
           "name": "workspace_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -988,7 +1011,7 @@
         },
         "workspace_id": {
           "name": "workspace_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1000,7 +1023,7 @@
         },
         "owner_id": {
           "name": "owner_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1091,9 +1114,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -1109,7 +1133,7 @@
         },
         "owner_id": {
           "name": "owner_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
