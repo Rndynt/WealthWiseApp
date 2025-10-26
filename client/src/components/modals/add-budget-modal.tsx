@@ -36,7 +36,7 @@ const iconMap: Record<string, string> = {
 interface AddBudgetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddBudgetModalProps) {

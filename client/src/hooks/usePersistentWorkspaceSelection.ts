@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import type { Workspace } from '@/types';
 
-const buildStorageKey = (userId: number) => `workspace-preference:${userId}`;
+const buildStorageKey = (userId: string) => `workspace-preference:${userId}`;
 
 interface Options {
-  userId?: number;
+  userId?: string;
   workspaces?: Workspace[];
   currentWorkspace: Workspace | null;
   onWorkspaceChange: (workspace: Workspace | null) => void;
@@ -17,7 +17,7 @@ export function usePersistentWorkspaceSelection({
   onWorkspaceChange,
 }: Options) {
   const storageKey = useMemo(() => {
-    if (typeof userId !== 'number') {
+    if (!userId) {
       return null;
     }
     return buildStorageKey(userId);
@@ -46,12 +46,9 @@ export function usePersistentWorkspaceSelection({
     }
 
     const storedId = localStorage.getItem(storageKey);
-    const parsedStoredId = storedId ? Number(storedId) : NaN;
 
     const storedWorkspace =
-      storedId && !Number.isNaN(parsedStoredId)
-        ? workspaces.find((workspace) => workspace.id === parsedStoredId)
-        : undefined;
+      storedId ? workspaces.find((workspace) => workspace.id === storedId) : undefined;
 
     if (storedWorkspace) {
       if (currentWorkspaceId !== storedWorkspace.id) {

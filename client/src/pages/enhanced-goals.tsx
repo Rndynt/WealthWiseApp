@@ -122,7 +122,7 @@ interface Debt {
 }
 
 interface EnhancedGoalsPageProps {
-  workspaceId?: number;
+  workspaceId?: string;
 }
 
 export default function EnhancedGoalsPage({ workspaceId: propWorkspaceId }: EnhancedGoalsPageProps) {

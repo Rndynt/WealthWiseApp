@@ -64,7 +64,7 @@ export interface GoalRecommendation {
 
 export class GoalsEnhancedService {
   // Auto-progress tracking from transactions
-  async updateGoalProgress(goalId: number, workspaceId: number): Promise<void> {
+  async updateGoalProgress(goalId: number, workspaceId: string): Promise<void> {
     const goal = await db.select().from(goals)
       .where(and(eq(goals.id, goalId), eq(goals.workspaceId, workspaceId)))
       .limit(1);
@@ -137,7 +137,7 @@ export class GoalsEnhancedService {
   }
 
   // Smart transaction recognition and contribution tracking using AI-powered goal matching
-  async processTransactionForGoals(transactionId: number, workspaceId: number): Promise<{ tracked: number; goals: string[] }> {
+  async processTransactionForGoals(transactionId: number, workspaceId: string): Promise<{ tracked: number; goals: string[] }> {
     const transaction = await db.select()
       .from(transactions)
       .where(eq(transactions.id, transactionId))
@@ -272,7 +272,7 @@ export class GoalsEnhancedService {
   }
 
   // AI-powered goal suggestions
-  async generateGoalSuggestions(workspaceId: number): Promise<GoalSuggestion[]> {
+  async generateGoalSuggestions(workspaceId: string): Promise<GoalSuggestion[]> {
     const suggestions: GoalSuggestion[] = [];
 
     // Analyze spending patterns
@@ -519,7 +519,7 @@ export class GoalsEnhancedService {
   }
 
   // Generate AI-powered insights
-  async generateGoalInsights(goalId: number, workspaceId: number): Promise<void> {
+  async generateGoalInsights(goalId: number, workspaceId: string): Promise<void> {
     const goal = await db.select().from(goals)
       .where(eq(goals.id, goalId))
       .limit(1);
@@ -597,7 +597,7 @@ export class GoalsEnhancedService {
   }
 
   // Financial health integration
-  async calculateGoalImpactOnFinancialHealth(workspaceId: number): Promise<{
+  async calculateGoalImpactOnFinancialHealth(workspaceId: string): Promise<{
     overallScore: number;
     goalContribution: number;
     recommendations: string[];
@@ -660,7 +660,7 @@ export class GoalsEnhancedService {
   }
 
   // Complete a goal
-  async completeGoal(goalId: number, workspaceId: number): Promise<void> {
+  async completeGoal(goalId: number, workspaceId: string): Promise<void> {
     await db.update(goals)
       .set({
         status: 'completed',
@@ -708,7 +708,7 @@ export class GoalsEnhancedService {
     return `${Math.ceil(months / 12)} years`;
   }
 
-  private async analyzeSpendingPatterns(workspaceId: number): Promise<{
+  private async analyzeSpendingPatterns(workspaceId: string): Promise<{
     averageMonthlyExpenses: number;
     categoryBreakdown: Record<string, number>;
   }> {
@@ -736,7 +736,7 @@ export class GoalsEnhancedService {
     return { averageMonthlyExpenses, categoryBreakdown };
   }
 
-  private async analyzeIncomePatterns(workspaceId: number): Promise<{
+  private async analyzeIncomePatterns(workspaceId: string): Promise<{
     monthlyIncome: number;
     disposableIncome: number;
     savingsRate: number;

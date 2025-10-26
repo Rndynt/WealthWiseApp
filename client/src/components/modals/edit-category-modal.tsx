@@ -13,7 +13,7 @@ interface Category {
   name: string;
   color?: string;
   icon?: string;
-  workspaceId: number;
+  workspaceId: string;
 }
 import { notificationService } from '@/lib/notification-service';
 
@@ -29,7 +29,7 @@ interface EditCategoryModalProps {
   category: Category | null;
   isOpen: boolean;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 export default function EditCategoryModal({ category, isOpen, onClose, workspaceId }: EditCategoryModalProps) {

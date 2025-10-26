@@ -182,7 +182,7 @@ export class AutomationService {
   }
 
   // Get unread notifications for workspace
-  async getUnreadNotifications(workspaceId: number, limit = 20) {
+  async getUnreadNotifications(workspaceId: string, limit = 20) {
     return await db
       .select()
       .from(notifications)

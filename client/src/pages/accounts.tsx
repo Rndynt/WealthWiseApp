@@ -10,7 +10,7 @@ import AddAccountModal from '@/components/modals/add-account-modal';
 import EditAccountModal from '@/components/modals/edit-account-modal';
 
 interface AccountsProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function Accounts({ workspaceId }: AccountsProps) {

@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
 interface DebtsProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function Debts({ workspaceId }: DebtsProps) {
@@ -460,7 +460,7 @@ function EditDebtModal({
 }: {
   debt: Debt | null;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -738,7 +738,7 @@ function DeleteDebtModal({
 }: {
   debt: Debt | null;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

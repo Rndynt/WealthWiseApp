@@ -236,7 +236,7 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
   }, [workspaces, currentWorkspace, onWorkspaceChange]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
-    const workspace = workspaces?.find(w => w.id === parseInt(workspaceId));
+    const workspace = workspaces?.find(w => w.id === workspaceId);
     if (workspace) {
       onWorkspaceChange(workspace);
     }
@@ -285,7 +285,7 @@ export default function EnhancedSidebar({ open, onToggle, currentWorkspace, onWo
               </SelectTrigger>
               <SelectContent>
                 {workspaces?.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id.toString()}>
+                <SelectItem key={workspace.id} value={workspace.id}>
                     {workspace.name}
                   </SelectItem>
                 ))}
