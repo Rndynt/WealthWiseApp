@@ -153,7 +153,7 @@ export class GoalsService {
   /**
    * Process transaction and update related goals automatically
    */
-  async processTransactionForGoals(transactionId: number): Promise<void> {
+  async processTransactionForGoals(transactionId: string): Promise<void> {
     const [transaction] = await db
       .select()
       .from(transactions)

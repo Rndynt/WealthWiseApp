@@ -46,7 +46,7 @@ export interface Account {
 }
 
 export interface Transaction {
-  id: number;
+  id: string;
   type: 'income' | 'expense' | 'transfer' | 'saving' | 'debt' | 'repayment';
   amount: string;
   description: string;
