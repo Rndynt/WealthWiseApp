@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import type { Workspace } from '@/types';
 
-const buildStorageKey = (userId: number) => `workspace-preference:${userId}`;
+const buildStorageKey = (userId: string) => `workspace-preference:${userId}`;
 
 interface Options {
-  userId?: number;
+  userId?: string;
   workspaces?: Workspace[];
   currentWorkspace: Workspace | null;
   onWorkspaceChange: (workspace: Workspace | null) => void;
@@ -17,7 +17,7 @@ export function usePersistentWorkspaceSelection({
   onWorkspaceChange,
 }: Options) {
   const storageKey = useMemo(() => {
-    if (typeof userId !== 'number') {
+    if (!userId) {
       return null;
     }
     return buildStorageKey(userId);

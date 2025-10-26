@@ -29,7 +29,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        userId: number;
+        userId: string;
         email: string;
       };
       accessContext?: RequestAccessContext;
@@ -1775,8 +1775,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (Number.isNaN(id)) {
+      const { id } = req.params;
+      if (!id) {
         return res.status(400).json({ message: "Invalid user id" });
       }
 
@@ -1807,7 +1807,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", authenticateToken, requirePermission('admin.users.update'), async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
       const updates = req.body;
 
       // Hash password if provided
@@ -1825,7 +1828,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:id", authenticateToken, requirePermission('admin.users.delete'), async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
       await storage.deleteUser(id);
       res.json({ message: "User deleted successfully" });
     } catch (error) {
@@ -1900,7 +1906,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
       const result = await storage.getUserSubscriptionWithPackage(userId);
       res.json(result);
     } catch (error) {
@@ -1949,7 +1958,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/workspace-subscriptions", authenticateToken, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
       const subscriptions = await storage.getUserOwnedWorkspaceSubscriptions(userId);
       res.json(subscriptions);
     } catch (error) {
@@ -1992,7 +2004,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
       const subscriptionData = insertUserSubscriptionSchema.parse({
         ...req.body,
         userId,

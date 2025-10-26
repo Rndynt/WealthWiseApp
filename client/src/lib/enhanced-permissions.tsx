@@ -101,7 +101,7 @@ export const ENHANCED_PERMISSIONS = {
 type EnhancedPermission = typeof ENHANCED_PERMISSIONS[keyof typeof ENHANCED_PERMISSIONS];
 
 interface UserWithRole {
-  id: number;
+  id: string;
   email: string;
   name: string;
   roleId: number;

@@ -66,7 +66,7 @@ export const PERMISSIONS = {
 type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
 
 interface UserWithRole {
-  id: number;
+  id: string;
   email: string;
   name: string;
   role?: {
