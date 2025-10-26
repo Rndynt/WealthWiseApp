@@ -42,13 +42,19 @@ export default function Accounts({ workspaceId }: AccountsProps) {
     enabled: !!workspaceId,
   });
 
-  const formatCurrency = (amount: string) => {
-    const num = parseFloat(amount);
-    return new Intl.NumberFormat('id-ID', {
+  const formatCurrency = (amount: string | number, currency = 'IDR') => {
+    const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+    if (Number.isNaN(numericAmount)) {
+      return '-';
+    }
+
+    const locale = currency === 'IDR' ? 'id-ID' : 'en-US';
+
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'IDR',
+      currency,
       minimumFractionDigits: 0,
-    }).format(num);
+    }).format(numericAmount);
   };
 
   if (!workspaceId) {
@@ -147,7 +153,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-gray-700">Balance</span>
                       <span className="text-lg font-bold text-gray-900">
-                        {formatCurrency(account.balance)}
+                        {formatCurrency(account.balance, account.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -212,6 +218,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                 <tbody>
                   {transactions?.slice(0, 10).map((transaction) => {
                     const account = accounts?.find(a => a.id === transaction.accountId);
+                    const currency = account?.currency ?? 'IDR';
                     return (
                       <tr key={transaction.id} className="border-b">
                         <td className="p-2">{new Date(transaction.date).toLocaleDateString()}</td>
@@ -229,7 +236,7 @@ export default function Accounts({ workspaceId }: AccountsProps) {
                         <td className={`text-right font-medium p-2 ${
                           transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
                         </td>
                       </tr>
                     );
