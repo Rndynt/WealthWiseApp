@@ -90,6 +90,9 @@ async function loadRequestAccessContext(req: Request): Promise<RequestAccessCont
   return context;
 }
 
+const uuidSchema = z.string().uuid();
+const isValidUuid = (value: unknown): value is string => uuidSchema.safeParse(value).success;
+
 const updateAccountSchema = z.object({
   name: z.string().min(1, "Account name is required"),
   type: z.enum(['transaction', 'asset'], {
@@ -1776,7 +1779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      if (!id) {
+      if (!isValidUuid(id)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
 
@@ -1808,7 +1811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", authenticateToken, requirePermission('admin.users.update'), async (req, res) => {
     try {
       const { id } = req.params;
-      if (!id) {
+      if (!isValidUuid(id)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
       const updates = req.body;
@@ -1829,7 +1832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/users/:id", authenticateToken, requirePermission('admin.users.delete'), async (req, res) => {
     try {
       const { id } = req.params;
-      if (!id) {
+      if (!isValidUuid(id)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
       await storage.deleteUser(id);
@@ -1907,7 +1910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
       const { userId } = req.params;
-      if (!userId) {
+      if (!isValidUuid(userId)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
       const result = await storage.getUserSubscriptionWithPackage(userId);
@@ -1959,7 +1962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/workspace-subscriptions", authenticateToken, async (req, res) => {
     try {
       const { userId } = req.params;
-      if (!userId) {
+      if (!isValidUuid(userId)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
       const subscriptions = await storage.getUserOwnedWorkspaceSubscriptions(userId);
@@ -2005,7 +2008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users/:userId/subscription", authenticateToken, async (req, res) => {
     try {
       const { userId } = req.params;
-      if (!userId) {
+      if (!isValidUuid(userId)) {
         return res.status(400).json({ message: "Invalid user id" });
       }
       const subscriptionData = insertUserSubscriptionSchema.parse({
