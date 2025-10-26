@@ -100,7 +100,7 @@ export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddB
     if (!form.categoryId || !form.amount) return;
     
     const budgetData = {
-      categoryId: parseInt(form.categoryId),
+      categoryId: form.categoryId,
       amount: parseFloat(form.amount),
       period: form.period,
       month: form.period === 'monthly' ? form.month : null,
@@ -132,7 +132,7 @@ export default function AddBudgetModal({ open, onOpenChange, workspaceId }: AddB
               </SelectTrigger>
               <SelectContent>
                 {expenseCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
+                  <SelectItem key={category.id} value={category.id}>
                     {iconMap[category.icon] || category.icon} {category.name}
                   </SelectItem>
                 ))}

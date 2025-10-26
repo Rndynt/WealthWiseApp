@@ -95,11 +95,11 @@ export interface IStorage {
 
   // Categories
   getWorkspaceCategories(workspaceId: string): Promise<Category[]>;
-  getCategory(id: number): Promise<Category | undefined>;
+  getCategory(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
-  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
-  deleteCategory(id: number): Promise<void>;
-  categoryHasTransactions(categoryId: number): Promise<boolean>;
+  updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category>;
+  deleteCategory(id: string): Promise<void>;
+  categoryHasTransactions(categoryId: string): Promise<boolean>;
 
   // Accounts
   getWorkspaceAccounts(workspaceId: string): Promise<Account[]>;
@@ -330,7 +330,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).where(eq(categories.workspaceId, workspaceId));
   }
 
-  async getCategory(id: number): Promise<Category | undefined> {
+  async getCategory(id: string): Promise<Category | undefined> {
     const [category] = await db.select().from(categories).where(eq(categories.id, id));
     return category || undefined;
   }
@@ -340,7 +340,7 @@ export class DatabaseStorage implements IStorage {
     return newCategory;
   }
 
-  async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category> {
+  async updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category> {
     const allowedUpdates: Partial<InsertCategory> = {};
     const fields: (keyof InsertCategory)[] = ['name', 'type', 'icon', 'description'];
     for (const field of fields) {
@@ -362,11 +362,11 @@ export class DatabaseStorage implements IStorage {
     return updatedCategory;
   }
 
-  async deleteCategory(id: number): Promise<void> {
+  async deleteCategory(id: string): Promise<void> {
     await db.delete(categories).where(eq(categories.id, id));
   }
 
-  async categoryHasTransactions(categoryId: number): Promise<boolean> {
+  async categoryHasTransactions(categoryId: string): Promise<boolean> {
     const [{ count }] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(transactions)
