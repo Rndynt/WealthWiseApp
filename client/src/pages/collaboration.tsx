@@ -22,12 +22,12 @@ import type { Workspace } from '@/types';
 
 interface WorkspaceMember {
   id: number;
-  userId: number;
+  userId: string;
   workspaceId: number;
   role: 'owner' | 'editor' | 'viewer';
   joinedAt: string;
   user: {
-    id: number;
+    id: string;
     name: string;
     email: string;
   };
