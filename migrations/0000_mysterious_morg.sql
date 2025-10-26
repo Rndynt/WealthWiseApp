@@ -12,8 +12,8 @@ CREATE TABLE "accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "budgets" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"category_id" integer NOT NULL,
+        "id" serial PRIMARY KEY NOT NULL,
+        "category_id" uuid NOT NULL,
 	"amount" numeric(15, 2) NOT NULL,
 	"period" text NOT NULL,
 	"month" integer,
@@ -23,7 +23,7 @@ CREATE TABLE "budgets" (
 );
 --> statement-breakpoint
 CREATE TABLE "categories" (
-	"id" serial PRIMARY KEY NOT NULL,
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"type" text NOT NULL,
 	"icon" text NOT NULL,
@@ -91,13 +91,13 @@ CREATE TABLE "subscription_packages" (
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"type" text NOT NULL,
-	"amount" numeric(15, 2) NOT NULL,
-	"description" text NOT NULL,
-	"date" timestamp NOT NULL,
-	"account_id" integer NOT NULL,
-	"category_id" integer,
+        "id" serial PRIMARY KEY NOT NULL,
+        "type" text NOT NULL,
+        "amount" numeric(15, 2) NOT NULL,
+        "description" text NOT NULL,
+        "date" timestamp NOT NULL,
+        "account_id" integer NOT NULL,
+        "category_id" uuid,
 	"to_account_id" integer,
         "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
