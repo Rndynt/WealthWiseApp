@@ -3,12 +3,12 @@ import { calculateWorkspaceOwnershipCounts } from '../workspaceLimits';
 
 describe('calculateWorkspaceOwnershipCounts', () => {
   it('separates owned and member workspaces by type', () => {
-    const userId = 1;
+    const userId = 'user-1';
     const workspaces = [
-      { type: 'personal' as const, ownerId: 1 },
-      { type: 'personal' as const, ownerId: 2 },
-      { type: 'shared' as const, ownerId: 1 },
-      { type: 'shared' as const, ownerId: 3 },
+      { type: 'personal' as const, ownerId: 'user-1' },
+      { type: 'personal' as const, ownerId: 'user-2' },
+      { type: 'shared' as const, ownerId: 'user-1' },
+      { type: 'shared' as const, ownerId: 'user-3' },
     ];
 
     const counts = calculateWorkspaceOwnershipCounts(userId, workspaces);
@@ -22,11 +22,11 @@ describe('calculateWorkspaceOwnershipCounts', () => {
   });
 
   it('handles scenarios without memberships gracefully', () => {
-    const userId = 42;
+    const userId = 'user-42';
     const workspaces = [
-      { type: 'personal' as const, ownerId: 42 },
-      { type: 'personal' as const, ownerId: 42 },
-      { type: 'shared' as const, ownerId: 99 },
+      { type: 'personal' as const, ownerId: 'user-42' },
+      { type: 'personal' as const, ownerId: 'user-42' },
+      { type: 'shared' as const, ownerId: 'user-99' },
     ];
 
     const counts = calculateWorkspaceOwnershipCounts(userId, workspaces);

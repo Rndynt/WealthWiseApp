@@ -43,7 +43,7 @@ import { format, addDays, addMonths, addYears, isBefore } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   roleId: number;
@@ -66,7 +66,7 @@ interface SubscriptionPackage {
 
 interface UserSubscription {
   id: number;
-  userId: number;
+  userId: string;
   packageId: number;
   startDate: string;
   endDate: string;
@@ -77,7 +77,7 @@ interface UserSubscription {
 }
 
 interface SubscriptionFormData {
-  userId: number;
+  userId: string;
   packageId: number;
   startDate: string;
   endDate: string;
@@ -91,7 +91,7 @@ export default function UserSubscriptionsManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<UserSubscription | null>(null);
   const [formData, setFormData] = useState<SubscriptionFormData>({
-    userId: 0,
+    userId: '',
     packageId: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -205,7 +205,7 @@ export default function UserSubscriptionsManagement() {
   // Helper functions
   const resetForm = () => {
     setFormData({
-      userId: 0,
+      userId: '',
       packageId: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -612,8 +612,8 @@ export default function UserSubscriptionsManagement() {
             <div>
               <Label htmlFor="userId">User</Label>
               <Select 
-                value={formData.userId.toString()} 
-                onValueChange={(value) => setFormData({ ...formData, userId: parseInt(value) })}
+                value={formData.userId}
+                onValueChange={(value) => setFormData({ ...formData, userId: value })}
                 disabled={!!editingSubscription}
               >
                 <SelectTrigger>
@@ -622,7 +622,7 @@ export default function UserSubscriptionsManagement() {
                 <SelectContent>
                   {Array.isArray(users) && users.length > 0 ? (
                     users.map((user) => (
-                      <SelectItem key={user.id} value={user.id.toString()}>
+                      <SelectItem key={user.id} value={user.id}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))

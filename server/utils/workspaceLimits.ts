@@ -18,7 +18,7 @@ export interface WorkspaceLimitBreakdown {
 }
 
 export function calculateWorkspaceOwnershipCounts(
-  userId: number,
+  userId: string,
   workspaces: ReadonlyArray<Pick<Workspace, 'type' | 'ownerId'>>
 ): WorkspaceOwnershipCounts {
   return workspaces.reduce<WorkspaceOwnershipCounts>((acc, workspace) => {

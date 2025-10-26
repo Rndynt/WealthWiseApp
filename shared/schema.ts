@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -52,7 +52,7 @@ export const subscriptionPackages = pgTable("subscription_packages", {
 // User subscriptions table
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
@@ -65,7 +65,7 @@ export const workspaceSubscriptions = pgTable("workspace_subscriptions", {
   id: serial("id").primaryKey(),
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
   packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
-  ownerId: integer("owner_id").references(() => users.id).notNull(), // Who pays for this
+  ownerId: uuid("owner_id").references(() => users.id).notNull(), // Who pays for this
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("active"), // 'active', 'expired', 'readonly', 'cancelled'
@@ -95,7 +95,7 @@ export const appSettings = pgTable("app_settings", {
 
 // Users table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
@@ -108,7 +108,7 @@ export const workspaces = pgTable("workspaces", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'personal' | 'shared'
-  ownerId: integer("owner_id").references(() => users.id).notNull(),
+  ownerId: uuid("owner_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -116,7 +116,7 @@ export const workspaces = pgTable("workspaces", {
 export const workspaceMembers = pgTable("workspace_members", {
   id: serial("id").primaryKey(),
   workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   role: text("role").notNull(), // 'owner' | 'editor' | 'viewer'
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
@@ -676,7 +676,7 @@ export const insertCategoryRuleSchema = createInsertSchema(categoryRules).omit({
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
   workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull(), // 'info', 'success', 'warning', 'error'
   title: text('title').notNull(),
   message: text('message').notNull(),

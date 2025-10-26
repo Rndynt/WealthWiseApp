@@ -79,19 +79,19 @@ export type WorkspaceWithMembership = Workspace & {
 
 export interface IStorage {
   // Users
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
   // Workspaces
   getWorkspace(id: number): Promise<Workspace | undefined>;
-  getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]>;
+  getUserWorkspaces(userId: string): Promise<WorkspaceWithMembership[]>;
   createWorkspace(workspace: InsertWorkspace): Promise<Workspace>;
 
   // Workspace Members
   getWorkspaceMembers(workspaceId: number): Promise<WorkspaceMember[]>;
   addWorkspaceMember(member: InsertWorkspaceMember): Promise<WorkspaceMember>;
-  getWorkspaceMembership(workspaceId: number, userId: number): Promise<WorkspaceMember | undefined>;
+  getWorkspaceMembership(workspaceId: number, userId: string): Promise<WorkspaceMember | undefined>;
 
   // Categories
   getWorkspaceCategories(workspaceId: number): Promise<Category[]>;
@@ -156,7 +156,7 @@ export interface IStorage {
 
   // RBAC - Role Permissions
   getRolePermissions(roleId: number): Promise<Permission[]>;
-  getUserPermissions(userId: number): Promise<string[]>;
+  getUserPermissions(userId: string): Promise<string[]>;
   addRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission>;
   removeRolePermission(roleId: number, permissionId: number): Promise<void>;
 
@@ -169,8 +169,8 @@ export interface IStorage {
   deleteSubscriptionPackage(id: number): Promise<void>;
 
   // User Subscriptions
-  getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
-  getUserSubscriptionWithPackage(userId: number): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined>;
+  getUserSubscription(userId: string): Promise<UserSubscription | undefined>;
+  getUserSubscriptionWithPackage(userId: string): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined>;
   createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
   updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription>;
 
@@ -179,22 +179,22 @@ export interface IStorage {
   getWorkspaceSubscriptionWithPackage(workspaceId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
   createWorkspaceSubscription(subscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription>;
   updateWorkspaceSubscription(id: number, subscription: Partial<InsertWorkspaceSubscription>): Promise<WorkspaceSubscription>;
-  getUserOwnedWorkspaceSubscriptions(userId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]>;
+  getUserOwnedWorkspaceSubscriptions(userId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]>;
 
   // User Management
   getAllUsers(): Promise<User[]>;
-  getUserWithRole(id: number): Promise<User & { role: Role } | undefined>;
-  updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
-  deleteUser(id: number): Promise<void>;
+  getUserWithRole(id: string): Promise<User & { role: Role } | undefined>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 
   // Subscription validation
-  getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null>;
-  canCreateWorkspace(userId: number): Promise<boolean>;
+  getUserSubscriptionLimits(userId: string): Promise<WorkspaceLimitBreakdown | null>;
+  canCreateWorkspace(userId: string): Promise<boolean>;
 
   // Account, Category & Budget Limits Validation
-  checkAccountLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
-  checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
-  checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkAccountLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkCategoryLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
+  checkBudgetLimit(workspaceId: number, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }>;
 
   // Settings
   getAppSettings(): Promise<AppSettings>;
@@ -252,7 +252,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // Users
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
     return workspace || undefined;
   }
 
-  async getUserWorkspaces(userId: number): Promise<WorkspaceWithMembership[]> {
+  async getUserWorkspaces(userId: string): Promise<WorkspaceWithMembership[]> {
     const results = await db
       .select({
         id: workspaces.id,
@@ -316,7 +316,7 @@ export class DatabaseStorage implements IStorage {
     return workspaceMember;
   }
 
-  async getWorkspaceMembership(workspaceId: number, userId: number): Promise<WorkspaceMember | undefined> {
+  async getWorkspaceMembership(workspaceId: number, userId: string): Promise<WorkspaceMember | undefined> {
     const [member] = await db
       .select()
       .from(workspaceMembers)
@@ -817,12 +817,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Subscriptions
-  async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
+  async getUserSubscription(userId: string): Promise<UserSubscription | undefined> {
     const [subscription] = await db.select().from(userSubscriptions).where(eq(userSubscriptions.userId, userId));
     return subscription || undefined;
   }
 
-  async getUserSubscriptionWithPackage(userId: number): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined> {
+  async getUserSubscriptionWithPackage(userId: string): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined> {
     const [result] = await db
       .select({
         subscription: userSubscriptions,
@@ -855,7 +855,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async getUserWithRole(id: number): Promise<User & { role: Role } | undefined> {
+  async getUserWithRole(id: string): Promise<User & { role: Role } | undefined> {
     const [result] = await db
       .select({
         id: users.id,
@@ -883,17 +883,17 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
+  async updateUser(id: string, user: Partial<InsertUser>): Promise<User> {
     const [updatedUser] = await db.update(users).set(user).where(eq(users.id, id)).returning();
     return updatedUser;
   }
 
-  async deleteUser(id: number): Promise<void> {
+  async deleteUser(id: string): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
   }
 
   // Subscription validation
-  async getUserSubscriptionLimits(userId: number): Promise<WorkspaceLimitBreakdown | null> {
+  async getUserSubscriptionLimits(userId: string): Promise<WorkspaceLimitBreakdown | null> {
     // Get current user subscription with package details
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -932,7 +932,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Account, Category & Budget Limits Validation
-  async checkAccountLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkAccountLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -953,7 +953,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async checkCategoryLimit(workspaceId: number, userId: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkCategoryLimit(workspaceId: number, userId: string): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -974,7 +974,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async checkBudgetLimit(workspaceId: number, userId: number, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
+  async checkBudgetLimit(workspaceId: number, userId: string, year: number, month?: number): Promise<{ canCreate: boolean; limit: number | null; current: number }> {
     // Get user subscription with package
     const userSubResult = await this.getUserSubscriptionWithPackage(userId);
 
@@ -995,7 +995,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async canCreateWorkspace(userId: number): Promise<boolean> {
+  async canCreateWorkspace(userId: string): Promise<boolean> {
     const limits = await this.getUserSubscriptionLimits(userId);
     if (!limits) return false;
 
@@ -1035,7 +1035,7 @@ export class DatabaseStorage implements IStorage {
     return updatedSubscription;
   }
 
-  async getUserOwnedWorkspaceSubscriptions(userId: number): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]> {
+  async getUserOwnedWorkspaceSubscriptions(userId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]> {
     const results = await db
       .select({
         subscription: workspaceSubscriptions,
@@ -1050,7 +1050,7 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
-  async getUserPermissions(userId: number): Promise<string[]> {
+  async getUserPermissions(userId: string): Promise<string[]> {
     // Get user's role
     const user = await this.getUser(userId);
     if (!user) return [];
