@@ -903,9 +903,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (transactionData.type === 'transfer' || transactionData.type === 'saving') {
+      if (transactionData.type === 'transfer') {
         if (!transactionData.toAccountId) {
-          return res.status(400).json({ message: 'Transfer and saving transactions require a destination account' });
+          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
         }
 
         if (transactionData.toAccountId === transactionData.accountId) {
@@ -913,7 +913,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (destinationAccount && destinationAccount.currency !== sourceAccount.currency) {
-          return res.status(400).json({ message: 'Transfers and savings can only occur between accounts with the same currency' });
+          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+        }
+      }
+
+      if (transactionData.type === 'saving' && transactionData.toAccountId) {
+        if (transactionData.toAccountId === transactionData.accountId) {
+          return res.status(400).json({ message: 'Destination account must be different from the source account' });
+        }
+
+        if (destinationAccount && destinationAccount.currency !== sourceAccount.currency) {
+          return res.status(400).json({ message: 'Savings can only occur between accounts with the same currency' });
         }
       }
 
@@ -1067,9 +1077,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (nextType === 'transfer' || nextType === 'saving') {
+      if (nextType === 'transfer') {
         if (!nextToAccountId) {
-          return res.status(400).json({ message: 'Transfer and saving transactions require a destination account' });
+          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
         }
 
         if (nextToAccountId === nextAccountId) {
@@ -1077,7 +1087,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (destinationAccount && destinationAccount.currency !== account.currency) {
-          return res.status(400).json({ message: 'Transfers and savings can only occur between accounts with the same currency' });
+          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+        }
+      } else if (nextType === 'saving') {
+        if (nextToAccountId && nextToAccountId === nextAccountId) {
+          return res.status(400).json({ message: 'Destination account must be different from the source account' });
+        }
+
+        if (destinationAccount && destinationAccount.currency !== account.currency) {
+          return res.status(400).json({ message: 'Savings can only occur between accounts with the same currency' });
         }
       } else if (hasToAccountUpdate || existingTransaction.toAccountId) {
         updates.toAccountId = null;
