@@ -1974,7 +1974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req: any, res) => {
     try {
-      const subscriptionId = parseInt(req.params.subscriptionId);
+      const subscriptionId = parseInt(req.params.subscriptionId, 10);
       const updates = req.body;
       
       if (updates.startDate) {
@@ -1985,6 +1985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const subscription = await storage.updateUserSubscription(subscriptionId, updates);
+      await syncUserSharedWorkspaces(subscription.userId);
       res.json(subscription);
     } catch (error) {
       console.error("Failed to update user subscription:", error);
@@ -2130,6 +2131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate: new Date(req.body.endDate),
       });
       const subscription = await storage.createUserSubscription(subscriptionData);
+      await syncUserSharedWorkspaces(subscription.userId);
       res.json(subscription);
     } catch (error) {
       console.error("Subscription creation error:", error);

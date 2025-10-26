@@ -36,16 +36,30 @@ export class WorkspaceSubscriptionService {
     }
 
     const { subscription, package: packageData } = subscriptionData;
+    const now = new Date();
     const subscriptionEnd = new Date(subscription.endDate);
-    const isActive = subscription.status === 'active' && subscriptionEnd > new Date();
+    const gracePeriodEnd = subscription.gracePeriodEnd ? new Date(subscription.gracePeriodEnd) : null;
+    const packageSupportsShared = packageData.canCreateSharedWorkspace ?? false;
+    const isActive = subscription.status === 'active' && subscriptionEnd > now;
+    const isInGraceWindow = gracePeriodEnd ? gracePeriodEnd > now : false;
 
     if (!isActive) {
+      let reason = 'Langganan workspace sudah tidak aktif. Perbarui langganan akun untuk melanjutkan kolaborasi.';
+
+      if (subscription.status === 'readonly') {
+        if (!packageSupportsShared) {
+          reason = 'Paket langganan saat ini tidak mendukung shared workspace. Upgrade diperlukan untuk melanjutkan kolaborasi.';
+        } else if (isInGraceWindow) {
+          reason = 'Langganan workspace berada dalam masa tenggang. Perpanjang langganan akun sebelum masa tenggang berakhir.';
+        }
+      }
+
       return {
         canAdd: false,
         maxMembers: 0,
         currentMembers,
         subscription: subscriptionData,
-        reason: 'Langganan workspace sudah tidak aktif. Perbarui langganan akun untuk melanjutkan kolaborasi.',
+        reason,
       };
     }
 
