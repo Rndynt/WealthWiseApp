@@ -105,6 +105,19 @@ function validateAccountIdParam(req: Request, res: any): string | undefined {
   return result.data.id;
 }
 
+const transactionIdParamsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid transaction id' }),
+});
+
+function validateTransactionIdParam(req: Request, res: any): string | undefined {
+  const result = transactionIdParamsSchema.safeParse(req.params);
+  if (!result.success) {
+    res.status(400).json({ message: 'Invalid transaction id' });
+    return;
+  }
+  return result.data.id;
+}
+
 const budgetIdParamsSchema = z.object({
   id: z.string().uuid({ message: 'Invalid budget id' }),
 });
@@ -1112,9 +1125,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/transactions/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: 'Invalid transaction id' });
+      const id = validateTransactionIdParam(req, res);
+      if (!id) {
+        return;
       }
 
       const existingTransaction = await storage.getTransaction(id);
@@ -1249,6 +1262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedTransaction = await storage.updateTransaction(id, updates);
+      if (!updatedTransaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
 
       if (existingTransaction.type === 'repayment' && existingTransaction.debtId) {
         await storage.updateDebtRepayment(existingTransaction.debtId, -parseFloat(existingTransaction.amount));
@@ -1270,10 +1286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/transactions/:id", authenticateToken, async (req, res) => {
     try {
-      const id = Number.parseInt(req.params.id, 10);
-
-      if (Number.isNaN(id)) {
-        return res.status(400).json({ message: "Invalid transaction ID" });
+      const id = validateTransactionIdParam(req, res);
+      if (!id) {
+        return;
       }
 
       const transaction = await storage.getTransaction(id);

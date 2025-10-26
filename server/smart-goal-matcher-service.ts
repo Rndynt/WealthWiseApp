@@ -33,7 +33,7 @@ export interface GoalMatchResult {
 }
 
 export interface TransactionContext {
-  id: number;
+  id: string;
   description: string;
   amount: string;
   type: string;
