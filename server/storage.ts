@@ -113,8 +113,9 @@ export interface IStorage {
   getWorkspaceTransactions(workspaceId: string, limit?: number): Promise<Transaction[]>;
   getAccountTransactions(accountId: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction>;
-  deleteTransaction(id: number): Promise<void>;
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction>;
+  deleteTransaction(id: string): Promise<void>;
 
   // Budgets
   getWorkspaceBudgets(workspaceId: string, year: number, month?: number): Promise<Budget[]>;
@@ -511,7 +512,7 @@ export class DatabaseStorage implements IStorage {
     return newTransaction;
   }
 
-  async updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction> {
+  async updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction> {
     const [updatedTransaction] = await db
       .update(transactions)
       .set(transaction)
@@ -520,16 +521,16 @@ export class DatabaseStorage implements IStorage {
     return updatedTransaction;
   }
 
-  async getTransaction(id: number): Promise<any> {
+  async getTransaction(id: string): Promise<Transaction | undefined> {
     const [transaction] = await db
       .select()
       .from(transactions)
       .where(eq(transactions.id, id))
       .limit(1);
-    return transaction;
+    return transaction ?? undefined;
   }
 
-  async deleteTransaction(id: number): Promise<void> {
+  async deleteTransaction(id: string): Promise<void> {
     await db.delete(transactions).where(eq(transactions.id, id));
   }
 
