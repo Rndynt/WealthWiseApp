@@ -45,7 +45,7 @@ export default function SubscriptionPage() {
   });
 
   const { data: packages } = useQuery<SubscriptionPackage[]>({
-    queryKey: ['/api/subscription-packages'],
+    queryKey: ['/api/public/subscription-packages'],
   });
 
   const upgradeMutation = useMutation({
