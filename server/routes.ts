@@ -17,6 +17,13 @@ import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+type UserWithRole = Exclude<Awaited<ReturnType<DatabaseStorage["getUserWithRole"]>>, undefined>;
+
+type RequestAccessContext = {
+  user: UserWithRole;
+  permissions: Set<string>;
+};
+
 // Extend Express Request interface to include user property
 declare global {
   namespace Express {
@@ -25,6 +32,7 @@ declare global {
         userId: number;
         email: string;
       };
+      accessContext?: RequestAccessContext;
     }
   }
 }
@@ -40,6 +48,47 @@ const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const DEFAULT_SHARED_PACKAGE_SLUG = "shared-default";
+const DEFAULT_USER_ROLE_NAME = "user_basic";
+
+const roleIdCache = new Map<string, number>();
+
+async function resolveRoleId(roleName: string): Promise<number> {
+  if (roleIdCache.has(roleName)) {
+    return roleIdCache.get(roleName)!;
+  }
+
+  const role = await storage.getRoleByName(roleName);
+  if (!role) {
+    throw new Error(`Role ${roleName} not found`);
+  }
+
+  roleIdCache.set(roleName, role.id);
+  return role.id;
+}
+
+async function loadRequestAccessContext(req: Request): Promise<RequestAccessContext | null> {
+  if (req.accessContext) {
+    return req.accessContext;
+  }
+
+  if (!req.user?.userId) {
+    return null;
+  }
+
+  const userRecord = await storage.getUserWithRole(req.user.userId);
+  if (!userRecord) {
+    return null;
+  }
+
+  const permissionList = await storage.getUserPermissions(req.user.userId);
+  const context: RequestAccessContext = {
+    user: userRecord,
+    permissions: new Set(permissionList),
+  };
+
+  req.accessContext = context;
+  return context;
+}
 
 const updateAccountSchema = z.object({
   name: z.string().min(1, "Account name is required"),
@@ -154,21 +203,29 @@ async function authenticateToken(req: any, res: any, next: any) {
 
 // Permission middleware
 const requirePermission = (permission: string) => {
-  return async (req: any, res: any, next: any) => {
+  return async (req: Request, res: any, next: any) => {
     try {
-      const user = await storage.getUserWithRole(req.user.userId);
-      
-      // Root user bypass - has all permissions
-      if (user?.role?.name === 'root' || user?.email === 'root@financeflow.com') {
+      if (!req.user?.userId) {
+        return res.status(401).json({ message: "User tidak terautentikasi" });
+      }
+
+      const context = await loadRequestAccessContext(req);
+      if (!context) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+
+      const { user: currentUser, permissions } = context;
+      if (currentUser.role?.name === 'root' || permissions.has('root.bypass')) {
         return next();
       }
-      
-      const permissions = await storage.getUserPermissions(req.user.userId);
-      if (!permissions.includes(permission)) {
+
+      if (!permissions.has(permission)) {
         return res.status(403).json({ message: "Akses ditolak. Permission tidak memadai." });
       }
+
       next();
     } catch (error) {
+      console.error('Permission check error:', error);
       res.status(500).json({ message: "Gagal mengecek permission" });
     }
   };
@@ -210,10 +267,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
 
       // Create user with basic role
+      const userBasicRoleId = await resolveRoleId(DEFAULT_USER_ROLE_NAME);
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword,
-        roleId: 3, // user basic role ID from seeder
+        roleId: userBasicRoleId,
       });
 
       // Create default basic subscription for new user
@@ -466,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/workspaces/:workspaceId/invite', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+  app.post('/api/workspaces/:workspaceId/invite', authenticateToken, requirePermission('user.collaboration.manage'), async (req: any, res) => {
     try {
       const workspaceId = parseInt(req.params.workspaceId);
       const { email, role } = req.body as { email: string; role: 'editor' | 'viewer' };
@@ -487,11 +545,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         const name = email.split('@')[0];
         const hashedPassword = await bcrypt.hash('demo123', 10);
+        const userBasicRoleId = await resolveRoleId(DEFAULT_USER_ROLE_NAME);
         user = await storage.createUser({
           email,
           password: hashedPassword,
           name,
-          roleId: 3,
+          roleId: userBasicRoleId,
         });
       }
 
@@ -521,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+  app.put('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('user.collaboration.manage'), async (req: any, res) => {
     try {
       const memberId = parseInt(req.params.memberId);
       const { role } = req.body as { role: 'editor' | 'viewer' | 'owner' };
@@ -533,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('collaboration.manage'), async (req: any, res) => {
+  app.delete('/api/workspaces/:workspaceId/members/:memberId', authenticateToken, requirePermission('user.collaboration.manage'), async (req: any, res) => {
     try {
       const memberId = parseInt(req.params.memberId);
       await db.delete(workspaceMembersTable).where(eq(workspaceMembersTable.id, memberId));
@@ -1507,7 +1566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // RBAC - Roles Management
-  app.get("/api/roles", authenticateToken, requirePermission('roles.read'), async (req, res) => {
+  app.get("/api/roles", authenticateToken, requirePermission('admin.roles.read'), async (req, res) => {
     try {
       const roles = await storage.getAllRoles();
       res.json(roles);
@@ -1516,7 +1575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/roles", authenticateToken, requirePermission('roles.create'), async (req, res) => {
+  app.post("/api/roles", authenticateToken, requirePermission('admin.roles.create'), async (req, res) => {
     try {
       const roleData = insertRoleSchema.parse(req.body);
       const role = await storage.createRole(roleData);
@@ -1527,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/roles/:id", authenticateToken, async (req, res) => {
+  app.put("/api/roles/:id", authenticateToken, requirePermission('admin.roles.update'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const role = await storage.updateRole(id, req.body);
@@ -1537,7 +1596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/roles/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/roles/:id", authenticateToken, requirePermission('admin.roles.delete'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteRole(id);
@@ -1548,7 +1607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // RBAC - Permissions Management
-  app.get("/api/permissions", authenticateToken, async (req, res) => {
+  app.get("/api/permissions", authenticateToken, requirePermission('admin.permissions.read'), async (req, res) => {
     try {
       const permissions = await storage.getAllPermissions();
       res.json(permissions);
@@ -1557,7 +1616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/roles/:roleId/permissions", authenticateToken, async (req, res) => {
+  app.get("/api/roles/:roleId/permissions", authenticateToken, requirePermission('admin.permissions.read'), async (req, res) => {
     try {
       const roleId = parseInt(req.params.roleId);
       const permissions = await storage.getRolePermissions(roleId);
@@ -1567,7 +1626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/roles/:roleId/permissions", authenticateToken, async (req, res) => {
+  app.post("/api/roles/:roleId/permissions", authenticateToken, requirePermission('admin.roles.update'), async (req, res) => {
     try {
       const roleId = parseInt(req.params.roleId);
       const { permissionId } = req.body;
@@ -1578,7 +1637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/roles/:roleId/permissions/:permissionId", authenticateToken, async (req, res) => {
+  app.delete("/api/roles/:roleId/permissions/:permissionId", authenticateToken, requirePermission('admin.roles.update'), async (req, res) => {
     try {
       const roleId = parseInt(req.params.roleId);
       const permissionId = parseInt(req.params.permissionId);
@@ -1590,7 +1649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subscription Packages Management
-  app.get("/api/subscription-packages", authenticateToken, requirePermission('subscriptions.read'), async (req, res) => {
+  app.get("/api/subscription-packages", authenticateToken, requirePermission('admin.subscriptions.access'), async (req, res) => {
     try {
       const packages = await storage.getAllSubscriptionPackages();
       res.json(packages);
@@ -1599,7 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/subscription-packages", authenticateToken, async (req, res) => {
+  app.post("/api/subscription-packages", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req, res) => {
     try {
       const packageData = insertSubscriptionPackageSchema.parse({
         ...req.body,
@@ -1624,7 +1683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/subscription-packages/:id", authenticateToken, async (req, res) => {
+  app.put("/api/subscription-packages/:id", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
@@ -1644,7 +1703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/subscription-packages/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/subscription-packages/:id", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteSubscriptionPackage(id);
@@ -1700,7 +1759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Management
-  app.get("/api/users", authenticateToken, requirePermission('users.read'), async (req, res) => {
+  app.get("/api/users", authenticateToken, requirePermission('admin.users.read'), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       // Remove password from response
@@ -1717,6 +1776,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user id" });
+      }
+
+      if (req.user?.userId !== id) {
+        const context = await loadRequestAccessContext(req);
+        if (!context) {
+          return res.status(403).json({ message: "Akses ditolak. Permission tidak memadai." });
+        }
+
+        const { user: currentUser, permissions } = context;
+        if (currentUser.role?.name !== 'root' && !permissions.has('root.bypass') && !permissions.has('admin.users.read')) {
+          return res.status(403).json({ message: "Akses ditolak. Permission tidak memadai." });
+        }
+      }
+
       const result = await storage.getUserWithRole(id);
       if (result) {
         const { password, ...safeUser } = result;
@@ -1725,11 +1800,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(404).json({ message: "User not found" });
       }
     } catch (error) {
+      console.error('Failed to get user:', error);
       res.status(500).json({ message: "Failed to get user" });
     }
   });
 
-  app.put("/api/users/:id", authenticateToken, requirePermission('users.update'), async (req, res) => {
+  app.put("/api/users/:id", authenticateToken, requirePermission('admin.users.update'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
@@ -1747,7 +1823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/users/:id", authenticateToken, requirePermission('admin.users.delete'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteUser(id);
@@ -1768,7 +1844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for managing user subscriptions
-  app.get("/api/admin/user-subscriptions", authenticateToken, requirePermission('subscriptions.read'), async (req: any, res) => {
+  app.get("/api/admin/user-subscriptions", authenticateToken, requirePermission('admin.subscriptions.access'), async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
       const subscriptionsData = await Promise.all(
@@ -1802,7 +1878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('subscriptions.update'), async (req: any, res) => {
+  app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req: any, res) => {
     try {
       const subscriptionId = parseInt(req.params.subscriptionId);
       const updates = req.body;
@@ -2024,7 +2100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings routes
-  app.get("/api/settings", authenticateToken, requirePermission("settings.read"), async (req, res) => {
+  app.get("/api/settings", authenticateToken, requirePermission('admin.settings.access'), async (req, res) => {
     try {
       const settings = await storage.getAppSettings();
       res.json(settings);
@@ -2034,7 +2110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/settings", authenticateToken, requirePermission("settings.update"), async (req, res) => {
+  app.put("/api/settings", authenticateToken, requirePermission('admin.settings.update'), async (req, res) => {
     try {
       const updates = req.body;
       const settings = await storage.updateAppSettings(updates);

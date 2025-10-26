@@ -142,6 +142,7 @@ export interface IStorage {
   // RBAC - Roles
   getAllRoles(): Promise<Role[]>;
   getRole(id: number): Promise<Role | undefined>;
+  getRoleByName(name: string): Promise<Role | undefined>;
   createRole(role: InsertRole): Promise<Role>;
   updateRole(id: number, role: Partial<InsertRole>): Promise<Role>;
   deleteRole(id: number): Promise<void>;
@@ -708,6 +709,11 @@ export class DatabaseStorage implements IStorage {
 
   async getRole(id: number): Promise<Role | undefined> {
     const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async getRoleByName(name: string): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.name, name));
     return role || undefined;
   }
 
