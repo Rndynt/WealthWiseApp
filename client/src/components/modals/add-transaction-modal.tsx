@@ -111,7 +111,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
       return;
     }
 
-    const fromAccount = accounts?.find(acc => acc.id === parseInt(form.accountId));
+    const fromAccount = accounts?.find(acc => acc.id === form.accountId);
     if (!fromAccount) {
       toast({
         variant: "destructive",
@@ -140,7 +140,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
         return;
       }
 
-      const destinationAccount = accounts?.find(acc => acc.id === parseInt(form.toAccountId));
+      const destinationAccount = accounts?.find(acc => acc.id === form.toAccountId);
       if (!destinationAccount) {
         toast({
           variant: "destructive",
@@ -163,9 +163,9 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
     const transactionData = {
       ...form,
       amount: parseFloat(form.amount),
-      accountId: parseInt(form.accountId),
+      accountId: form.accountId,
       categoryId: form.categoryId ? form.categoryId : undefined,
-      toAccountId: form.toAccountId ? parseInt(form.toAccountId) : undefined,
+      toAccountId: form.toAccountId ? form.toAccountId : undefined,
       debtId: form.debtId ? parseInt(form.debtId) : undefined,
       workspaceId,
     };
@@ -279,7 +279,7 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
               </SelectTrigger>
               <SelectContent>
                 {accounts?.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
+                  <SelectItem key={account.id} value={account.id}>
                     {account.name} ({account.currency})
                   </SelectItem>
                 ))}
@@ -295,8 +295,8 @@ export default function AddTransactionModal({ open, onOpenChange, workspaceId }:
                   <SelectValue placeholder="Select destination account..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts?.filter(acc => acc.id.toString() !== form.accountId).map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
+                  {accounts?.filter(acc => acc.id !== form.accountId).map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
                       {account.name} ({account.currency})
                     </SelectItem>
                   ))}
