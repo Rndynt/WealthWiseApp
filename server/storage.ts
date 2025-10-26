@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql } from 'drizzle-orm';
+import { eq, and, or, desc, asc, sql } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
@@ -91,6 +91,7 @@ export interface IStorage {
   // Workspace Members
   getWorkspaceMembers(workspaceId: number): Promise<WorkspaceMember[]>;
   addWorkspaceMember(member: InsertWorkspaceMember): Promise<WorkspaceMember>;
+  getWorkspaceMembership(workspaceId: number, userId: number): Promise<WorkspaceMember | undefined>;
 
   // Categories
   getWorkspaceCategories(workspaceId: number): Promise<Category[]>;
@@ -104,6 +105,7 @@ export interface IStorage {
   createAccount(account: InsertAccount): Promise<Account>;
   updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account>;
   deleteAccount(id: number): Promise<void>;
+  accountHasTransactions(accountId: number): Promise<boolean>;
 
   // Transactions
   getWorkspaceTransactions(workspaceId: number, limit?: number): Promise<Transaction[]>;
@@ -310,6 +312,15 @@ export class DatabaseStorage implements IStorage {
     return workspaceMember;
   }
 
+  async getWorkspaceMembership(workspaceId: number, userId: number): Promise<WorkspaceMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(workspaceMembers)
+      .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
+      .limit(1);
+    return member || undefined;
+  }
+
   // Categories
   async getWorkspaceCategories(workspaceId: number): Promise<Category[]> {
     return await db.select().from(categories).where(eq(categories.workspaceId, workspaceId));
@@ -335,58 +346,45 @@ export class DatabaseStorage implements IStorage {
 
   // Accounts
   async getWorkspaceAccounts(workspaceId: number): Promise<Account[]> {
-    const workspaceAccounts = await db.select().from(accounts).where(eq(accounts.workspaceId, workspaceId));
+    const result = await db.execute(sql`
+      SELECT
+        a.id,
+        a.name,
+        a.type,
+        a.currency,
+        a.notes,
+        a.workspace_id AS "workspaceId",
+        a.created_at AS "createdAt",
+        (
+          COALESCE(SUM(
+            CASE
+              WHEN t.account_id = a.id AND t.type IN ('income', 'debt') THEN t.amount
+              WHEN t.account_id = a.id AND t.type IN ('expense', 'repayment') THEN -t.amount
+              WHEN t.account_id = a.id AND t.type = 'transfer' THEN -t.amount
+              ELSE 0
+            END
+          ), 0)
+          + COALESCE((
+            SELECT SUM(t_in.amount)
+            FROM transactions t_in
+            WHERE t_in.to_account_id = a.id
+              AND t_in.workspace_id = ${workspaceId}
+              AND t_in.type = 'transfer'
+          ), 0)
+        )::text AS balance
+      FROM accounts a
+      LEFT JOIN transactions t
+        ON t.account_id = a.id
+       AND t.workspace_id = ${workspaceId}
+      WHERE a.workspace_id = ${workspaceId}
+      GROUP BY a.id
+      ORDER BY a.id
+    `);
 
-    // Calculate balance from transactions for each account
-    const accountsWithCalculatedBalance = await Promise.all(
-      workspaceAccounts.map(async (account: any) => {
-        const accountTransactions = await db
-          .select()
-          .from(transactions)
-          .where(eq(transactions.accountId, account.id));
-
-        // Get all transfer transactions where this account is the destination
-        const incomingTransfers = await db
-          .select()
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.toAccountId, account.id),
-              eq(transactions.type, 'transfer')
-            )
-          );
-
-        // Calculate balance: income and debt add, expense and repayment subtract
-        const calculatedBalance = accountTransactions.reduce((sum: number, transaction: any) => {
-          const amount = parseFloat(transaction.amount);
-          if (transaction.type === 'income' || transaction.type === 'debt') {
-            return sum + amount;
-          } else if (transaction.type === 'expense' || transaction.type === 'repayment') {
-            return sum - amount;
-          } else if (transaction.type === 'transfer') {
-            // If this account is the source account, subtract
-            if (transaction.accountId === account.id) {
-              return sum - amount;
-            }
-          }
-          return sum;
-        }, 0);
-
-        // Add incoming transfers
-        const incomingTransferAmount = incomingTransfers.reduce((sum: number, transfer: any) => {
-          return sum + parseFloat(transfer.amount);
-        }, 0);
-
-        const finalBalance = calculatedBalance + incomingTransferAmount;
-
-        return {
-          ...account,
-          balance: finalBalance.toString()
-        };
-      })
-    );
-
-    return accountsWithCalculatedBalance;
+    return result.rows.map((row: any) => ({
+      ...row,
+      balance: (row.balance ?? '0').toString(),
+    }));
   }
 
   async getAccount(id: number): Promise<Account | undefined> {
@@ -400,23 +398,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account> {
-    console.log("Updating account in database:", id, account);
+    const allowedUpdates: Partial<InsertAccount> = {};
+    const fields: (keyof InsertAccount)[] = ['name', 'type', 'currency', 'notes'];
+    for (const field of fields) {
+      const value = account[field];
+      if (value !== undefined) {
+        (allowedUpdates as Record<string, unknown>)[field as string] = value;
+      }
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      throw new Error('No valid account fields provided for update');
+    }
+
     const [updatedAccount] = await db
       .update(accounts)
-      .set(account)
+      .set(allowedUpdates)
       .where(eq(accounts.id, id))
       .returning();
-    
+
     if (!updatedAccount) {
       throw new Error(`Account with id ${id} not found`);
     }
-    
-    console.log("Account updated successfully:", updatedAccount);
+
     return updatedAccount;
   }
 
   async deleteAccount(id: number): Promise<void> {
     await db.delete(accounts).where(eq(accounts.id, id));
+  }
+
+  async accountHasTransactions(accountId: number): Promise<boolean> {
+    const [{ count }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(transactions)
+      .where(
+        or(
+          eq(transactions.accountId, accountId),
+          eq(transactions.toAccountId, accountId)
+        )
+      );
+
+    return Number(count ?? 0) > 0;
   }
 
   // Transactions

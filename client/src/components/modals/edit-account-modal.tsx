@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +16,8 @@ interface Account {
   name: string;
   type: string;
   balance: string;
+  currency: string;
+  notes?: string | null;
   workspaceId: number;
 }
 import { notificationService } from '@/lib/notification-service';
@@ -22,7 +25,8 @@ import { notificationService } from '@/lib/notification-service';
 const editAccountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: z.enum(['transaction', 'asset']),
-  balance: z.string().min(1, 'Balance is required'),
+  currency: z.string().min(1, 'Currency is required'),
+  notes: z.string().optional(),
 });
 
 type EditAccountFormData = z.infer<typeof editAccountSchema>;
@@ -37,6 +41,20 @@ interface EditAccountModalProps {
 export default function EditAccountModal({ account, isOpen, onClose, workspaceId }: EditAccountModalProps) {
   const queryClient = useQueryClient();
 
+  const formattedBalance = React.useMemo(() => {
+    if (!account) return '';
+    const value = parseFloat(account.balance ?? '0');
+    if (Number.isNaN(value)) {
+      return account.balance;
+    }
+    const locale = account.currency === 'IDR' ? 'id-ID' : 'en-US';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: account.currency,
+      minimumFractionDigits: 0,
+    }).format(value);
+  }, [account]);
+
   const {
     register,
     handleSubmit,
@@ -49,7 +67,8 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
     defaultValues: {
       name: account?.name || '',
       type: (account?.type as any) || 'transaction',
-      balance: account?.balance || '0',
+      currency: account?.currency || 'IDR',
+      notes: account?.notes ?? '',
     },
   });
 
@@ -59,14 +78,15 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
       reset({
         name: account.name,
         type: account.type as any,
-        balance: account.balance,
+        currency: account.currency,
+        notes: account.notes ?? '',
       });
     }
   }, [account, reset]);
 
   const updateMutation = useMutation({
     mutationFn: (data: EditAccountFormData) =>
-      apiRequest('PATCH', `/api/accounts/${account?.id}`, data),
+      apiRequest('PUT', `/api/accounts/${account?.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
       notificationService.success('Account Updated', 'Account details updated successfully!');
@@ -74,7 +94,8 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
     },
     onError: (error) => {
       console.error('Update account error:', error);
-      notificationService.error('Update Failed', 'Failed to update account. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to update account. Please try again.';
+      notificationService.error('Update Failed', message);
     },
   });
 
@@ -88,7 +109,8 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
     },
     onError: (error) => {
       console.error('Delete account error:', error);
-      notificationService.error('Delete Failed', 'Failed to delete account. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
+      notificationService.error('Delete Failed', message);
     },
   });
 
@@ -144,17 +166,41 @@ export default function EditAccountModal({ account, isOpen, onClose, workspaceId
           </div>
 
           <div>
-            <Label htmlFor="balance">Balance ({account?.currency || 'IDR'})</Label>
-            <Input
-              id="balance"
-              type="number"
-              step="0.01"
-              {...register('balance')}
-              placeholder="0.00"
-            />
-            {errors.balance && (
-              <p className="text-sm text-red-600 mt-1">{errors.balance.message}</p>
+            <Label htmlFor="currency">Currency</Label>
+            <Select
+              value={watch('currency')}
+              onValueChange={(value) => setValue('currency', value as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="IDR">Indonesian Rupiah (IDR)</SelectItem>
+                <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                <SelectItem value="EUR">Euro (EUR)</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.currency && (
+              <p className="text-sm text-red-600 mt-1">{errors.currency.message}</p>
             )}
+          </div>
+
+          <div>
+            <Label>Current Balance</Label>
+            <Input value={formattedBalance} readOnly disabled />
+            <p className="text-sm text-gray-500 mt-1">
+              Balance is calculated automatically from transactions and cannot be edited manually.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              {...register('notes')}
+              placeholder="Optional notes about this account"
+              rows={3}
+            />
           </div>
 
           <div className="flex gap-2 pt-4">
