@@ -13,6 +13,7 @@ import {
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 // Extend Express Request interface to include user property
 declare global {
@@ -37,6 +38,17 @@ const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const DEFAULT_SHARED_PACKAGE_SLUG = "shared-default";
+
+const updateAccountSchema = z.object({
+  name: z.string().min(1, "Account name is required"),
+  type: z.enum(['transaction', 'asset'], {
+    errorMap: () => ({ message: 'Account type must be transaction or asset' }),
+  }),
+  currency: z.string().min(1, "Currency is required"),
+  notes: z.string().optional(),
+}).strict().partial().refine((data) => Object.keys(data).length > 0, {
+  message: 'No account updates provided',
+});
 
 // Smart notification triggers (excluding repayment processing to avoid double deduction)
 async function checkNonRepaymentNotifications(workspaceId: number, transaction: any) {
@@ -595,41 +607,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/accounts/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const updates = { ...req.body };
-      
-      // Validate required fields and convert types
-      if (updates.balance !== undefined) {
-        updates.balance = parseFloat(updates.balance).toString();
-      }
-      if (updates.startDate) {
-        updates.startDate = new Date(updates.startDate);
-      }
-      
-      // Ensure workspace validation
-      if (!updates.workspaceId && req.body.workspaceId) {
-        updates.workspaceId = parseInt(req.body.workspaceId);
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: "Invalid account id" });
       }
 
-      console.log("Updating account:", id, "with data:", updates);
+      if (req.body && typeof req.body === 'object') {
+        if ('balance' in req.body) {
+          return res.status(400).json({
+            message: 'Account balance is calculated automatically and cannot be edited manually.',
+          });
+        }
+        if ('workspaceId' in req.body) {
+          return res.status(400).json({
+            message: 'Workspace cannot be reassigned for an existing account.',
+          });
+        }
+      }
+
+      const existingAccount = await storage.getAccount(id);
+      if (!existingAccount) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+
+      const workspace = await storage.getWorkspace(existingAccount.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: "Workspace not found for this account" });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingAccount.workspaceId, req.user!.userId);
+      const isWorkspaceOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isWorkspaceOwner) {
+        return res.status(403).json({ message: "You do not have permission to update this account" });
+      }
+
+      const updates = updateAccountSchema.parse(req.body);
       const account = await storage.updateAccount(id, updates);
       res.json(account);
     } catch (error) {
       console.error("Account update error:", error);
-      res.status(400).json({ 
-        message: "Failed to update account", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid account data' });
+      }
+      const message = error instanceof Error ? error.message : 'Failed to update account';
+      const statusCode = message === 'No valid account fields provided for update' ? 400 : 500;
+      res.status(statusCode).json({ message });
     }
   });
 
   app.delete("/api/accounts/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: "Invalid account id" });
+      }
+
+      const account = await storage.getAccount(id);
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+
+      const workspace = await storage.getWorkspace(account.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: "Workspace not found for this account" });
+      }
+
+      const membership = await storage.getWorkspaceMembership(account.workspaceId, req.user!.userId);
+      const isWorkspaceOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isWorkspaceOwner) {
+        return res.status(403).json({ message: "You do not have permission to delete this account" });
+      }
+
+      if (await storage.accountHasTransactions(id)) {
+        return res.status(409).json({
+          message: 'Account cannot be deleted while transactions or transfers still reference it. Please move or delete those entries first.',
+        });
+      }
+
       await storage.deleteAccount(id);
       res.json({ message: "Account deleted successfully" });
     } catch (error) {
-      res.status(400).json({ message: "Failed to delete account" });
+      console.error('Account delete error:', error);
+      res.status(500).json({ message: "Failed to delete account" });
     }
   });
 
