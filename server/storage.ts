@@ -178,6 +178,7 @@ export interface IStorage {
   // Workspace Subscriptions
   getWorkspaceSubscription(workspaceId: string): Promise<WorkspaceSubscription | undefined>;
   getWorkspaceSubscriptionWithPackage(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
+  syncWorkspaceSubscriptionFromUser(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined>;
   createWorkspaceSubscription(subscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription>;
   updateWorkspaceSubscription(id: number, subscription: Partial<InsertWorkspaceSubscription>): Promise<WorkspaceSubscription>;
   getUserOwnedWorkspaceSubscriptions(userId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage, workspace: Workspace}[]>;
@@ -819,7 +820,15 @@ export class DatabaseStorage implements IStorage {
 
   // User Subscriptions
   async getUserSubscription(userId: string): Promise<UserSubscription | undefined> {
-    const [subscription] = await db.select().from(userSubscriptions).where(eq(userSubscriptions.userId, userId));
+    const [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(and(
+        eq(userSubscriptions.userId, userId),
+        eq(userSubscriptions.status, 'active')
+      ))
+      .orderBy(desc(userSubscriptions.createdAt))
+      .limit(1);
     return subscription || undefined;
   }
 
@@ -1009,11 +1018,24 @@ export class DatabaseStorage implements IStorage {
 
   // Workspace Subscriptions
   async getWorkspaceSubscription(workspaceId: string): Promise<WorkspaceSubscription | undefined> {
-    const [subscription] = await db.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId, workspaceId));
+    const [subscription] = await db
+      .select()
+      .from(workspaceSubscriptions)
+      .where(and(
+        eq(workspaceSubscriptions.workspaceId, workspaceId),
+        eq(workspaceSubscriptions.status, 'active')
+      ))
+      .orderBy(desc(workspaceSubscriptions.createdAt))
+      .limit(1);
     return subscription || undefined;
   }
 
   async getWorkspaceSubscriptionWithPackage(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined> {
+    const synced = await this.syncWorkspaceSubscriptionFromUser(workspaceId);
+    if (synced) {
+      return synced;
+    }
+
     const [result] = await db
       .select({
         subscription: workspaceSubscriptions,
@@ -1021,9 +1043,111 @@ export class DatabaseStorage implements IStorage {
       })
       .from(workspaceSubscriptions)
       .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
-      .where(eq(workspaceSubscriptions.workspaceId, workspaceId));
+      .where(eq(workspaceSubscriptions.workspaceId, workspaceId))
+      .orderBy(desc(workspaceSubscriptions.createdAt))
+      .limit(1);
 
     return result || undefined;
+  }
+
+  async syncWorkspaceSubscriptionFromUser(workspaceId: string): Promise<{subscription: WorkspaceSubscription, package: SubscriptionPackage} | undefined> {
+    const workspace = await this.getWorkspace(workspaceId);
+    if (!workspace || workspace.type !== 'shared') {
+      return undefined;
+    }
+
+    const now = new Date();
+    const userSubscription = await this.getUserSubscriptionWithPackage(workspace.ownerId);
+
+    const [existing] = await db
+      .select({
+        subscription: workspaceSubscriptions,
+        package: subscriptionPackages,
+      })
+      .from(workspaceSubscriptions)
+      .innerJoin(subscriptionPackages, eq(workspaceSubscriptions.packageId, subscriptionPackages.id))
+      .where(eq(workspaceSubscriptions.workspaceId, workspaceId))
+      .orderBy(desc(workspaceSubscriptions.createdAt))
+      .limit(1);
+
+    if (!userSubscription) {
+      if (!existing) {
+        return undefined;
+      }
+
+      if (existing.subscription.status !== 'expired') {
+        const existingEndDate = existing.subscription.endDate
+          ? new Date(existing.subscription.endDate)
+          : now;
+        const effectiveEndDate = existingEndDate < now ? existingEndDate : now;
+        const [updated] = await db
+          .update(workspaceSubscriptions)
+          .set({
+            status: 'expired',
+            ownerId: workspace.ownerId,
+            endDate: effectiveEndDate,
+            gracePeriodEnd: null,
+          })
+          .where(eq(workspaceSubscriptions.id, existing.subscription.id))
+          .returning();
+
+        return {
+          subscription: updated,
+          package: existing.package,
+        };
+      }
+
+      return existing;
+    }
+
+    const startDate = new Date(userSubscription.subscription.startDate);
+    const endDate = new Date(userSubscription.subscription.endDate);
+    const computedGraceEnd = new Date(endDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    let derivedStatus: WorkspaceSubscription['status'] = 'expired';
+    let gracePeriodEnd: Date | null = null;
+
+    if (!userSubscription.package.canCreateSharedWorkspace) {
+      derivedStatus = 'readonly';
+      gracePeriodEnd = null;
+    } else if (userSubscription.subscription.status === 'active') {
+      if (endDate > now) {
+        derivedStatus = 'active';
+        gracePeriodEnd = computedGraceEnd;
+      } else if (computedGraceEnd > now) {
+        derivedStatus = 'readonly';
+        gracePeriodEnd = computedGraceEnd;
+      }
+    }
+
+    const payload = {
+      workspaceId,
+      ownerId: workspace.ownerId,
+      packageId: userSubscription.package.id,
+      startDate,
+      endDate,
+      status: derivedStatus,
+      gracePeriodEnd,
+    } satisfies InsertWorkspaceSubscription;
+
+    let subscription: WorkspaceSubscription;
+
+    if (existing) {
+      const [updated] = await db
+        .update(workspaceSubscriptions)
+        .set(payload)
+        .where(eq(workspaceSubscriptions.id, existing.subscription.id))
+        .returning();
+      subscription = updated;
+    } else {
+      const [created] = await db.insert(workspaceSubscriptions).values(payload).returning();
+      subscription = created;
+    }
+
+    return {
+      subscription,
+      package: userSubscription.package,
+    };
   }
 
   async createWorkspaceSubscription(insertSubscription: InsertWorkspaceSubscription): Promise<WorkspaceSubscription> {

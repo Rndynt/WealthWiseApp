@@ -47,7 +47,6 @@ const goalsEnhancedService = new GoalsEnhancedService();
 const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const DEFAULT_SHARED_PACKAGE_SLUG = "shared-default";
 const DEFAULT_USER_ROLE_NAME = "user_basic";
 
 const roleIdCache = new Map<string, number>();
@@ -153,6 +152,15 @@ async function loadRequestAccessContext(req: Request): Promise<RequestAccessCont
 
   req.accessContext = context;
   return context;
+}
+
+async function syncUserSharedWorkspaces(userId: string): Promise<void> {
+  const workspaces = await storage.getUserWorkspaces(userId);
+  await Promise.all(
+    workspaces
+      .filter((workspace) => workspace.membershipType === 'owned' && workspace.type === 'shared')
+      .map((workspace) => storage.syncWorkspaceSubscriptionFromUser(workspace.id))
+  );
 }
 
 const updateAccountSchema = z.object({
@@ -538,29 +546,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const workspace = await storage.createWorkspace(workspaceData);
       
-      // If shared workspace, create workspace subscription
       if (type === 'shared') {
-        const sharedWorkspacePackage = await storage.getSubscriptionPackageBySlug(DEFAULT_SHARED_PACKAGE_SLUG);
+        const synced = await storage.syncWorkspaceSubscriptionFromUser(workspace.id);
 
-        if (!sharedWorkspacePackage) {
-          console.error(`Default shared workspace package not found for slug: ${DEFAULT_SHARED_PACKAGE_SLUG}`);
+        if (!synced) {
+          console.error('Failed to synchronize workspace subscription from user subscription', workspace.id);
           return res.status(500).json({
-            message: "Paket default untuk shared workspace tidak ditemukan. Silakan hubungi administrator."
+            message: 'Gagal menyinkronkan langganan workspace dari langganan akun. Silakan hubungi administrator.',
           });
         }
-
-        const now = new Date();
-        const oneMonthLater = new Date();
-        oneMonthLater.setMonth(now.getMonth() + 1);
-
-        await storage.createWorkspaceSubscription({
-          workspaceId: workspace.id,
-          packageId: sharedWorkspacePackage.id,
-          ownerId: req.user.userId,
-          startDate: now,
-          endDate: oneMonthLater,
-          status: "active"
-        });
       }
       
       res.json(workspace);
@@ -1980,7 +1974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req: any, res) => {
     try {
-      const subscriptionId = parseInt(req.params.subscriptionId);
+      const subscriptionId = parseInt(req.params.subscriptionId, 10);
       const updates = req.body;
       
       if (updates.startDate) {
@@ -1991,6 +1985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const subscription = await storage.updateUserSubscription(subscriptionId, updates);
+      await syncUserSharedWorkspaces(subscription.userId);
       res.json(subscription);
     } catch (error) {
       console.error("Failed to update user subscription:", error);
@@ -2031,25 +2026,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!workspaceId) {
         return;
       }
-      
-      // Check if user can create shared workspace
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace tidak ditemukan.' });
+      }
+
+      if (workspace.ownerId !== req.user.userId) {
+        return res.status(403).json({ message: 'Hanya pemilik workspace yang dapat menyegarkan langganan.' });
+      }
+
+      if (workspace.type !== 'shared') {
+        return res.status(400).json({ message: 'Workspace pribadi tidak memerlukan langganan kolaborasi terpisah.' });
+      }
+
       const userSub = await storage.getUserSubscriptionWithPackage(req.user.userId);
-      if (!userSub || !userSub.package.canCreateSharedWorkspace) {
-        return res.status(403).json({ 
-          message: "Anda perlu upgrade ke paket Professional atau Business untuk membuat shared workspace." 
+      if (!userSub) {
+        return res.status(403).json({ message: 'Langganan akun aktif tidak ditemukan. Silakan berlangganan terlebih dahulu.' });
+      }
+
+      if (!userSub.package.canCreateSharedWorkspace) {
+        return res.status(403).json({
+          message: 'Anda perlu upgrade ke paket Professional atau Business untuk menggunakan shared workspace.',
         });
       }
 
-      const subscriptionData = {
-        ...req.body,
-        workspaceId,
-        ownerId: req.user.userId,
-        startDate: new Date(req.body.startDate),
-        endDate: new Date(req.body.endDate),
-      };
-      
-      const subscription = await storage.createWorkspaceSubscription(subscriptionData);
-      res.json(subscription);
+      const synced = await storage.syncWorkspaceSubscriptionFromUser(workspaceId);
+      if (!synced) {
+        return res.status(409).json({ message: 'Gagal menyinkronkan langganan workspace dari langganan akun.' });
+      }
+
+      res.json(synced);
     } catch (error) {
       console.error("Workspace subscription creation error:", error);
       res.status(400).json({ message: "Failed to create workspace subscription" });
@@ -2063,7 +2070,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user id" });
       }
       const subscriptions = await storage.getUserOwnedWorkspaceSubscriptions(userId);
-      res.json(subscriptions);
+      const synced = await Promise.all(subscriptions.map(async (entry) => {
+        const updated = await storage.syncWorkspaceSubscriptionFromUser(entry.workspace.id);
+        if (updated) {
+          return { ...updated, workspace: entry.workspace };
+        }
+        return entry;
+      }));
+      res.json(synced);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user workspace subscriptions" });
     }
@@ -2084,6 +2098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         const subscription = await storage.updateUserSubscription(existingSubscription.id, subscriptionData);
+        await syncUserSharedWorkspaces(req.user.userId);
         res.json(subscription);
       } else {
         // Create new subscription
@@ -2094,6 +2109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endDate: new Date(req.body.endDate),
         });
         const subscription = await storage.createUserSubscription(subscriptionData);
+        await syncUserSharedWorkspaces(req.user.userId);
         res.json(subscription);
       }
     } catch (error) {
@@ -2115,6 +2131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate: new Date(req.body.endDate),
       });
       const subscription = await storage.createUserSubscription(subscriptionData);
+      await syncUserSharedWorkspaces(subscription.userId);
       res.json(subscription);
     } catch (error) {
       console.error("Subscription creation error:", error);
