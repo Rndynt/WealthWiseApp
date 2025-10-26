@@ -1102,10 +1102,23 @@ export class DatabaseStorage implements IStorage {
 
     const startDate = new Date(userSubscription.subscription.startDate);
     const endDate = new Date(userSubscription.subscription.endDate);
-    const derivedStatus = userSubscription.subscription.status === 'active' && endDate > now ? 'active' : 'expired';
-    const gracePeriodEnd = derivedStatus === 'active'
-      ? new Date(endDate.getTime() + 3 * 24 * 60 * 60 * 1000)
-      : null;
+    const computedGraceEnd = new Date(endDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    let derivedStatus: WorkspaceSubscription['status'] = 'expired';
+    let gracePeriodEnd: Date | null = null;
+
+    if (!userSubscription.package.canCreateSharedWorkspace) {
+      derivedStatus = 'readonly';
+      gracePeriodEnd = null;
+    } else if (userSubscription.subscription.status === 'active') {
+      if (endDate > now) {
+        derivedStatus = 'active';
+        gracePeriodEnd = computedGraceEnd;
+      } else if (computedGraceEnd > now) {
+        derivedStatus = 'readonly';
+        gracePeriodEnd = computedGraceEnd;
+      }
+    }
 
     const payload = {
       workspaceId,
@@ -1115,7 +1128,7 @@ export class DatabaseStorage implements IStorage {
       endDate,
       status: derivedStatus,
       gracePeriodEnd,
-    };
+    } satisfies InsertWorkspaceSubscription;
 
     let subscription: WorkspaceSubscription;
 
