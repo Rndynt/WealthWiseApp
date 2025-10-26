@@ -95,7 +95,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
     enabled: !!workspaceId,
   });
 
-  const getAccountName = (accountId: number) => {
+  const getAccountName = (accountId: string) => {
     return accounts?.find(acc => acc.id === accountId)?.name || 'Unknown Account';
   };
   const getCategoryName = (categoryId?: string | null) => {
@@ -563,9 +563,9 @@ function EditTransactionModal({
         amount: transaction.amount,
         description: transaction.description,
         date: new Date(transaction.date),
-        accountId: transaction.accountId.toString(),
+        accountId: transaction.accountId,
         categoryId: transaction.categoryId ?? '',
-        toAccountId: transaction.toAccountId?.toString() || '',
+        toAccountId: transaction.toAccountId ?? '',
         debtId: transaction.debtId?.toString() || ''
       });
     }
@@ -606,7 +606,7 @@ function EditTransactionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const sourceAccount = accounts.find(acc => acc.id === parseInt(form.accountId));
+    const sourceAccount = accounts.find(acc => acc.id === form.accountId);
     if (!sourceAccount) {
       toast({
         variant: "destructive",
@@ -635,7 +635,7 @@ function EditTransactionModal({
         return;
       }
 
-      const destinationAccount = accounts.find(acc => acc.id === parseInt(form.toAccountId));
+      const destinationAccount = accounts.find(acc => acc.id === form.toAccountId);
       if (!destinationAccount) {
         toast({
           variant: "destructive",
@@ -660,9 +660,9 @@ function EditTransactionModal({
       amount: parseFloat(form.amount),
       description: form.description,
       date: form.date,
-      accountId: parseInt(form.accountId),
+      accountId: form.accountId,
       categoryId: form.categoryId ? form.categoryId : null,
-      toAccountId: form.toAccountId ? parseInt(form.toAccountId) : null,
+      toAccountId: form.toAccountId ? form.toAccountId : null,
       debtId: form.debtId ? parseInt(form.debtId) : null,
     });
   };
@@ -739,7 +739,7 @@ function EditTransactionModal({
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
+                  <SelectItem key={account.id} value={account.id}>
                     {account.name} ({account.currency})
                   </SelectItem>
                 ))}
@@ -773,8 +773,8 @@ function EditTransactionModal({
                   <SelectValue placeholder="Pilih akun tujuan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.filter(acc => acc.id.toString() !== form.accountId).map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
+                  {accounts.filter(acc => acc.id !== form.accountId).map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
                       {account.name} ({account.currency})
                     </SelectItem>
                   ))}
