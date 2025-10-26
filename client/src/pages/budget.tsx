@@ -55,8 +55,16 @@ export default function Budget({ workspaceId }: BudgetProps) {
     );
   }
 
+  const params = new URLSearchParams({ year: selectedYear.toString() });
+  if (selectedMonth) {
+    params.set('month', selectedMonth.toString());
+  }
+
+  const budgetsEndpoint = `/api/workspaces/${workspaceId}/budgets?${params.toString()}`;
+  const budgetLimitsEndpoint = `/api/workspaces/${workspaceId}/budget-limits?${params.toString()}`;
+
   const { data: budgets, isLoading } = useQuery<BudgetType[]>({
-    queryKey: [`/api/workspaces/${workspaceId}/budgets`, selectedYear, selectedMonth],
+    queryKey: [budgetsEndpoint],
     enabled: !!workspaceId,
   });
 
@@ -72,7 +80,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
 
   // Check budget limits
   const { data: budgetLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
-    queryKey: [`/api/workspaces/${workspaceId}/budget-limits`, selectedYear, selectedMonth],
+    queryKey: [budgetLimitsEndpoint],
     enabled: !!workspaceId,
   });
 

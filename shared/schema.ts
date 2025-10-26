@@ -595,7 +595,16 @@ export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   updatedAt: true,
 });
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
+export const categoryTypeSchema = z.enum(['income', 'needs', 'wants'], {
+  errorMap: () => ({ message: 'Category type must be income, needs, or wants' }),
+});
+
+export const insertCategorySchema = createInsertSchema(categories, {
+  type: categoryTypeSchema,
+  name: z.string().min(1, 'Category name is required'),
+  icon: z.string().min(1, 'Category icon is required'),
+  description: z.union([z.string(), z.null()]).optional(),
+}).omit({
   id: true,
   createdAt: true,
 });

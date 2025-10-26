@@ -8,9 +8,10 @@ import {
   insertAccountSchema, insertTransactionSchema, insertBudgetSchema, insertDebtSchema,
   insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema,
   insertSubscriptionPackageSchema, insertUserSubscriptionSchema,
-  insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema
+  insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema,
+  categoryTypeSchema
 } from "@shared/schema";
-import type { Account, InsertTransaction } from "@shared/schema";
+import type { Account, InsertTransaction, InsertCategory, InsertBudget } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -64,6 +65,25 @@ const updateTransactionSchema = z.object({
   debtId: z.union([z.number().int().positive(), z.null()]).optional(),
 }).strict().refine((data) => Object.keys(data).length > 0, {
   message: 'No transaction updates provided',
+});
+
+const updateCategorySchema = z.object({
+  name: z.string().min(1, 'Category name is required').optional(),
+  type: categoryTypeSchema.optional(),
+  icon: z.string().min(1, 'Category icon is required').optional(),
+  description: z.union([z.string(), z.null()]).optional(),
+}).strict().refine((data) => Object.keys(data).length > 0, {
+  message: 'No category updates provided',
+});
+
+const updateBudgetSchema = z.object({
+  amount: z.union([z.number(), z.string()]).optional(),
+  period: z.enum(['monthly', 'yearly']).optional(),
+  month: z.union([z.coerce.number().int().min(1).max(12), z.null()]).optional(),
+  year: z.coerce.number().int().optional(),
+  categoryId: z.coerce.number().int().positive().optional(),
+}).strict().refine((data) => Object.keys(data).length > 0, {
+  message: 'No budget updates provided',
 });
 
 // Smart notification triggers (excluding repayment processing to avoid double deduction)
@@ -527,17 +547,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Category routes
   app.get("/api/workspaces/:workspaceId/categories", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have access to this workspace' });
+      }
+
       const categories = await storage.getWorkspaceCategories(workspaceId);
       res.json(categories);
     } catch (error) {
+      console.error('Failed to get categories:', error);
       res.status(500).json({ message: "Failed to get categories" });
     }
   });
 
   app.post("/api/workspaces/:workspaceId/categories", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to create categories in this workspace' });
+      }
 
       // Check category limits untuk basic package users
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
@@ -550,6 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const categoryData = insertCategorySchema.parse({
         ...req.body,
+        description: req.body?.description ?? undefined,
         workspaceId,
       });
 
@@ -557,28 +608,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(category);
     } catch (error) {
       console.error("Category creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid category data' });
+      }
       res.status(400).json({ message: "Failed to create category" });
     }
   });
 
   app.put("/api/categories/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid category id' });
+      }
+
+      const existingCategory = await storage.getCategory(id);
+      if (!existingCategory) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+
+      const workspace = await storage.getWorkspace(existingCategory.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this category' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingCategory.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to update this category' });
+      }
+
+      const parsedUpdates = updateCategorySchema.parse({
+        ...req.body,
+        description: req.body?.description ?? undefined,
+      });
+
+      const updates: Partial<InsertCategory> = {};
+      if (parsedUpdates.name !== undefined) {
+        updates.name = parsedUpdates.name;
+      }
+      if (parsedUpdates.type !== undefined) {
+        updates.type = parsedUpdates.type;
+      }
+      if (parsedUpdates.icon !== undefined) {
+        updates.icon = parsedUpdates.icon;
+      }
+      if (parsedUpdates.description !== undefined) {
+        updates.description = parsedUpdates.description ?? null;
+      }
 
       const category = await storage.updateCategory(id, updates);
       res.json(category);
     } catch (error) {
+      console.error("Category update error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid category update' });
+      }
       res.status(400).json({ message: "Failed to update category" });
     }
   });
 
   app.delete("/api/categories/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid category id' });
+      }
+
+      const existingCategory = await storage.getCategory(id);
+      if (!existingCategory) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+
+      const workspace = await storage.getWorkspace(existingCategory.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this category' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingCategory.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to delete this category' });
+      }
+
+      const hasTransactions = await storage.categoryHasTransactions(id);
+      if (hasTransactions) {
+        return res.status(409).json({ message: 'Cannot delete category while transactions still reference it' });
+      }
+
       await storage.deleteCategory(id);
       res.json({ message: "Category deleted successfully" });
     } catch (error) {
+      console.error('Category delete error:', error);
       res.status(400).json({ message: "Failed to delete category" });
     }
   });
@@ -782,9 +903,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (transactionData.type === 'transfer') {
+      if (transactionData.type === 'transfer' || transactionData.type === 'saving') {
         if (!transactionData.toAccountId) {
-          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
+          return res.status(400).json({ message: 'Transfer and saving transactions require a destination account' });
         }
 
         if (transactionData.toAccountId === transactionData.accountId) {
@@ -792,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (destinationAccount && destinationAccount.currency !== sourceAccount.currency) {
-          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+          return res.status(400).json({ message: 'Transfers and savings can only occur between accounts with the same currency' });
         }
       }
 
@@ -818,7 +939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transactionData.categoryId = undefined;
       }
 
-      if (transactionData.type !== 'transfer') {
+      if (transactionData.type !== 'transfer' && transactionData.type !== 'saving') {
         transactionData.toAccountId = undefined;
       }
 
@@ -946,9 +1067,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (nextType === 'transfer') {
+      if (nextType === 'transfer' || nextType === 'saving') {
         if (!nextToAccountId) {
-          return res.status(400).json({ message: 'Transfer transactions require a destination account' });
+          return res.status(400).json({ message: 'Transfer and saving transactions require a destination account' });
         }
 
         if (nextToAccountId === nextAccountId) {
@@ -956,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (destinationAccount && destinationAccount.currency !== account.currency) {
-          return res.status(400).json({ message: 'Transfers can only occur between accounts with the same currency' });
+          return res.status(400).json({ message: 'Transfers and savings can only occur between accounts with the same currency' });
         }
       } else if (hasToAccountUpdate || existingTransaction.toAccountId) {
         updates.toAccountId = null;
@@ -1059,22 +1180,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Budget routes
   app.get("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const year = parseInt(req.query.year as string) || new Date().getFullYear();
-      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have access to this workspace' });
+      }
+
+      const year = Number.parseInt(req.query.year as string, 10) || new Date().getFullYear();
+      const month = req.query.month ? Number.parseInt(req.query.month as string, 10) : undefined;
 
       const budgets = await storage.getWorkspaceBudgets(workspaceId, year, month);
       res.json(budgets);
     } catch (error) {
+      console.error('Failed to get budgets:', error);
       res.status(500).json({ message: "Failed to get budgets" });
     }
   });
 
   app.post("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
-      const year = parseInt(req.body.year) || new Date().getFullYear();
-      const month = req.body.month ? parseInt(req.body.month) : undefined;
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to create budgets in this workspace' });
+      }
+
+      const year = Number.parseInt(req.body.year, 10) || new Date().getFullYear();
+      const month = req.body.month ? Number.parseInt(req.body.month, 10) : undefined;
 
       // Check budget limits untuk basic package users
       const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
@@ -1088,15 +1240,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         workspaceId,
-        amount: req.body.amount.toString(), // Convert amount to string
+        amount: req.body.amount.toString(),
         year,
-        month,
+        month: month ?? null,
       });
+
+      if (budgetData.period === 'monthly' && !budgetData.month) {
+        return res.status(400).json({ message: 'Monthly budgets require a month value' });
+      }
+
+      if (budgetData.period === 'yearly') {
+        budgetData.month = null;
+      }
+
+      const category = await storage.getCategory(budgetData.categoryId);
+      if (!category || category.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Category not found in this workspace' });
+      }
 
       const budget = await storage.createBudget(budgetData);
       res.json(budget);
     } catch (error) {
       console.error("Budget creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid budget data' });
+      }
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {
@@ -1107,29 +1275,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/budgets/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      if (updates.year) {
-        updates.year = parseInt(updates.year);
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid budget id' });
       }
-      if (updates.month) {
-        updates.month = parseInt(updates.month);
+
+      const existingBudget = await storage.getBudget(id);
+      if (!existingBudget) {
+        return res.status(404).json({ message: 'Budget not found' });
       }
-      if (updates.amount) {
-        updates.amount = updates.amount.toString();
+
+      const workspace = await storage.getWorkspace(existingBudget.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this budget' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingBudget.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to update this budget' });
+      }
+
+      const parsedUpdates = updateBudgetSchema.parse({
+        ...req.body,
+        month: req.body?.month ?? undefined,
+      });
+
+      const updates: Partial<InsertBudget> = {};
+
+      if (parsedUpdates.amount !== undefined) {
+        const numericAmount = typeof parsedUpdates.amount === 'number'
+          ? parsedUpdates.amount
+          : Number.parseFloat(parsedUpdates.amount);
+
+        if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+          return res.status(400).json({ message: 'Amount must be greater than zero' });
+        }
+
+        updates.amount = numericAmount.toString();
+      }
+
+      if (parsedUpdates.period !== undefined) {
+        updates.period = parsedUpdates.period;
+      }
+
+      const hasMonthUpdate = Object.prototype.hasOwnProperty.call(parsedUpdates, 'month');
+      if (hasMonthUpdate) {
+        updates.month = parsedUpdates.month ?? null;
+      }
+
+      if (parsedUpdates.year !== undefined) {
+        updates.year = parsedUpdates.year;
+      }
+
+      if (parsedUpdates.categoryId !== undefined) {
+        updates.categoryId = parsedUpdates.categoryId;
+      }
+
+      const nextPeriod = updates.period ?? existingBudget.period;
+      const nextMonth = hasMonthUpdate ? (parsedUpdates.month ?? null) : existingBudget.month;
+
+      if (nextPeriod === 'monthly' && !nextMonth) {
+        return res.status(400).json({ message: 'Monthly budgets require a month value' });
+      }
+
+      if (nextPeriod === 'yearly') {
+        updates.month = null;
+      } else if (hasMonthUpdate && parsedUpdates.month) {
+        updates.month = parsedUpdates.month;
+      }
+
+      const nextCategoryId = updates.categoryId ?? existingBudget.categoryId;
+      const category = await storage.getCategory(nextCategoryId);
+      if (!category || category.workspaceId !== existingBudget.workspaceId) {
+        return res.status(400).json({ message: 'Category not found in this workspace' });
       }
 
       const budget = await storage.updateBudget(id, updates);
       res.json(budget);
     } catch (error) {
       console.error("Budget update error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message ?? 'Invalid budget update' });
+      }
       res.status(400).json({ message: "Failed to update budget" });
     }
   });
 
   app.delete("/api/budgets/:id", authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid budget id' });
+      }
+
+      const existingBudget = await storage.getBudget(id);
+      if (!existingBudget) {
+        return res.status(404).json({ message: 'Budget not found' });
+      }
+
+      const workspace = await storage.getWorkspace(existingBudget.workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found for this budget' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(existingBudget.workspaceId, req.user!.userId);
+      const isOwner = workspace.ownerId === req.user!.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have permission to delete this budget' });
+      }
+
       await storage.deleteBudget(id);
       res.json({ message: "Budget deleted successfully" });
     } catch (error) {
@@ -1676,32 +1931,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check category limits
   app.get('/api/workspaces/:workspaceId/category-limits', authenticateToken, async (req, res) => {
-    const workspaceId = parseInt(req.params.workspaceId);
-
     try {
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
       if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
       }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user.userId);
+      const isOwner = workspace.ownerId === req.user.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have access to this workspace' });
+      }
+
       const limits = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       res.json(limits);
     } catch (error) {
+      console.error('Failed to check category limits:', error);
       res.status(500).json({ message: 'Failed to check category limits' });
     }
   });
 
   // Check budget limits
   app.get('/api/workspaces/:workspaceId/budget-limits', authenticateToken, async (req, res) => {
-    const workspaceId = parseInt(req.params.workspaceId);
-    const year = parseInt(req.query.year as string) || new Date().getFullYear();
-    const month = req.query.month ? parseInt(req.query.month as string) : undefined;
-
     try {
+      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
+      if (Number.isNaN(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid workspace id' });
+      }
+
+      const year = Number.parseInt(req.query.year as string, 10) || new Date().getFullYear();
+      const month = req.query.month ? Number.parseInt(req.query.month as string, 10) : undefined;
+
       if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
       }
+
+      const workspace = await storage.getWorkspace(workspaceId);
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found' });
+      }
+
+      const membership = await storage.getWorkspaceMembership(workspaceId, req.user.userId);
+      const isOwner = workspace.ownerId === req.user.userId;
+      if (!membership && !isOwner) {
+        return res.status(403).json({ message: 'You do not have access to this workspace' });
+      }
+
       const limits = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       res.json(limits);
     } catch (error) {
+      console.error('Failed to check budget limits:', error);
       res.status(500).json({ message: 'Failed to check budget limits' });
     }
   });
