@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,28 +15,41 @@ interface AddAccountModalProps {
   workspaceId?: number;
 }
 
+type AccountFormState = {
+  name: string;
+  type: 'transaction' | 'asset' | '';
+  currency: string;
+  notes: string;
+};
+
+const createDefaultFormState = (): AccountFormState => ({
+  name: '',
+  type: '',
+  currency: 'IDR',
+  notes: '',
+});
+
 export default function AddAccountModal({ open, onOpenChange, workspaceId }: AddAccountModalProps) {
-  const [form, setForm] = useState({
-    name: '',
-    type: '' as 'transaction' | 'asset' | '',
-    currency: 'IDR',
-    notes: '',
-  });
+  const [form, setForm] = useState<AccountFormState>(createDefaultFormState);
+  const resetForm = useCallback(() => setForm(createDefaultFormState()), []);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createAccountMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest('POST', `/api/workspaces/${workspaceId}/accounts`, data),
+    mutationFn: (data: any) => {
+      if (!workspaceId) {
+        return Promise.reject(new Error('Workspace required'));
+      }
+      return apiRequest('POST', `/api/workspaces/${workspaceId}/accounts`, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/workspaces/${workspaceId}/accounts`] });
       toast({
         title: "Account created",
         description: "Your new account has been created successfully.",
       });
-      setForm({ name: '', type: '', currency: 'IDR', notes: '' });
-      onOpenChange(false);
+      handleDialogChange(false);
     },
     onError: (error: any) => {
       toast({
@@ -50,12 +63,27 @@ export default function AddAccountModal({ open, onOpenChange, workspaceId }: Add
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.type) return;
-    
+    if (!workspaceId) {
+      toast({
+        variant: "destructive",
+        title: "Workspace required",
+        description: "Please select a workspace before adding an account.",
+      });
+      return;
+    }
+
     createAccountMutation.mutate(form);
   };
 
+  const handleDialogChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetForm();
+    }
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Account</DialogTitle>
@@ -114,11 +142,11 @@ export default function AddAccountModal({ open, onOpenChange, workspaceId }: Add
           </div>
           
           <div className="flex space-x-3">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className="flex-1"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleDialogChange(false)}
             >
               Cancel
             </Button>
