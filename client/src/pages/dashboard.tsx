@@ -6,7 +6,7 @@ import { PieChart, TrendingUp, TrendingDown, DollarSign, Wallet, CreditCard, Rec
 import { Budget, Category, Transaction, DashboardData } from '@/types';
 
 interface DashboardProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 const iconMap: { [key: string]: React.ReactNode } = {

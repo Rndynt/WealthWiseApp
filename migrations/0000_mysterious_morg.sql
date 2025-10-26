@@ -7,7 +7,7 @@ CREATE TABLE "accounts" (
 	"currency" text NOT NULL,
 	"balance" numeric(15, 2) DEFAULT '0' NOT NULL,
 	"notes" text,
-	"workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -18,7 +18,7 @@ CREATE TABLE "budgets" (
 	"period" text NOT NULL,
 	"month" integer,
 	"year" integer NOT NULL,
-	"workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -28,7 +28,7 @@ CREATE TABLE "categories" (
 	"type" text NOT NULL,
 	"icon" text NOT NULL,
 	"description" text,
-	"workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -41,7 +41,7 @@ CREATE TABLE "debts" (
 	"interest_rate" numeric(5, 2),
 	"due_date" timestamp,
 	"status" text NOT NULL,
-	"workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -99,7 +99,7 @@ CREATE TABLE "transactions" (
 	"account_id" integer NOT NULL,
 	"category_id" integer,
 	"to_account_id" integer,
-	"workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -125,7 +125,7 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 CREATE TABLE "workspace_members" (
         "id" serial PRIMARY KEY NOT NULL,
-        "workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
         "user_id" uuid NOT NULL,
 	"role" text NOT NULL,
 	"joined_at" timestamp DEFAULT now() NOT NULL
@@ -133,7 +133,7 @@ CREATE TABLE "workspace_members" (
 --> statement-breakpoint
 CREATE TABLE "workspace_subscriptions" (
         "id" serial PRIMARY KEY NOT NULL,
-        "workspace_id" integer NOT NULL,
+        "workspace_id" uuid NOT NULL,
         "package_id" integer NOT NULL,
         "owner_id" uuid NOT NULL,
 	"start_date" timestamp NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE "workspace_subscriptions" (
 );
 --> statement-breakpoint
 CREATE TABLE "workspaces" (
-        "id" serial PRIMARY KEY NOT NULL,
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "name" text NOT NULL,
         "type" text NOT NULL,
         "owner_id" uuid NOT NULL,

@@ -54,7 +54,7 @@ interface RecurringTransaction {
   startDate: string;
   endDate?: string;
   isActive: boolean;
-  workspaceId: number;
+  workspaceId: string;
   createdAt: string;
   lastExecuted?: string;
   nextExecution: string;
@@ -66,13 +66,13 @@ interface CategoryRule {
   pattern: string;
   categoryId: number;
   isActive: boolean;
-  workspaceId: number;
+  workspaceId: string;
   timesUsed: number;
   createdAt: string;
 }
 
 interface AutomationProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function Automation({ workspaceId }: AutomationProps) {

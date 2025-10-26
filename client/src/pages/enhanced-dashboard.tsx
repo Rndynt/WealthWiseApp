@@ -9,7 +9,7 @@ import {
 import { PageContainer } from '@/components/ui/page-container';
 
 interface EnhancedDashboardProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function EnhancedDashboard({ workspaceId }: EnhancedDashboardProps) {

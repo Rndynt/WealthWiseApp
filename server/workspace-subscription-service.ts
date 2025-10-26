@@ -19,11 +19,11 @@ export class WorkspaceSubscriptionService {
     private readonly storage: Pick<DatabaseStorage, 'getWorkspaceSubscriptionWithPackage'>,
   ) {}
 
-  async getSubscriptionWithPackage(workspaceId: number): Promise<WorkspaceSubscriptionWithPackage | undefined> {
+  async getSubscriptionWithPackage(workspaceId: string): Promise<WorkspaceSubscriptionWithPackage | undefined> {
     return this.storage.getWorkspaceSubscriptionWithPackage(workspaceId);
   }
 
-  async validateMemberLimit(workspaceId: number, currentMembers: number): Promise<MemberLimitValidationResult> {
+  async validateMemberLimit(workspaceId: string, currentMembers: number): Promise<MemberLimitValidationResult> {
     const subscriptionData = await this.getSubscriptionWithPackage(workspaceId);
 
     if (!subscriptionData) {

@@ -43,7 +43,7 @@ const iconMap: Record<string, string> = {
 };
 
 interface ReportsProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function Reports({ workspaceId }: ReportsProps) {

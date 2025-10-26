@@ -66,6 +66,19 @@ async function resolveRoleId(roleName: string): Promise<number> {
   return role.id;
 }
 
+const workspaceIdParamsSchema = z.object({
+  workspaceId: z.string().uuid({ message: 'Invalid workspace id' }),
+});
+
+function validateWorkspaceIdParam(req: Request, res: any): string | undefined {
+  const result = workspaceIdParamsSchema.safeParse(req.params);
+  if (!result.success) {
+    res.status(400).json({ message: 'Invalid workspace id' });
+    return;
+  }
+  return result.data.workspaceId;
+}
+
 async function loadRequestAccessContext(req: Request): Promise<RequestAccessContext | null> {
   if (req.accessContext) {
     return req.accessContext;
@@ -136,7 +149,7 @@ const updateBudgetSchema = z.object({
 });
 
 // Smart notification triggers (excluding repayment processing to avoid double deduction)
-async function checkNonRepaymentNotifications(workspaceId: number, transaction: any) {
+async function checkNonRepaymentNotifications(workspaceId: string, transaction: any) {
   try {
     // Check for unusual transaction amounts
     const amount = parseFloat(transaction.amount);
@@ -169,7 +182,7 @@ async function checkNonRepaymentNotifications(workspaceId: number, transaction: 
 
 
 
-async function calculateCategorySpending(workspaceId: number, categoryId: number): Promise<number> {
+async function calculateCategorySpending(workspaceId: string, categoryId: number): Promise<number> {
   const currentMonth = new Date();
   const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const transactions = await storage.getWorkspaceTransactions(workspaceId, 1000);
@@ -508,7 +521,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Collaboration routes: workspace members
   app.get('/api/workspaces/:workspaceId/members', authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const members = await storage.getWorkspaceMembers(workspaceId);
       const membersWithUser = await Promise.all(members.map(async (m) => {
         const u = await storage.getUser(m.userId);
@@ -526,7 +542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/workspaces/:workspaceId/invite', authenticateToken, requirePermission('user.collaboration.manage'), async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const { email, role } = req.body as { email: string; role: 'editor' | 'viewer' };
       if (!email || !role) {
         return res.status(400).json({ message: 'Email and role are required' });
@@ -606,9 +625,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Category routes
   app.get("/api/workspaces/:workspaceId/categories", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -632,9 +651,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/categories", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -766,7 +785,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Account routes
   app.get("/api/workspaces/:workspaceId/accounts", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const accounts = await storage.getWorkspaceAccounts(workspaceId);
       res.json(accounts);
     } catch (error) {
@@ -776,7 +798,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/accounts", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
 
       // Check category limits untuk basic package users
       const accountLimit = await storage.checkAccountLimit(workspaceId, req.user!.userId);
@@ -891,9 +916,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get("/api/workspaces/:workspaceId/transactions", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -918,9 +943,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/transactions", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -1246,7 +1271,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes
   app.get("/api/workspaces/:workspaceId/dashboard", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const dashboardData = await storage.getDashboardData(workspaceId);
       res.json(dashboardData);
     } catch (error) {
@@ -1257,9 +1285,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Budget routes
   app.get("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -1286,9 +1314,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/budgets", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const workspace = await storage.getWorkspace(workspaceId);
@@ -1473,7 +1501,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debt routes
   app.get("/api/workspaces/:workspaceId/debts", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const debts = await storage.getWorkspaceDebts(workspaceId);
       res.json(debts);
     } catch (error) {
@@ -1483,7 +1514,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/debts", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const debtData = insertDebtSchema.parse({
         ...req.body,
         workspaceId,
@@ -1716,7 +1750,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification routes
   app.get('/api/workspaces/:workspaceId/notifications', authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const notifications = await storage.getNotificationsByWorkspace(workspaceId);
       res.json(notifications);
     } catch (error) {
@@ -1726,7 +1763,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/workspaces/:workspaceId/notifications', authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const notificationData = req.body;
       const notification = await storage.createNotification({
         ...notificationData,
@@ -1920,7 +1960,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Workspace Subscriptions
   app.get("/api/workspaces/:workspaceId/subscription", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const result = await storage.getWorkspaceSubscriptionWithPackage(workspaceId);
       res.json(result);
     } catch (error) {
@@ -1930,7 +1973,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/subscription", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       // Check if user can create shared workspace
       const userSub = await storage.getUserSubscriptionWithPackage(req.user.userId);
@@ -2024,7 +2070,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check account limits
   app.get('/api/workspaces/:workspaceId/account-limits', authenticateToken, async (req, res) => {
-    const workspaceId = parseInt(req.params.workspaceId);
+    const workspaceId = validateWorkspaceIdParam(req, res);
+    if (!workspaceId) {
+      return;
+    }
 
     try {
       if (!req.user) {
@@ -2041,9 +2090,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check category limits
   app.get('/api/workspaces/:workspaceId/category-limits', authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       if (!req.user) {
@@ -2072,9 +2121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check budget limits
   app.get('/api/workspaces/:workspaceId/budget-limits', authenticateToken, async (req, res) => {
     try {
-      const workspaceId = Number.parseInt(req.params.workspaceId, 10);
-      if (Number.isNaN(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid workspace id' });
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
       }
 
       const year = Number.parseInt(req.query.year as string, 10) || new Date().getFullYear();
@@ -2139,7 +2188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics routes
   app.get("/api/workspaces/:workspaceId/analytics", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const timeframe = (req.query.timeframe as string) || '6months';
       
       const analyticsData = await storage.getAnalyticsData(workspaceId, timeframe);
@@ -2152,7 +2204,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/workspaces/:workspaceId/financial-health", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       const healthData = await storage.getFinancialHealthData(workspaceId);
       res.json(healthData);
@@ -2165,7 +2220,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification routes
   app.get("/api/workspaces/:workspaceId/notifications/debt-reminders", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       const reminders = await storage.checkDebtReminders(workspaceId);
       res.json(reminders);
@@ -2177,7 +2235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/workspaces/:workspaceId/notifications/budget-alerts", authenticateToken, async (req, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       const alerts = await storage.checkBudgetAlerts(workspaceId);
       res.json(alerts);
@@ -2227,7 +2288,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Goals API endpoints
   app.get("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const goals = await storage.getGoalsByWorkspace(workspaceId);
       res.json(goals);
     } catch (error) {
@@ -2239,7 +2303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Goal Performance Metrics - MUST BE BEFORE /:id routes
   app.get("/api/workspaces/:workspaceId/goals/metrics", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const metrics = await storage.getGoalPerformanceMetrics(workspaceId);
       res.json(metrics);
     } catch (error) {
@@ -2251,7 +2318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-Powered Goal Suggestions - MUST BE BEFORE /:id routes
   app.get("/api/workspaces/:workspaceId/goals/suggestions", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       // Gather financial data for AI analysis
       const [transactions, accounts, budgets, goals, debts] = await Promise.all([
@@ -2292,7 +2362,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-Powered Goal Insights API - MUST BE BEFORE /:id routes
   app.get("/api/workspaces/:workspaceId/goals/insights", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       // Gather financial data for AI analysis
       const [transactions, goals, budgets] = await Promise.all([
@@ -2358,7 +2431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/goals", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const goalData = insertGoalSchema.parse({
         ...req.body,
         workspaceId,
@@ -2381,7 +2457,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/workspaces/:workspaceId/goals/:id", authenticateToken, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const updates = req.body;
       const goal = await storage.updateGoal(id, updates);
       res.json(goal);
@@ -2460,7 +2539,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Recurring Transactions API endpoints
   app.get("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const transactions = await storage.getRecurringTransactionsByWorkspace(workspaceId);
       res.json(transactions);
     } catch (error) {
@@ -2471,7 +2553,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/recurring-transactions", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       
       // Calculate next execution date based on frequency and start date
       const startDate = new Date(req.body.startDate);
@@ -2525,7 +2610,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Category Rules API endpoints
   app.get("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const rules = await storage.getCategoryRulesByWorkspace(workspaceId);
       res.json(rules);
     } catch (error) {
@@ -2536,7 +2624,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workspaces/:workspaceId/category-rules", authenticateToken, async (req: any, res) => {
     try {
-      const workspaceId = parseInt(req.params.workspaceId);
+      const workspaceId = validateWorkspaceIdParam(req, res);
+      if (!workspaceId) {
+        return;
+      }
       const ruleData = insertCategoryRuleSchema.parse({
         ...req.body,
         workspaceId,
