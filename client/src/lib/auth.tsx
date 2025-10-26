@@ -4,7 +4,7 @@ import { apiRequest } from './queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
 }

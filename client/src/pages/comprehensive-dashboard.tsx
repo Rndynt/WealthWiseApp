@@ -12,7 +12,7 @@ import {
 import { PageContainer } from '@/components/ui/page-container';
 
 interface ComprehensiveDashboardProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function ComprehensiveDashboard({ workspaceId }: ComprehensiveDashboardProps) {

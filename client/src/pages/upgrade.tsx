@@ -38,7 +38,7 @@ interface SubscriptionPackage {
 
 interface UserSubscription {
   id: number;
-  userId: number;
+  userId: string;
   packageId: number;
   startDate: string;
   endDate: string;

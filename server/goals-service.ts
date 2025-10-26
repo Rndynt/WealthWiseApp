@@ -174,7 +174,7 @@ export class GoalsService {
   /**
    * Smart Goal Suggestions based on user's financial profile
    */
-  async generateGoalSuggestions(workspaceId: number): Promise<GoalRecommendation[]> {
+  async generateGoalSuggestions(workspaceId: string): Promise<GoalRecommendation[]> {
     const financialData = await this.getWorkspaceFinancialData(workspaceId);
     const suggestions: GoalRecommendation[] = [];
     
@@ -541,7 +541,7 @@ export class GoalsService {
   /**
    * Create progress insight
    */
-  private async createProgressInsight(goalId: number, title: string, message: string, workspaceId: number): Promise<void> {
+  private async createProgressInsight(goalId: number, title: string, message: string, workspaceId: string): Promise<void> {
     await db.insert(goalInsights).values({
       goalId,
       type: 'achievement',
@@ -556,7 +556,7 @@ export class GoalsService {
   /**
    * Get comprehensive workspace financial data
    */
-  private async getWorkspaceFinancialData(workspaceId: number) {
+  private async getWorkspaceFinancialData(workspaceId: string) {
     // Get recent transactions for analysis
     const recentTransactions = await db
       .select()

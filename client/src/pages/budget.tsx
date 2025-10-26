@@ -37,7 +37,7 @@ const iconMap: Record<string, string> = {
 };
 
 interface BudgetProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
 }
 
 export default function Budget({ workspaceId }: BudgetProps) {

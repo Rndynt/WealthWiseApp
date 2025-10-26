@@ -12,7 +12,7 @@ import { apiRequest } from '@/lib/queryClient';
 interface AddCategoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspaceId: number;
+  workspaceId: string;
 }
 
 export default function AddCategoryModal({ open, onOpenChange, workspaceId }: AddCategoryModalProps) {

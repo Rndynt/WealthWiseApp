@@ -633,34 +633,55 @@ async function seedEnhancedWorkspaceSubscriptions() {
 async function seedEnhancedCategories() {
   console.log("🏷️ Seeding enhanced categories with proper workspace assignments...");
 
+  const allUsers = await db.select().from(users);
+  const allWorkspaces = await db.select().from(workspaces);
+
+  const findPersonalWorkspace = (email: string) => {
+    const ownerId = allUsers.find(user => user.email === email)?.id;
+    return ownerId
+      ? allWorkspaces.find(workspace => workspace.ownerId === ownerId && workspace.type === 'personal')
+      : undefined;
+  };
+
+  const rootWorkspace = findPersonalWorkspace('root@financeflow.com');
+  const adminWorkspace = findPersonalWorkspace('admin@financeflow.com');
+  const basicWorkspace = findPersonalWorkspace('basic@financeflow.com');
+  const premiumWorkspace = findPersonalWorkspace('premium@financeflow.com');
+  const demoWorkspace = findPersonalWorkspace('demo@financeflow.com');
+
+  if (!rootWorkspace || !adminWorkspace || !basicWorkspace || !premiumWorkspace || !demoWorkspace) {
+    console.log("⚠️ Skipping categories - missing personal workspaces");
+    return;
+  }
+
   // Categories for each personal workspace
   const categoryData = [
-    // Root user categories (workspace 1)
-    { name: "Salary", type: "income", icon: "briefcase", description: "Monthly salary", workspaceId: 1 },
-    { name: "Food & Dining", type: "needs", icon: "utensils", description: "Food expenses", workspaceId: 1 },
-    { name: "Entertainment", type: "wants", icon: "gamepad", description: "Entertainment expenses", workspaceId: 1 },
+    // Root user categories
+    { name: "Salary", type: "income", icon: "briefcase", description: "Monthly salary", workspaceId: rootWorkspace.id },
+    { name: "Food & Dining", type: "needs", icon: "utensils", description: "Food expenses", workspaceId: rootWorkspace.id },
+    { name: "Entertainment", type: "wants", icon: "gamepad", description: "Entertainment expenses", workspaceId: rootWorkspace.id },
 
-    // Admin user categories (workspace 2)
-    { name: "Freelance Income", type: "income", icon: "briefcase", description: "Freelance work", workspaceId: 2 },
-    { name: "Utilities", type: "needs", icon: "bolt", description: "Electricity, water, etc", workspaceId: 2 },
-    { name: "Shopping", type: "wants", icon: "shopping-cart", description: "Non-essential shopping", workspaceId: 2 },
+    // Admin user categories
+    { name: "Freelance Income", type: "income", icon: "briefcase", description: "Freelance work", workspaceId: adminWorkspace.id },
+    { name: "Utilities", type: "needs", icon: "bolt", description: "Electricity, water, etc", workspaceId: adminWorkspace.id },
+    { name: "Shopping", type: "wants", icon: "shopping-cart", description: "Non-essential shopping", workspaceId: adminWorkspace.id },
 
-    // Basic user categories (workspace 3) - LIMITED TO 3
-    { name: "Job Income", type: "income", icon: "briefcase", description: "Primary job income", workspaceId: 3 },
-    { name: "Groceries", type: "needs", icon: "shopping-cart", description: "Food and groceries", workspaceId: 3 },
-    { name: "Transport", type: "needs", icon: "bus", description: "Transportation costs", workspaceId: 3 },
+    // Basic user categories - LIMITED TO 3
+    { name: "Job Income", type: "income", icon: "briefcase", description: "Primary job income", workspaceId: basicWorkspace.id },
+    { name: "Groceries", type: "needs", icon: "shopping-cart", description: "Food and groceries", workspaceId: basicWorkspace.id },
+    { name: "Transport", type: "needs", icon: "bus", description: "Transportation costs", workspaceId: basicWorkspace.id },
 
-    // Premium user categories (workspace 4) - UNLIMITED
-    { name: "Business Income", type: "income", icon: "briefcase", description: "Business revenue", workspaceId: 4 },
-    { name: "Housing", type: "needs", icon: "home", description: "Rent and housing costs", workspaceId: 4 },
-    { name: "Healthcare", type: "needs", icon: "stethoscope", description: "Medical expenses", workspaceId: 4 },
-    { name: "Travel", type: "wants", icon: "plane", description: "Travel and vacation", workspaceId: 4 },
-    { name: "Gadgets", type: "wants", icon: "phone", description: "Technology purchases", workspaceId: 4 },
+    // Premium user categories - UNLIMITED
+    { name: "Business Income", type: "income", icon: "briefcase", description: "Business revenue", workspaceId: premiumWorkspace.id },
+    { name: "Housing", type: "needs", icon: "home", description: "Rent and housing costs", workspaceId: premiumWorkspace.id },
+    { name: "Healthcare", type: "needs", icon: "stethoscope", description: "Medical expenses", workspaceId: premiumWorkspace.id },
+    { name: "Travel", type: "wants", icon: "plane", description: "Travel and vacation", workspaceId: premiumWorkspace.id },
+    { name: "Gadgets", type: "wants", icon: "phone", description: "Technology purchases", workspaceId: premiumWorkspace.id },
 
-    // Demo user categories (workspace 5) - LIMITED TO 3
-    { name: "Part-time Work", type: "income", icon: "briefcase", description: "Part-time income", workspaceId: 5 },
-    { name: "Education", type: "needs", icon: "graduation-cap", description: "Education costs", workspaceId: 5 },
-    { name: "Coffee", type: "wants", icon: "coffee", description: "Coffee and treats", workspaceId: 5 },
+    // Demo user categories - LIMITED TO 3
+    { name: "Part-time Work", type: "income", icon: "briefcase", description: "Part-time income", workspaceId: demoWorkspace.id },
+    { name: "Education", type: "needs", icon: "graduation-cap", description: "Education costs", workspaceId: demoWorkspace.id },
+    { name: "Coffee", type: "wants", icon: "coffee", description: "Coffee and treats", workspaceId: demoWorkspace.id },
   ];
 
   await db.insert(categories).values(categoryData).onConflictDoNothing();
@@ -668,6 +689,27 @@ async function seedEnhancedCategories() {
 
 async function seedEnhancedAccounts() {
   console.log("🏦 Seeding enhanced accounts with proper workspace assignments...");
+
+  const allUsers = await db.select().from(users);
+  const allWorkspaces = await db.select().from(workspaces);
+
+  const findPersonalWorkspace = (email: string) => {
+    const ownerId = allUsers.find(user => user.email === email)?.id;
+    return ownerId
+      ? allWorkspaces.find(workspace => workspace.ownerId === ownerId && workspace.type === 'personal')
+      : undefined;
+  };
+
+  const rootWorkspace = findPersonalWorkspace('root@financeflow.com');
+  const adminWorkspace = findPersonalWorkspace('admin@financeflow.com');
+  const basicWorkspace = findPersonalWorkspace('basic@financeflow.com');
+  const premiumWorkspace = findPersonalWorkspace('premium@financeflow.com');
+  const demoWorkspace = findPersonalWorkspace('demo@financeflow.com');
+
+  if (!rootWorkspace || !adminWorkspace || !basicWorkspace || !premiumWorkspace || !demoWorkspace) {
+    console.log("⚠️ Skipping accounts - missing personal workspaces");
+    return;
+  }
 
   // Create accounts for root user (balance calculated from transactions)
   await db.insert(accounts).values([
@@ -677,7 +719,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Primary checking account",
-      workspaceId: 1,
+      workspaceId: rootWorkspace.id,
     },
     {
       name: "Savings Account",
@@ -685,15 +727,15 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Emergency fund and savings",
-      workspaceId: 1,
+      workspaceId: rootWorkspace.id,
     },
     {
       name: "Investment Portfolio",
       type: "asset",
-      currency: "IDR", 
+      currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Stock and mutual fund investments",
-      workspaceId: 1,
+      workspaceId: rootWorkspace.id,
     },
     {
       name: "Cash",
@@ -701,7 +743,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Physical cash on hand",
-      workspaceId: 1,
+      workspaceId: rootWorkspace.id,
     },
   ]).onConflictDoNothing();
 
@@ -713,7 +755,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Main business account",
-      workspaceId: 2,
+      workspaceId: adminWorkspace.id,
     },
     {
       name: "Investment Portfolio",
@@ -721,7 +763,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Company investments",
-      workspaceId: 2,
+      workspaceId: adminWorkspace.id,
     },
   ]).onConflictDoNothing();
 
@@ -733,7 +775,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Primary personal account",
-      workspaceId: 3,
+      workspaceId: basicWorkspace.id,
     },
   ]).onConflictDoNothing();
 
@@ -745,7 +787,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Primary personal checking account",
-      workspaceId: 4,
+      workspaceId: premiumWorkspace.id,
     },
     {
       name: "High-Yield Savings",
@@ -753,7 +795,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "High-yield savings account",
-      workspaceId: 4,
+      workspaceId: premiumWorkspace.id,
     },
     {
       name: "Investment Account",
@@ -761,7 +803,7 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Personal investment account",
-      workspaceId: 4,
+      workspaceId: premiumWorkspace.id,
     },
   ]).onConflictDoNothing();
 
@@ -773,15 +815,15 @@ async function seedEnhancedAccounts() {
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Main account for daily expenses",
-      workspaceId: 5,
+      workspaceId: demoWorkspace.id,
     },
     {
       name: "Cash Wallet",
-      type: "transaction", 
+      type: "transaction",
       currency: "IDR",
       balance: "0", // Will be calculated from transactions
       notes: "Cash for daily expenses",
-      workspaceId: 5,
+      workspaceId: demoWorkspace.id,
     },
   ]).onConflictDoNothing();
 }

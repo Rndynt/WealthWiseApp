@@ -18,7 +18,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransactionsProps {
-  workspaceId: number | undefined;
+  workspaceId: string | undefined;
   dateRange?: { from: Date; to: Date } | null;
 }
 
@@ -536,7 +536,7 @@ function EditTransactionModal({
 }: {
   transaction: Transaction | null;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
   accounts: Account[];
   categories: Category[];
 }) {
@@ -805,7 +805,7 @@ function DeleteTransactionModal({
 }: {
   transaction: Transaction | null;
   onClose: () => void;
-  workspaceId: number;
+  workspaceId: string;
   accounts: Account[];
   formatCurrency: (amount: string | number, currency?: string) => string;
 }) {
