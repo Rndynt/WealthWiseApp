@@ -8,6 +8,13 @@
       "when": 1755241447449,
       "tag": "0000_mysterious_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761503992044,
+      "tag": "0001_category_uuid",
+      "breakpoints": false
     }
   ]
 }

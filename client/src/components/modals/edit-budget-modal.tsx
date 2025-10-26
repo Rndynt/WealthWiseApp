@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 interface Budget {
   id: number;
-  categoryId: number;
+  categoryId: string;
   amount: string;
   year: number;
   month: number;
@@ -19,7 +19,7 @@ interface Budget {
 }
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   color?: string;
   icon?: string;
@@ -27,7 +27,7 @@ interface Category {
 import { notificationService } from '@/lib/notification-service';
 
 const editBudgetSchema = z.object({
-  categoryId: z.number().min(1, 'Category is required'),
+  categoryId: z.string().uuid({ message: 'Category is required' }),
   amount: z.string().min(1, 'Budget amount is required'),
   year: z.number(),
   month: z.number(),
@@ -53,7 +53,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, workspaceId }
   const form = useForm<EditBudgetFormData>({
     resolver: zodResolver(editBudgetSchema),
     defaultValues: {
-      categoryId: budget?.categoryId || 0,
+      categoryId: budget?.categoryId || '',
       amount: budget?.amount || '0',
       year: budget?.year || new Date().getFullYear(),
       month: budget?.month || new Date().getMonth() + 1,
@@ -109,15 +109,15 @@ export default function EditBudgetModal({ budget, isOpen, onClose, workspaceId }
           <div>
             <Label htmlFor="categoryId">Category</Label>
             <Select
-              value={form.watch('categoryId')?.toString() || ''}
-              onValueChange={(value) => form.setValue('categoryId', parseInt(value))}
+              value={form.watch('categoryId') || ''}
+              onValueChange={(value) => form.setValue('categoryId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
                 {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
+                  <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
                 ))}
