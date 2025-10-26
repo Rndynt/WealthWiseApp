@@ -112,7 +112,7 @@ export class AutomationService {
   }
 
   // Auto-update goal progress from transactions
-  async updateGoalProgress(transactionId: number): Promise<void> {
+  async updateGoalProgress(transactionId: string): Promise<void> {
     const [transaction] = await db
       .select()
       .from(transactions)

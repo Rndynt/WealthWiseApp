@@ -146,7 +146,7 @@ export const accounts = pgTable("accounts", {
 
 // Transactions table
 export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   type: text("type").notNull(), // 'income' | 'expense' | 'transfer' | 'saving' | 'debt' | 'repayment'
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description").notNull(),
@@ -237,7 +237,7 @@ export const goals = pgTable("goals", {
 export const goalContributions = pgTable("goal_contributions", {
   id: serial("id").primaryKey(),
   goalId: integer("goal_id").references(() => goals.id).notNull(),
-  transactionId: integer("transaction_id").references(() => transactions.id),
+  transactionId: uuid("transaction_id").references(() => transactions.id),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   contributionType: text("contribution_type").notNull(), // 'transaction' | 'manual' | 'auto_transfer' | 'interest'
   source: text("source"), // Description of contribution source
@@ -249,7 +249,7 @@ export const goalContributions = pgTable("goal_contributions", {
 // Goal match audit table - tracks auto-tracking decisions
 export const goalMatchAudits = pgTable("goal_match_audits", {
   id: serial("id").primaryKey(),
-  transactionId: integer("transaction_id").references(() => transactions.id).notNull(),
+  transactionId: uuid("transaction_id").references(() => transactions.id).notNull(),
   workspaceId: uuid("workspace_id").references(() => workspaces.id).notNull(),
   selectedGoalId: integer("selected_goal_id").references(() => goals.id),
   matchedGoalsData: json("matched_goals_data").notNull(), // All scored goals and criteria
