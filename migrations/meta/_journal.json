@@ -15,6 +15,13 @@
       "when": 1761503992044,
       "tag": "0001_category_uuid",
       "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761503992045,
+      "tag": "0002_transactions_uuid",
+      "breakpoints": false
     }
   ]
 }

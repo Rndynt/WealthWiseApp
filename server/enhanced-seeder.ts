@@ -27,8 +27,9 @@ async function resetDatabase() {
   try {
     // Use TRUNCATE CASCADE to handle foreign keys automatically
     const tableNames = [
+      'goal_match_audits', 'goal_contributions',
       'transactions', 'budgets', 'debts', 'accounts', 'categories',
-      'workspace_members', 'workspace_subscriptions', 'workspaces', 
+      'workspace_members', 'workspace_subscriptions', 'workspaces',
       'user_subscriptions', 'users', 'subscription_packages',
       'role_permissions', 'permissions', 'roles'
     ];

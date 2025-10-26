@@ -137,7 +137,7 @@ export class GoalsEnhancedService {
   }
 
   // Smart transaction recognition and contribution tracking using AI-powered goal matching
-  async processTransactionForGoals(transactionId: number, workspaceId: string): Promise<{ tracked: number; goals: string[] }> {
+  async processTransactionForGoals(transactionId: string, workspaceId: string): Promise<{ tracked: number; goals: string[] }> {
     const transaction = await db.select()
       .from(transactions)
       .where(eq(transactions.id, transactionId))
