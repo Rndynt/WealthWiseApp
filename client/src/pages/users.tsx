@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2, UserCog, Shield, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export default function UsersManagement() {
     name: '',
     email: '',
     password: '',
-    roleId: 3
+    roleId: 0
   });
 
   const { toast } = useToast();
@@ -66,6 +66,34 @@ export default function UsersManagement() {
   const { data: roles } = useQuery<Role[]>({
     queryKey: ['/api/roles'],
   });
+
+  const getDefaultRoleId = (availableRoles?: Role[]) => {
+    if (!availableRoles || availableRoles.length === 0) {
+      return 0;
+    }
+
+    const userBasicRole = availableRoles.find(role => role.name === 'user_basic');
+    if (userBasicRole) {
+      return userBasicRole.id;
+    }
+
+    const fallbackRole = availableRoles.find(role => role.name !== 'root');
+    return fallbackRole?.id ?? 0;
+  };
+
+  useEffect(() => {
+    if (editingUser) {
+      return;
+    }
+
+    const defaultRoleId = getDefaultRoleId(roles);
+    setFormData(prev => {
+      if (!defaultRoleId || prev.roleId === defaultRoleId) {
+        return prev;
+      }
+      return { ...prev, roleId: defaultRoleId };
+    });
+  }, [roles, editingUser]);
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: UserFormData) => {
@@ -136,7 +164,7 @@ export default function UsersManagement() {
       name: '',
       email: '',
       password: '',
-      roleId: 3
+      roleId: getDefaultRoleId(roles)
     });
     setEditingUser(null);
   };
@@ -162,6 +190,14 @@ export default function UsersManagement() {
         toast({
           title: "Error",
           description: "Password wajib diisi untuk user baru.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.roleId) {
+        toast({
+          title: "Error",
+          description: "Role default belum tersedia. Mohon coba lagi setelah data role dimuat.",
           variant: "destructive",
         });
         return;
@@ -321,7 +357,10 @@ export default function UsersManagement() {
               
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={formData.roleId.toString()} onValueChange={(value) => setFormData({ ...formData, roleId: parseInt(value) })}>
+                <Select
+                  value={formData.roleId ? formData.roleId.toString() : undefined}
+                  onValueChange={(value) => setFormData({ ...formData, roleId: parseInt(value) })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih role" />
                   </SelectTrigger>
