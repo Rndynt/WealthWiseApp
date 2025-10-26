@@ -98,12 +98,14 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   const getAccountName = (accountId: number) => {
     return accounts?.find(acc => acc.id === accountId)?.name || 'Unknown Account';
   };
-  const getCategoryName = (categoryId: number) => {
+  const getCategoryName = (categoryId?: string | null) => {
+    if (!categoryId) return 'Unknown';
     const category = categories?.find(cat => cat.id === categoryId);
     return category?.name || 'Unknown';
   };
 
-  const getCategoryIcon = (categoryId: number) => {
+  const getCategoryIcon = (categoryId?: string | null) => {
+    if (!categoryId) return '📄';
     const category = categories?.find(cat => cat.id === categoryId);
     if (!category) return '📄';
     return iconMap[category.icon] || category.icon;
@@ -562,7 +564,7 @@ function EditTransactionModal({
         description: transaction.description,
         date: new Date(transaction.date),
         accountId: transaction.accountId.toString(),
-        categoryId: transaction.categoryId?.toString() || '',
+        categoryId: transaction.categoryId ?? '',
         toAccountId: transaction.toAccountId?.toString() || '',
         debtId: transaction.debtId?.toString() || ''
       });
@@ -659,7 +661,7 @@ function EditTransactionModal({
       description: form.description,
       date: form.date,
       accountId: parseInt(form.accountId),
-      categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+      categoryId: form.categoryId ? form.categoryId : null,
       toAccountId: form.toAccountId ? parseInt(form.toAccountId) : null,
       debtId: form.debtId ? parseInt(form.debtId) : null,
     });
@@ -754,7 +756,7 @@ function EditTransactionModal({
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem key={category.id} value={category.id}>
                       {iconMap[category.icon] || category.icon} {category.name}
                     </SelectItem>
                   ))}
