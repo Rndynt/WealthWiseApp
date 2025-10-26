@@ -75,6 +75,21 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
     enabled: !!workspaceId,
   });
 
+  const formatCurrency = (amount: string | number, currency = 'IDR') => {
+    const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+    if (!Number.isFinite(numericAmount)) {
+      return '-';
+    }
+
+    const locale = currency === 'IDR' ? 'id-ID' : 'en-US';
+
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+    }).format(numericAmount);
+  };
+
   const { data: categories } = useQuery<Category[]>({
     queryKey: [`/api/workspaces/${workspaceId}/categories`],
     enabled: !!workspaceId,
@@ -107,12 +122,13 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
   };
 
   const getAmountDisplay = (transaction: Transaction) => {
+    const accountCurrency = accounts?.find(acc => acc.id === transaction.accountId)?.currency ?? 'IDR';
     const amount = parseFloat(transaction.amount);
-    const formatted = `Rp ${amount.toLocaleString('id-ID')}`;
+    const formatted = formatCurrency(Math.abs(amount), accountCurrency);
 
-    if (transaction.type === 'income') {
+    if (transaction.type === 'income' || transaction.type === 'debt') {
       return { text: `+${formatted}`, color: 'text-green-600' };
-    } else if (transaction.type === 'expense') {
+    } else if (transaction.type === 'expense' || transaction.type === 'repayment') {
       return { text: `-${formatted}`, color: 'text-red-600' };
     } else {
       return { text: formatted, color: 'text-blue-600' };
@@ -318,7 +334,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
       />
 
       {/* Transaction Detail Modal */}
-      <TransactionDetailModal 
+      <TransactionDetailModal
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
         accounts={accounts || []}
@@ -331,6 +347,7 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
           setSelectedTransaction(null);
           setDeletingTransaction(transaction);
         }}
+        formatCurrency={formatCurrency}
       />
 
       {/* Edit Transaction Modal */}
@@ -343,23 +360,26 @@ export default function Transactions({ workspaceId, dateRange }: TransactionsPro
       />
 
       {/* Delete Confirmation Modal */}
-      <DeleteTransactionModal 
+      <DeleteTransactionModal
         transaction={deletingTransaction}
         onClose={() => setDeletingTransaction(null)}
         workspaceId={workspaceId}
+        accounts={accounts || []}
+        formatCurrency={formatCurrency}
       />
     </PageContainer>
   );
 }
 
 // Transaction Detail Modal Component
-function TransactionDetailModal({ 
-  transaction, 
-  onClose, 
-  accounts, 
-  categories, 
-  onEdit, 
-  onDelete 
+function TransactionDetailModal({
+  transaction,
+  onClose,
+  accounts,
+  categories,
+  onEdit,
+  onDelete,
+  formatCurrency,
 }: {
   transaction: Transaction | null;
   onClose: () => void;
@@ -367,6 +387,7 @@ function TransactionDetailModal({
   categories: Category[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
+  formatCurrency: (amount: string | number, currency?: string) => string;
 }) {
   if (!transaction) return null;
 
@@ -398,6 +419,14 @@ function TransactionDetailModal({
     }
   };
 
+  const currency = account?.currency ?? 'IDR';
+  const rawAmount = parseFloat(transaction.amount);
+  const formattedAmount = formatCurrency(Math.abs(rawAmount), currency);
+  const isPositive = transaction.type === 'income' || transaction.type === 'debt';
+  const isNegative = transaction.type === 'expense' || transaction.type === 'repayment';
+  const amountPrefix = isPositive ? '+' : isNegative ? '-' : '';
+  const amountColor = isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-blue-600';
+
   return (
     <Dialog open={!!transaction} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
@@ -415,12 +444,8 @@ function TransactionDetailModal({
           {/* Main Info */}
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
             <h3 className="font-semibold text-lg mb-1">{transaction.description}</h3>
-            <p className={`text-2xl font-bold ${
-              transaction.type === 'income' || transaction.type === 'debt' 
-                ? 'text-green-600' 
-                : 'text-red-600'
-            }`}>
-              {(transaction.type === 'income' || transaction.type === 'debt') ? '+' : '-'}Rp {parseFloat(transaction.amount).toLocaleString('id-ID')}
+            <p className={`text-2xl font-bold ${amountColor}`}>
+              {amountPrefix}{formattedAmount}
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary">
@@ -578,7 +603,56 @@ function EditTransactionModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const sourceAccount = accounts.find(acc => acc.id === parseInt(form.accountId));
+    if (!sourceAccount) {
+      toast({
+        variant: "destructive",
+        title: "Akun tidak ditemukan",
+        description: "Pilih akun sumber yang valid.",
+      });
+      return;
+    }
+
+    if (form.type === 'repayment' && !form.debtId) {
+      toast({
+        variant: "destructive",
+        title: "Pembayaran utang membutuhkan data utang",
+        description: "Silakan pilih utang yang ingin diperbarui.",
+      });
+      return;
+    }
+
+    if (form.type === 'transfer') {
+      if (!form.toAccountId) {
+        toast({
+          variant: "destructive",
+          title: "Akun tujuan belum dipilih",
+          description: "Pilih akun tujuan untuk transfer ini.",
+        });
+        return;
+      }
+
+      const destinationAccount = accounts.find(acc => acc.id === parseInt(form.toAccountId));
+      if (!destinationAccount) {
+        toast({
+          variant: "destructive",
+          title: "Akun tujuan tidak ditemukan",
+          description: "Pilih akun tujuan yang valid.",
+        });
+        return;
+      }
+
+      if (destinationAccount.currency !== sourceAccount.currency) {
+        toast({
+          variant: "destructive",
+          title: "Mata uang berbeda",
+          description: "Transfer hanya diperbolehkan antar akun dengan mata uang yang sama.",
+        });
+        return;
+      }
+    }
+
     updateMutation.mutate({
       type: form.type,
       amount: parseFloat(form.amount),
@@ -606,7 +680,18 @@ function EditTransactionModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Jenis Transaksi</Label>
-            <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
+            <Select
+              value={form.type}
+              onValueChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  type: value,
+                  categoryId: value === 'income' || value === 'expense' ? current.categoryId : '',
+                  toAccountId: value === 'transfer' ? current.toAccountId : '',
+                  debtId: value === 'repayment' ? current.debtId : '',
+                }))
+              }
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -653,7 +738,7 @@ function EditTransactionModal({
               <SelectContent>
                 {accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
+                    {account.name} ({account.currency})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -688,7 +773,7 @@ function EditTransactionModal({
                 <SelectContent>
                   {accounts.filter(acc => acc.id.toString() !== form.accountId).map((account) => (
                     <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
+                      {account.name} ({account.currency})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -711,14 +796,18 @@ function EditTransactionModal({
 }
 
 // Delete Transaction Modal Component
-function DeleteTransactionModal({ 
-  transaction, 
-  onClose, 
-  workspaceId 
+function DeleteTransactionModal({
+  transaction,
+  onClose,
+  workspaceId,
+  accounts,
+  formatCurrency,
 }: {
   transaction: Transaction | null;
   onClose: () => void;
   workspaceId: number;
+  accounts: Account[];
+  formatCurrency: (amount: string | number, currency?: string) => string;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -771,6 +860,15 @@ function DeleteTransactionModal({
 
   if (!transaction) return null;
 
+  const account = accounts.find(acc => acc.id === transaction.accountId);
+  const currency = account?.currency ?? 'IDR';
+  const numericAmount = parseFloat(transaction.amount);
+  const formattedAmount = formatCurrency(Math.abs(numericAmount), currency);
+  const isPositive = transaction.type === 'income' || transaction.type === 'debt';
+  const isNegative = transaction.type === 'expense' || transaction.type === 'repayment';
+  const amountPrefix = isPositive ? '+' : isNegative ? '-' : '';
+  const amountColor = isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-blue-600';
+
   return (
     <Dialog open={!!transaction} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -786,8 +884,8 @@ function DeleteTransactionModal({
 
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
           <h4 className="font-medium">{transaction.description}</h4>
-          <p className="text-lg font-semibold text-red-600">
-            Rp {parseFloat(transaction.amount).toLocaleString('id-ID')}
+          <p className={`text-lg font-semibold ${amountColor}`}>
+            {amountPrefix}{formattedAmount}
           </p>
           <p className="text-sm text-gray-500">
             {format(new Date(transaction.date), 'dd MMMM yyyy')}
