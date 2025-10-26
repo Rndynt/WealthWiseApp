@@ -35,7 +35,20 @@ export class WorkspaceSubscriptionService {
       };
     }
 
-    const { package: packageData } = subscriptionData;
+    const { subscription, package: packageData } = subscriptionData;
+    const subscriptionEnd = new Date(subscription.endDate);
+    const isActive = subscription.status === 'active' && subscriptionEnd > new Date();
+
+    if (!isActive) {
+      return {
+        canAdd: false,
+        maxMembers: 0,
+        currentMembers,
+        subscription: subscriptionData,
+        reason: 'Langganan workspace sudah tidak aktif. Perbarui langganan akun untuk melanjutkan kolaborasi.',
+      };
+    }
+
     const maxMembers = packageData.maxMembers;
 
     if (maxMembers !== null && typeof maxMembers === 'number' && currentMembers >= maxMembers) {
