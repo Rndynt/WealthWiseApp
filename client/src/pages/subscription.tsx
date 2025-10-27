@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Check, Star, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/apiEndpoints';
 
 interface SubscriptionPackage {
   id: number;
@@ -41,11 +41,11 @@ export default function SubscriptionPage() {
   const queryClient = useQueryClient();
 
   const { data: currentSubscription } = useQuery<UserSubscription>({
-    queryKey: ['/api/user/subscription'],
+    queryKey: [API_ENDPOINTS.userSubscription],
   });
 
   const { data: packages } = useQuery<SubscriptionPackage[]>({
-    queryKey: ['/api/public/subscription-packages'],
+    queryKey: [API_ENDPOINTS.publicSubscriptionPackages],
   });
 
   const upgradeMutation = useMutation({
@@ -54,7 +54,7 @@ export default function SubscriptionPage() {
       const oneMonthLater = new Date();
       oneMonthLater.setMonth(now.getMonth() + 1);
 
-      return apiRequest('POST', '/api/user/subscription', {
+      return apiRequest('POST', API_ENDPOINTS.userSubscription, {
         packageId,
         startDate: now.toISOString(),
         endDate: oneMonthLater.toISOString(),
@@ -66,7 +66,7 @@ export default function SubscriptionPage() {
         title: "Berhasil",
         description: "Subscription berhasil diupgrade!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/user/subscription'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
     },
     onError: (error: any) => {
       toast({
