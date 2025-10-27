@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/apiEndpoints';
 import { 
   Crown, 
   Star, 
@@ -79,21 +80,21 @@ export default function UpgradePage() {
 
   // Fetch current user subscription
   const { data: currentSubscription } = useQuery<{ subscription: UserSubscription }>({
-    queryKey: ['/api/user/subscription'],
+    queryKey: [API_ENDPOINTS.userSubscription],
   });
 
   // Fetch available packages
   const { data: packages, isLoading } = useQuery<SubscriptionPackage[]>({
-    queryKey: ['/api/public/subscription-packages'],
+    queryKey: [API_ENDPOINTS.publicSubscriptionPackages],
     retry: false,
   });
 
   // Payment processing mutation
   const processPAymentMutation = useMutation({
     mutationFn: (data: PaymentData) =>
-      apiRequest('/api/payment/process', 'POST', data),
+      apiRequest('POST', API_ENDPOINTS.paymentProcess, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/subscription'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
       setShowPaymentModal(false);
       toast({
         title: "Payment Successful!",
