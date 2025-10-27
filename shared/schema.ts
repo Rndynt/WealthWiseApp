@@ -58,6 +58,23 @@ export const subscriptionPackageLimits = pgTable("subscription_package_limits", 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const subscriptionPayments = pgTable("subscription_payments", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").notNull().unique(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
+  status: text("status").notNull(),
+  transactionId: text("transaction_id"),
+  paymentType: text("payment_type"),
+  grossAmount: decimal("gross_amount", { precision: 12, scale: 2 }).notNull(),
+  fraudStatus: text("fraud_status"),
+  snapToken: text("snap_token"),
+  snapRedirectUrl: text("snap_redirect_url"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // User subscriptions table
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
@@ -354,6 +371,18 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
 
 export const subscriptionPackagesRelations = relations(subscriptionPackages, ({ many }) => ({
   userSubscriptions: many(userSubscriptions),
+  subscriptionPayments: many(subscriptionPayments),
+}));
+
+export const subscriptionPaymentsRelations = relations(subscriptionPayments, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptionPayments.userId],
+    references: [users.id],
+  }),
+  package: one(subscriptionPackages, {
+    fields: [subscriptionPayments.packageId],
+    references: [subscriptionPackages.id],
+  }),
 }));
 
 export const userSubscriptionsRelations = relations(userSubscriptions, ({ one }) => ({
@@ -390,6 +419,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ownedWorkspaces: many(workspaces),
   workspaceMembers: many(workspaceMembers),
   userSubscriptions: many(userSubscriptions),
+  subscriptionPayments: many(subscriptionPayments),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -578,6 +608,14 @@ export const insertSubscriptionPackageLimitSchema = createInsertSchema(subscript
   createdAt: true,
 });
 
+export const insertSubscriptionPaymentSchema = createInsertSchema(subscriptionPayments, {
+  metadata: z.any().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
   id: true,
   createdAt: true,
@@ -741,6 +779,9 @@ export type SubscriptionPackage = typeof subscriptionPackages.$inferSelect;
 export type InsertSubscriptionPackage = z.infer<typeof insertSubscriptionPackageSchema>;
 export type SubscriptionPackageLimit = typeof subscriptionPackageLimits.$inferSelect;
 export type InsertSubscriptionPackageLimit = z.infer<typeof insertSubscriptionPackageLimitSchema>;
+
+export type SubscriptionPayment = typeof subscriptionPayments.$inferSelect;
+export type InsertSubscriptionPayment = z.infer<typeof insertSubscriptionPaymentSchema>;
 
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
