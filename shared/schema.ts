@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, varchar, date, json, uuid, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -56,7 +56,9 @@ export const subscriptionPackageLimits = pgTable("subscription_package_limits", 
   scope: text("scope").notNull(), // 'per_workspace' | 'global_user'
   limit: integer("limit"), // null = unlimited
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  packageResourceUnique: unique().on(table.packageId, table.resource),
+}));
 
 export const subscriptionPayments = pgTable("subscription_payments", {
   id: serial("id").primaryKey(),
