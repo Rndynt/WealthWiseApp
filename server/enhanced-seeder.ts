@@ -4,6 +4,7 @@ import {
   permissions,
   rolePermissions,
   subscriptionPackages,
+  subscriptionPackageLimits,
   users,
   userSubscriptions,
   workspaces,
@@ -15,6 +16,7 @@ import {
   budgets,
   debts
 } from "@shared/schema";
+import type { InsertSubscriptionPackageLimit } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -30,7 +32,7 @@ async function resetDatabase() {
       'goal_match_audits', 'goal_contributions',
       'transactions', 'budgets', 'debts', 'accounts', 'categories',
       'workspace_members', 'workspace_subscriptions', 'workspaces',
-      'user_subscriptions', 'users', 'subscription_packages',
+      'user_subscriptions', 'users', 'subscription_package_limits', 'subscription_packages',
       'role_permissions', 'permissions', 'roles'
     ];
     
@@ -340,6 +342,58 @@ async function seedEnhancedSubscriptionPackages() {
       isActive: true
     }
   ]).onConflictDoNothing();
+}
+
+async function seedSubscriptionPackageLimitScopes() {
+  console.log("📊 Seeding subscription package limit scopes...");
+
+  const packages = await db.select().from(subscriptionPackages);
+  if (packages.length === 0) {
+    console.log("⚠️ Skipping package limit scopes - no subscription packages found");
+    return;
+  }
+
+  const packageBySlug = new Map(packages.map(pkg => [pkg.slug, pkg]));
+
+  const scopedLimits: Array<{ slug: string; resource: string; scope: 'per_workspace' | 'global_user'; limit: number | null }> = [
+    { slug: 'basic', resource: 'accounts', scope: 'per_workspace', limit: 2 },
+    { slug: 'basic', resource: 'categories', scope: 'per_workspace', limit: 3 },
+    { slug: 'basic', resource: 'budgets', scope: 'per_workspace', limit: 2 },
+    { slug: 'premium', resource: 'accounts', scope: 'global_user', limit: 5 },
+    { slug: 'premium', resource: 'categories', scope: 'global_user', limit: 5 },
+    { slug: 'premium', resource: 'budgets', scope: 'global_user', limit: 5 },
+    { slug: 'shared-default', resource: 'accounts', scope: 'global_user', limit: 7 },
+    { slug: 'shared-default', resource: 'categories', scope: 'global_user', limit: 10 },
+    { slug: 'shared-default', resource: 'budgets', scope: 'global_user', limit: 10 },
+    { slug: 'business', resource: 'accounts', scope: 'global_user', limit: 15 },
+    { slug: 'business', resource: 'categories', scope: 'global_user', limit: 20 },
+    { slug: 'business', resource: 'budgets', scope: 'global_user', limit: 20 },
+  ];
+
+  const limitInserts: InsertSubscriptionPackageLimit[] = [];
+  for (const entry of scopedLimits) {
+    const pkg = packageBySlug.get(entry.slug);
+    if (!pkg) {
+      console.warn(`⚠️ Package with slug ${entry.slug} not found. Skipping limit seed for resource ${entry.resource}.`);
+      continue;
+    }
+
+    limitInserts.push({
+      packageId: pkg.id,
+      resource: entry.resource,
+      scope: entry.scope,
+      limit: entry.limit,
+    });
+  }
+
+  if (limitInserts.length === 0) {
+    console.log("⚠️ No subscription package limit scopes to insert");
+    return;
+  }
+
+  await db.insert(subscriptionPackageLimits).values(limitInserts).onConflictDoNothing({
+    target: [subscriptionPackageLimits.packageId, subscriptionPackageLimits.resource],
+  });
 }
 
 async function seedEnhancedUsers() {
@@ -972,6 +1026,7 @@ async function main() {
     await seedEnhancedPermissions();
     await seedEnhancedRolePermissions();
     await seedEnhancedSubscriptionPackages();
+    await seedSubscriptionPackageLimitScopes();
     await seedEnhancedUsers();
     await seedEnhancedUserSubscriptions();
     await seedEnhancedWorkspaces();

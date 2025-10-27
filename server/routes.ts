@@ -716,8 +716,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check category limits untuk basic package users
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       if (!categoryLimit.canCreate) {
+        const scopeLabel = categoryLimit.scope === 'global_user' ? 'kuota global kategori' : 'kuota kategori di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal kategori untuk paket basic (${categoryLimit.current}/${categoryLimit.limit}). Upgrade ke paket premium untuk kategori unlimited.`,
+          message: `Anda telah mencapai batas kategori (${categoryLimit.current}/${categoryLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: categoryLimit
         });
       }
@@ -852,8 +853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check category limits untuk basic package users
       const accountLimit = await storage.checkAccountLimit(workspaceId, req.user!.userId);
       if (!accountLimit.canCreate) {
+        const scopeLabel = accountLimit.scope === 'global_user' ? 'kuota global akun' : 'kuota akun di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal account untuk paket basic (${accountLimit.current}/${accountLimit.limit}). Upgrade ke paket premium untuk account lebih banyak.`,
+          message: `Anda telah mencapai batas akun (${accountLimit.current}/${accountLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: accountLimit
         });
       }
@@ -1384,8 +1386,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check budget limits untuk basic package users
       const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       if (!budgetLimit.canCreate) {
+        const scopeLabel = budgetLimit.scope === 'global_user' ? 'kuota global budget plan' : 'kuota budget di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal budget plan untuk paket basic (${budgetLimit.current}/${budgetLimit.limit} per periode). Upgrade ke paket premium untuk budget unlimited.`,
+          message: `Anda telah mencapai batas budget (${budgetLimit.current}/${budgetLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: budgetLimit
         });
       }
