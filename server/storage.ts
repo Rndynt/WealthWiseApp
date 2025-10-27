@@ -1216,7 +1216,9 @@ export class DatabaseStorage implements IStorage {
     if (userSubResult) {
       const personalLimit: number | null = userSubResult.package.maxWorkspaces;
       const sharedLimit: number | null = userSubResult.package.canCreateSharedWorkspace
-        ? userSubResult.package.maxSharedWorkspaces
+        ? userSubResult.package.maxSharedWorkspaces > 0
+          ? userSubResult.package.maxSharedWorkspaces
+          : null
         : 0;
       const maxMembers: number | null = userSubResult.package.maxMembers;
 
