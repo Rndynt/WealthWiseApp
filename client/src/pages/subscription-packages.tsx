@@ -29,6 +29,7 @@ interface SubscriptionPackage {
   price: string;
   features: string[];
   maxWorkspaces: number;
+  maxAccounts: number;
   maxMembers: number;
   maxCategories: number | null;
   maxBudgets: number | null;
@@ -47,6 +48,7 @@ interface PackageFormData {
   price: string;
   features: string[];
   maxWorkspaces: number;
+  maxAccounts: number;
   maxMembers: number;
   maxCategories: number | null;
   maxBudgets: number | null;
@@ -119,6 +121,7 @@ export default function SubscriptionPackagesManagement() {
     price: '0',
     features: [''],
     maxWorkspaces: 1,
+    maxAccounts: 1,
     maxMembers: 1,
     maxCategories: null,
     maxBudgets: null,
@@ -270,6 +273,7 @@ export default function SubscriptionPackagesManagement() {
       price: '0',
       features: [''],
       maxWorkspaces: 1,
+      maxAccounts: 1,
       maxMembers: 1,
       maxCategories: null,
       maxBudgets: null,
@@ -311,6 +315,7 @@ export default function SubscriptionPackagesManagement() {
       price: pkg.price,
       features: pkg.features.length > 0 ? pkg.features : [''],
       maxWorkspaces: pkg.maxWorkspaces || 1,
+      maxAccounts: pkg.maxAccounts || 1,
       maxMembers: pkg.maxMembers || 1,
       maxCategories: pkg.maxCategories,
       maxBudgets: pkg.maxBudgets,
@@ -478,7 +483,20 @@ export default function SubscriptionPackagesManagement() {
                     required
                   />
                 </div>
-                
+
+                <div>
+                  <Label htmlFor="maxAccounts">Max Akun Keuangan</Label>
+                  <Input
+                    id="maxAccounts"
+                    type="number"
+                    min="1"
+                    value={formData.maxAccounts}
+                    onChange={(e) => setFormData({ ...formData, maxAccounts: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Digunakan sebagai fallback default untuk limit akun.</p>
+                </div>
+
                 <div>
                   <Label htmlFor="maxMembers">Max Anggota per Shared Workspace</Label>
                   <Input
@@ -733,6 +751,10 @@ export default function SubscriptionPackagesManagement() {
                 <div className="flex justify-between text-sm">
                   <span>Max Workspace Pribadi:</span>
                   <span className="font-medium">{pkg.maxWorkspaces || '∞'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Max Akun Keuangan:</span>
+                  <span className="font-medium">{pkg.maxAccounts || '∞'}</span>
                 </div>
                 {pkg.canCreateSharedWorkspace && (
                   <>
