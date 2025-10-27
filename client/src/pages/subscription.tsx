@@ -91,7 +91,7 @@ export default function SubscriptionPage() {
   };
 
   const formatQuotaValue = (value: number | null | undefined) => {
-    if (value === null) {
+    if (value === null || typeof value === 'undefined' || value <= 0) {
       return '∞';
     }
 

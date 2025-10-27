@@ -594,10 +594,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check shared workspace limits
         const ownedSharedSubs = await storage.getUserOwnedWorkspaceSubscriptions(req.user.userId);
         const maxSharedWorkspaces = userSub.package.maxSharedWorkspaces;
-        
-        if (maxSharedWorkspaces !== null && ownedSharedSubs.length >= maxSharedWorkspaces) {
-          return res.status(403).json({ 
-            message: `Anda telah mencapai batas maksimal shared workspace (${ownedSharedSubs.length}/${maxSharedWorkspaces}). Upgrade ke paket Business untuk unlimited shared workspace.` 
+        if (
+          maxSharedWorkspaces !== null &&
+          maxSharedWorkspaces > 0 &&
+          ownedSharedSubs.length >= maxSharedWorkspaces
+        ) {
+          return res.status(403).json({
+            message: `Anda telah mencapai batas maksimal shared workspace (${ownedSharedSubs.length}/${maxSharedWorkspaces}). Upgrade ke paket Business untuk unlimited shared workspace.`
           });
         }
       } else {

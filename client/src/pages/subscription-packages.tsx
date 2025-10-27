@@ -89,11 +89,27 @@ const SCOPE_DESCRIPTIONS: Record<SubscriptionLimitScope, string> = {
 };
 
 const formatLimitValue = (value: number | null | undefined) => {
-  if (value === null || typeof value === 'undefined') {
+  if (value === null || typeof value === 'undefined' || value <= 0) {
     return '∞';
   }
 
   return value.toString();
+};
+
+const normalizeSharedWorkspaceLimit = (value: number | null | undefined) => {
+  if (value === null || typeof value === 'undefined') {
+    return null;
+  }
+
+  return value > 0 ? value : null;
+};
+
+const serializeSharedWorkspaceLimit = (value: number | null | undefined) => {
+  if (value === null || typeof value === 'undefined' || value <= 0) {
+    return 0;
+  }
+
+  return value;
 };
 
 const createLimitState = (source?: SubscriptionPackageLimitConfig[]): SubscriptionPackageLimitConfig[] => {
@@ -308,6 +324,9 @@ export default function SubscriptionPackagesManagement() {
       ...formData,
       slug: formData.slug.trim(),
       features: cleanedFeatures.length > 0 ? cleanedFeatures : ['Fitur utama'],
+      maxSharedWorkspaces: formData.canCreateSharedWorkspace
+        ? serializeSharedWorkspaceLimit(formData.maxSharedWorkspaces)
+        : 0,
       limits: limitConfigs.map((limit) => ({ ...limit })),
     };
 
@@ -330,7 +349,7 @@ export default function SubscriptionPackagesManagement() {
       maxMembers: pkg.maxMembers ?? 1,
       maxCategories: pkg.maxCategories,
       maxBudgets: pkg.maxBudgets,
-      maxSharedWorkspaces: pkg.maxSharedWorkspaces ?? null,
+      maxSharedWorkspaces: normalizeSharedWorkspaceLimit(pkg.maxSharedWorkspaces),
       canCreateSharedWorkspace: pkg.canCreateSharedWorkspace,
       type: pkg.type,
       description: pkg.description,
