@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { CreditCard, Check, Star, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +69,7 @@ export default function SubscriptionPage() {
         description: "Subscription berhasil diupgrade!",
       });
       queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscriptionLimits] });
     },
     onError: (error: any) => {
       toast({
@@ -78,18 +80,52 @@ export default function SubscriptionPage() {
     },
   });
 
+  const parsePrice = (price: string) => {
+    const parsed = Number.parseFloat(price);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   const formatPrice = (price: string) => {
-    const numPrice = parseFloat(price);
+    const numPrice = parsePrice(price);
     return numPrice === 0 ? 'Gratis' : `Rp ${numPrice.toLocaleString('id-ID')}`;
+  };
+
+  const formatQuotaValue = (value: number | null | undefined) => {
+    if (value === null) {
+      return '∞';
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value.toString();
+    }
+
+    return '0';
   };
 
   const isCurrentPackage = (packageId: number) => {
     return currentSubscription?.subscription.packageId === packageId;
   };
 
+  const currentPackagePrice = useMemo(() => {
+    if (!currentSubscription) {
+      return 0;
+    }
+    return parsePrice(currentSubscription.package.price);
+  }, [currentSubscription]);
+
   const canUpgrade = (packageId: number) => {
     if (!currentSubscription) return true;
-    return packageId > currentSubscription.subscription.packageId;
+    const targetPackage = packages?.find((pkg) => pkg.id === packageId);
+    if (!targetPackage) {
+      return false;
+    }
+
+    const targetPrice = parsePrice(targetPackage.price);
+    if (targetPrice !== currentPackagePrice) {
+      return targetPrice > currentPackagePrice;
+    }
+
+    return packageId !== currentSubscription.subscription.packageId && packageId > currentSubscription.subscription.packageId;
   };
 
   return (
@@ -139,17 +175,17 @@ export default function SubscriptionPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
                   <span>Workspace Pribadi:</span>
-                  <span className="font-medium">{pkg.maxWorkspaces || '∞'}</span>
+                  <span className="font-medium">{formatQuotaValue(pkg.maxWorkspaces)}</span>
                 </div>
                 {pkg.canCreateSharedWorkspace && (
                   <div className="flex justify-between text-sm">
                     <span>Shared Workspace:</span>
-                    <span className="font-medium">{pkg.maxSharedWorkspaces || '∞'}</span>
+                    <span className="font-medium">{formatQuotaValue(pkg.maxSharedWorkspaces)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Max Anggota:</span>
-                  <span className="font-medium">{pkg.maxMembers || '∞'}</span>
+                  <span className="font-medium">{formatQuotaValue(pkg.maxMembers)}</span>
                 </div>
               </div>
 
@@ -209,7 +245,7 @@ export default function SubscriptionPage() {
                 <td className="border border-gray-300 p-3 font-medium">Workspace Pribadi</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
-                    {pkg.maxWorkspaces || '∞'}
+                    {formatQuotaValue(pkg.maxWorkspaces)}
                   </td>
                 ))}
               </tr>
@@ -217,7 +253,7 @@ export default function SubscriptionPage() {
                 <td className="border border-gray-300 p-3 font-medium">Shared Workspace</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
-                    {pkg.canCreateSharedWorkspace ? (pkg.maxSharedWorkspaces || '∞') : '✗'}
+                    {pkg.canCreateSharedWorkspace ? formatQuotaValue(pkg.maxSharedWorkspaces) : '✗'}
                   </td>
                 ))}
               </tr>
@@ -225,7 +261,7 @@ export default function SubscriptionPage() {
                 <td className="border border-gray-300 p-3 font-medium">Max Anggota per Shared Workspace</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
-                    {pkg.canCreateSharedWorkspace ? (pkg.maxMembers || '∞') : '✗'}
+                    {pkg.canCreateSharedWorkspace ? formatQuotaValue(pkg.maxMembers) : '✗'}
                   </td>
                 ))}
               </tr>
@@ -233,7 +269,7 @@ export default function SubscriptionPage() {
                 <td className="border border-gray-300 p-3 font-medium">Kategori</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
-                    {pkg.maxCategories || '∞'}
+                    {formatQuotaValue(pkg.maxCategories)}
                   </td>
                 ))}
               </tr>
@@ -241,7 +277,7 @@ export default function SubscriptionPage() {
                 <td className="border border-gray-300 p-3 font-medium">Budget Plans</td>
                 {packages?.filter(pkg => pkg.isActive).map(pkg => (
                   <td key={pkg.id} className="border border-gray-300 p-3 text-center">
-                    {pkg.maxBudgets || '∞'}
+                    {formatQuotaValue(pkg.maxBudgets)}
                   </td>
                 ))}
               </tr>

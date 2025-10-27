@@ -95,6 +95,7 @@ export default function UpgradePage() {
       apiRequest('POST', API_ENDPOINTS.paymentProcess, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscriptionLimits] });
       setShowPaymentModal(false);
       toast({
         title: "Payment Successful!",
