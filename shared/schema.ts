@@ -49,6 +49,15 @@ export const subscriptionPackages = pgTable("subscription_packages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const subscriptionPackageLimits = pgTable("subscription_package_limits", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
+  resource: text("resource").notNull(),
+  scope: text("scope").notNull(), // 'per_workspace' | 'global_user'
+  limit: integer("limit"), // null = unlimited
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // User subscriptions table
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
@@ -564,6 +573,11 @@ export const insertSubscriptionPackageSchema = createInsertSchema(subscriptionPa
   createdAt: true,
 });
 
+export const insertSubscriptionPackageLimitSchema = createInsertSchema(subscriptionPackageLimits).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
   id: true,
   createdAt: true,
@@ -725,6 +739,8 @@ export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
 export type SubscriptionPackage = typeof subscriptionPackages.$inferSelect;
 export type InsertSubscriptionPackage = z.infer<typeof insertSubscriptionPackageSchema>;
+export type SubscriptionPackageLimit = typeof subscriptionPackageLimits.$inferSelect;
+export type InsertSubscriptionPackageLimit = z.infer<typeof insertSubscriptionPackageLimitSchema>;
 
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
