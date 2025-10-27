@@ -85,18 +85,6 @@ interface SubscriptionFormData {
   status: 'active' | 'expired' | 'cancelled';
 }
 
-// Safe data fetching functions
-const safeFetch = async (endpoint: string): Promise<any[]> => {
-  try {
-    const response = await apiRequest('GET', endpoint);
-    const result = await response.json();
-    return Array.isArray(result) ? result : [];
-  } catch (error) {
-    console.error(`Error fetching ${endpoint}:`, error);
-    return [];
-  }
-};
-
 export default function UserSubscriptionsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -240,6 +228,45 @@ export default function UserSubscriptionsManagement() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.userId) {
+      toast({
+        title: "Validasi gagal",
+        description: "Silakan pilih pengguna untuk langganan ini.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.packageId) {
+      toast({
+        title: "Validasi gagal",
+        description: "Silakan pilih paket langganan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      toast({
+        title: "Tanggal tidak valid",
+        description: "Pastikan tanggal mulai dan selesai diisi dengan benar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (end <= start) {
+      toast({
+        title: "Rentang tanggal tidak valid",
+        description: "Tanggal berakhir harus setelah tanggal mulai.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingSubscription) {
       updateSubscriptionMutation.mutate({
         ...formData,
@@ -321,12 +348,15 @@ export default function UserSubscriptionsManagement() {
   const isLoading = subscriptionsLoading || usersLoading || packagesLoading;
   const hasError = subscriptionsError || usersError || packagesError;
 
-  // Debug logging
-  console.log('Data states:', {
-    subscriptions: { data: subscriptions, loading: subscriptionsLoading, error: subscriptionsError },
-    users: { data: users, loading: usersLoading, error: usersError },
-    packages: { data: packages, loading: packagesLoading, error: packagesError }
-  });
+  const startDateValue = new Date(formData.startDate);
+  const endDateValue = new Date(formData.endDate);
+  const hasValidDateRange =
+    !Number.isNaN(startDateValue.getTime()) &&
+    !Number.isNaN(endDateValue.getTime()) &&
+    endDateValue > startDateValue;
+
+  const isFormValid = Boolean(formData.userId && formData.packageId && hasValidDateRange);
+  const isMutating = createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending;
 
   if (isLoading) {
     return (
@@ -651,9 +681,9 @@ export default function UserSubscriptionsManagement() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="userId">User</Label>
-              <Select 
+              <Select
                 value={formData.userId}
-                onValueChange={(value) => setFormData({ ...formData, userId: value })}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, userId: value }))}
                 disabled={!!editingSubscription}
               >
                 <SelectTrigger>
@@ -671,9 +701,15 @@ export default function UserSubscriptionsManagement() {
 
             <div>
               <Label htmlFor="packageId">Package</Label>
-              <Select 
-                value={formData.packageId.toString()} 
-                onValueChange={(value) => setFormData({ ...formData, packageId: parseInt(value) })}
+              <Select
+                value={formData.packageId.toString()}
+                onValueChange={(value) => {
+                  const numericValue = Number.parseInt(value, 10);
+                  setFormData((prev) => ({
+                    ...prev,
+                    packageId: Number.isNaN(numericValue) ? prev.packageId : numericValue,
+                  }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih package" />
@@ -733,13 +769,12 @@ export default function UserSubscriptionsManagement() {
               <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
                 Batal
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                disabled={createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending}
+              <Button
+                type="submit"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={!isFormValid || isMutating}
               >
-                {createSubscriptionMutation.isPending || updateSubscriptionMutation.isPending ? 'Loading...' : 
-                 editingSubscription ? 'Update' : 'Create'}
+                {isMutating ? 'Memproses...' : editingSubscription ? 'Update' : 'Create'}
               </Button>
             </DialogFooter>
           </form>

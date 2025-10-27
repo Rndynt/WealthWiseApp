@@ -1,6 +1,7 @@
 export const API_ENDPOINTS = {
   userSubscription: '/api/user/subscription',
   publicSubscriptionPackages: '/api/public/subscription-packages',
+  userSubscriptionLimits: '/api/user/subscription-limits',
   paymentProcess: '/api/payment/process',
 } as const;
 

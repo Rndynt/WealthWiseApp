@@ -215,6 +215,7 @@ export interface IStorage {
 
   // User Subscriptions
   getUserSubscription(userId: string): Promise<UserSubscription | undefined>;
+  getUserSubscriptionById(id: number): Promise<UserSubscription | undefined>;
   getUserSubscriptionWithPackage(userId: string): Promise<{subscription: UserSubscription, package: SubscriptionPackage} | undefined>;
   createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
   updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription>;
@@ -1120,6 +1121,16 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(userSubscriptions.createdAt))
       .limit(1);
+    return subscription || undefined;
+  }
+
+  async getUserSubscriptionById(id: number): Promise<UserSubscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.id, id))
+      .limit(1);
+
     return subscription || undefined;
   }
 
