@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import midtransClient, { Snap } from 'midtrans-client';
+import midtransClient from 'midtrans-client';
+import type { Snap } from 'midtrans-client';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
 const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY;
