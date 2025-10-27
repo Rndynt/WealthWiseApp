@@ -26,6 +26,14 @@ export interface WorkspaceSubscriptionLimits {
 
 export type SubscriptionLimitScope = 'per_workspace' | 'global_user';
 
+export type SubscriptionLimitResource = 'accounts' | 'categories' | 'budgets';
+
+export interface SubscriptionPackageLimitConfig {
+  resource: SubscriptionLimitResource;
+  scope: SubscriptionLimitScope;
+  limit: number | null;
+}
+
 export interface ResourceLimitInfo {
   canCreate: boolean;
   limit: number | null;
