@@ -11,7 +11,7 @@ import {
   insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema,
   categoryTypeSchema
 } from "@shared/schema";
-import type { Account, InsertTransaction, InsertCategory, InsertBudget } from "@shared/schema";
+import type { Account, InsertTransaction, InsertCategory, InsertBudget, InsertUserSubscription } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -69,6 +69,24 @@ function parseLimitValue(value: unknown): number | null | undefined {
   }
 
   return Math.floor(numeric);
+}
+
+function ensureValidSubscriptionDates(
+  startInput: unknown,
+  endInput: unknown,
+) {
+  const startDate = new Date(startInput as string);
+  const endDate = new Date(endInput as string);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    throw new Error('Tanggal langganan tidak valid');
+  }
+
+  if (endDate <= startDate) {
+    throw new Error('Tanggal berakhir harus setelah tanggal mulai');
+  }
+
+  return { startDate, endDate };
 }
 
 function parseLimitConfigurations(input: unknown): SubscriptionPackageLimitConfig[] {
@@ -2036,14 +2054,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/user-subscriptions/:subscriptionId", authenticateToken, requirePermission('admin.subscriptions.manage'), async (req: any, res) => {
     try {
-      const subscriptionId = parseInt(req.params.subscriptionId, 10);
-      const updates = req.body;
-      
-      if (updates.startDate) {
-        updates.startDate = new Date(updates.startDate);
+      const subscriptionId = Number.parseInt(req.params.subscriptionId, 10);
+      if (Number.isNaN(subscriptionId)) {
+        return res.status(400).json({ message: "ID subscription tidak valid" });
       }
-      if (updates.endDate) {
-        updates.endDate = new Date(updates.endDate);
+
+      const existingSubscription = await storage.getUserSubscriptionById(subscriptionId);
+      if (!existingSubscription) {
+        return res.status(404).json({ message: "Subscription tidak ditemukan" });
+      }
+
+      const rawUpdates = req.body ?? {};
+      const updates: Partial<InsertUserSubscription> = {};
+
+      if (rawUpdates.packageId !== undefined) {
+        const packageId = Number(rawUpdates.packageId);
+        if (Number.isNaN(packageId)) {
+          throw new Error('Paket langganan tidak valid');
+        }
+        updates.packageId = packageId;
+      }
+
+      if (rawUpdates.status) {
+        updates.status = rawUpdates.status;
+      }
+
+      if (rawUpdates.startDate !== undefined || rawUpdates.endDate !== undefined) {
+        const { startDate, endDate } = ensureValidSubscriptionDates(
+          rawUpdates.startDate ?? existingSubscription.startDate,
+          rawUpdates.endDate ?? existingSubscription.endDate,
+        );
+
+        if (rawUpdates.startDate !== undefined) {
+          updates.startDate = startDate;
+        }
+
+        if (rawUpdates.endDate !== undefined) {
+          updates.endDate = endDate;
+        }
       }
 
       const subscription = await storage.updateUserSubscription(subscriptionId, updates);
@@ -2051,7 +2099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(subscription);
     } catch (error) {
       console.error("Failed to update user subscription:", error);
-      res.status(400).json({ message: "Failed to update user subscription" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update user subscription" });
     }
   });
 
@@ -2149,26 +2197,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check if user already has an active subscription
       const existingSubscription = await storage.getUserSubscription(req.user.userId);
-      
+
       if (existingSubscription) {
         // Update existing subscription
+        const { startDate, endDate } = ensureValidSubscriptionDates(req.body.startDate, req.body.endDate);
+        const packageId = Number(req.body.packageId);
+        if (Number.isNaN(packageId)) {
+          throw new Error('Paket langganan tidak valid');
+        }
         const subscriptionData = {
-          packageId: req.body.packageId,
-          startDate: new Date(req.body.startDate),
-          endDate: new Date(req.body.endDate),
+          packageId,
+          startDate,
+          endDate,
           status: req.body.status || "active"
         };
-        
+
         const subscription = await storage.updateUserSubscription(existingSubscription.id, subscriptionData);
         await syncUserSharedWorkspaces(req.user.userId);
         res.json(subscription);
       } else {
         // Create new subscription
+        const { startDate, endDate } = ensureValidSubscriptionDates(req.body.startDate, req.body.endDate);
+        const packageId = Number(req.body.packageId);
+        if (Number.isNaN(packageId)) {
+          throw new Error('Paket langganan tidak valid');
+        }
         const subscriptionData = insertUserSubscriptionSchema.parse({
           ...req.body,
           userId: req.user.userId,
-          startDate: new Date(req.body.startDate),
-          endDate: new Date(req.body.endDate),
+          packageId,
+          startDate,
+          endDate,
         });
         const subscription = await storage.createUserSubscription(subscriptionData);
         await syncUserSharedWorkspaces(req.user.userId);
@@ -2176,7 +2235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Subscription creation/update error:", error);
-      res.status(400).json({ message: "Failed to process user subscription" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to process user subscription" });
     }
   });
 
@@ -2186,18 +2245,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ message: "Invalid user id" });
       }
+      const { startDate, endDate } = ensureValidSubscriptionDates(req.body.startDate, req.body.endDate);
+      const packageId = Number(req.body.packageId);
+      if (Number.isNaN(packageId)) {
+        throw new Error('Paket langganan tidak valid');
+      }
       const subscriptionData = insertUserSubscriptionSchema.parse({
         ...req.body,
         userId,
-        startDate: new Date(req.body.startDate),
-        endDate: new Date(req.body.endDate),
+        packageId,
+        startDate,
+        endDate,
       });
       const subscription = await storage.createUserSubscription(subscriptionData);
       await syncUserSharedWorkspaces(subscription.userId);
       res.json(subscription);
     } catch (error) {
       console.error("Subscription creation error:", error);
-      res.status(400).json({ message: "Failed to create user subscription" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create user subscription" });
     }
   });
 
