@@ -11,7 +11,7 @@ import {
   insertGoalSchema, insertGoalMilestoneSchema, insertRecurringTransactionSchema, insertCategoryRuleSchema,
   categoryTypeSchema
 } from "@shared/schema";
-import type { Account, InsertTransaction, InsertCategory, InsertBudget, InsertUserSubscription } from "@shared/schema";
+import type { Account, InsertTransaction, InsertCategory, InsertBudget, InsertUserSubscription, InsertSubscriptionPayment } from "@shared/schema";
 import { db } from "./db";
 import { workspaceMembers as workspaceMembersTable } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -42,6 +42,7 @@ import { goalsService } from './goals-service';
 import { aiGoalsService } from './ai-goals-service';
 import { GoalsEnhancedService } from './goals-enhanced-service';
 import { WorkspaceSubscriptionService } from './workspace-subscription-service';
+import { getMidtransSnap, getMidtransConfig, verifyMidtransSignature, isMidtransConfigured } from './midtrans';
 
 const goalsEnhancedService = new GoalsEnhancedService();
 const workspaceSubscriptionService = new WorkspaceSubscriptionService(storage);
@@ -234,6 +235,83 @@ async function syncUserSharedWorkspaces(userId: string): Promise<void> {
       .filter((workspace) => workspace.membershipType === 'owned' && workspace.type === 'shared')
       .map((workspace) => storage.syncWorkspaceSubscriptionFromUser(workspace.id))
   );
+}
+
+async function activateSubscriptionFromPayment(userId: string, packageId: number): Promise<void> {
+  const subscriptionPackage = await storage.getSubscriptionPackage(packageId);
+  if (!subscriptionPackage) {
+    throw new Error('Subscription package tidak ditemukan');
+  }
+
+  const now = new Date();
+  let endDate = new Date(now);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  const existing = await storage.getUserSubscriptionWithPackage(userId);
+  if (existing?.subscription) {
+    const currentEnd = new Date(existing.subscription.endDate);
+    if (!Number.isNaN(currentEnd.getTime()) && currentEnd > now) {
+      endDate = new Date(currentEnd);
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+
+    await storage.updateUserSubscription(existing.subscription.id, {
+      packageId,
+      startDate: now,
+      endDate,
+      status: 'active',
+    });
+  } else {
+    await storage.createUserSubscription({
+      userId,
+      packageId,
+      startDate: now,
+      endDate,
+      status: 'active',
+    });
+  }
+
+  await syncUserSharedWorkspaces(userId);
+}
+
+type MidtransRedirectStatus = 'success' | 'pending' | 'error';
+
+function renderMidtransRedirectPage(status: MidtransRedirectStatus, message: string): string {
+  const titles: Record<MidtransRedirectStatus, string> = {
+    success: 'Pembayaran Berhasil',
+    pending: 'Pembayaran Belum Selesai',
+    error: 'Pembayaran Gagal',
+  };
+
+  const colors: Record<MidtransRedirectStatus, string> = {
+    success: '#16a34a',
+    pending: '#f59e0b',
+    error: '#dc2626',
+  };
+
+  return `<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${titles[status]}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f9fafb; margin: 0; padding: 0; }
+      .container { max-width: 480px; margin: 80px auto; background: #ffffff; border-radius: 16px; padding: 32px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15); text-align: center; }
+      h1 { margin-top: 0; margin-bottom: 16px; color: ${colors[status]}; }
+      p { color: #475569; font-size: 16px; line-height: 1.6; }
+      button { margin-top: 24px; background-color: #0f172a; color: white; border: none; padding: 12px 24px; border-radius: 9999px; cursor: pointer; font-size: 15px; }
+      button:hover { background-color: #1e293b; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>${titles[status]}</h1>
+      <p>${message}</p>
+      <button onclick="window.close();">Tutup</button>
+    </div>
+  </body>
+</html>`;
 }
 
 const updateAccountSchema = z.object({
@@ -2446,41 +2524,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes (dummy implementation)
-  app.post("/api/payment/process", authenticateToken, async (req, res) => {
+  // Midtrans payment routes
+  app.get("/api/payment/config", authenticateToken, async (_req, res) => {
+    const config = getMidtransConfig();
+    res.json(config);
+  });
+
+  app.post("/api/payment/process", authenticateToken, async (req: any, res) => {
     try {
-      const { packageId, cardNumber, cardHolder } = req.body;
-      
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real implementation, you would:
-      // 1. Validate payment details with payment gateway
-      // 2. Process the payment
-      // 3. Update user subscription
-      
-      // For demo, just update the user's subscription
-      const now = new Date();
-      const oneMonthLater = new Date();
-      oneMonthLater.setMonth(now.getMonth() + 1);
-      
-      await storage.createUserSubscription({
-        userId: req.user!.userId,
-        packageId: packageId,
-        startDate: now,
-        endDate: oneMonthLater,
-        status: "active"
+      if (!isMidtransConfigured()) {
+        return res.status(503).json({ message: "Payment gateway belum dikonfigurasi" });
+      }
+
+      const { packageId } = req.body ?? {};
+      const numericPackageId = Number(packageId);
+      if (!Number.isInteger(numericPackageId)) {
+        return res.status(400).json({ message: "Paket langganan tidak valid" });
+      }
+
+      const subscriptionPackage = await storage.getSubscriptionPackage(numericPackageId);
+      if (!subscriptionPackage || subscriptionPackage.isActive === false) {
+        return res.status(404).json({ message: "Paket langganan tidak ditemukan atau tidak aktif" });
+      }
+
+      const rawPrice = Number(subscriptionPackage.price);
+      if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
+        return res.status(400).json({ message: "Harga paket langganan tidak valid" });
+      }
+
+      const grossAmount = Math.round(rawPrice);
+      const sanitizedUserId = req.user!.userId.replace(/[^a-zA-Z0-9]/g, "").slice(-12);
+      const orderId = `SUB-${sanitizedUserId}-${Date.now()}`;
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+      const snap = getMidtransSnap();
+      const transaction = await snap.createTransaction({
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: grossAmount,
+        },
+        item_details: [
+          {
+            id: `pkg-${subscriptionPackage.id}`,
+            price: grossAmount,
+            quantity: 1,
+            name: subscriptionPackage.name,
+          },
+        ],
+        customer_details: {
+          email: req.user?.email,
+          first_name: req.user?.email?.split("@")[0] ?? "User",
+        },
+        callbacks: {
+          finish: `${baseUrl}/payment/midtrans/finish`,
+          error: `${baseUrl}/payment/midtrans/error`,
+          pending: `${baseUrl}/payment/midtrans/unfinish`,
+        },
       });
-      
-      res.json({ 
-        success: true, 
-        message: "Payment processed successfully",
-        transactionId: `demo_${Date.now()}`
+
+      const paymentRecord: InsertSubscriptionPayment = {
+        orderId,
+        userId: req.user!.userId,
+        packageId: subscriptionPackage.id,
+        status: "pending",
+        grossAmount: grossAmount.toFixed(2),
+        snapToken: transaction.token,
+        snapRedirectUrl: transaction.redirect_url,
+      };
+
+      await storage.createSubscriptionPayment(paymentRecord);
+
+      res.json({
+        token: transaction.token,
+        redirectUrl: transaction.redirect_url,
+        orderId,
+        grossAmount,
       });
     } catch (error) {
       console.error("Payment processing error:", error);
-      res.status(400).json({ message: "Payment processing failed" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Payment processing failed" });
     }
+  });
+
+  app.post("/api/payment/midtrans/notification", async (req, res) => {
+    try {
+      if (!isMidtransConfigured()) {
+        return res.status(503).json({ message: "Payment gateway belum dikonfigurasi" });
+      }
+
+      const notification = req.body as Record<string, any>;
+      const orderId = notification.order_id;
+      const statusCode = notification.status_code;
+      const grossAmount = notification.gross_amount;
+      const signatureKey = notification.signature_key;
+
+      if (!orderId || !statusCode || !grossAmount || !signatureKey) {
+        return res.status(400).json({ message: "Notifikasi Midtrans tidak lengkap" });
+      }
+
+      const isValidSignature = verifyMidtransSignature({
+        orderId,
+        statusCode,
+        grossAmount,
+        signatureKey,
+      });
+
+      if (!isValidSignature) {
+        console.warn("Invalid Midtrans signature for order", orderId);
+        return res.status(403).json({ message: "Signature Midtrans tidak valid" });
+      }
+
+      const existingPayment = await storage.getSubscriptionPaymentByOrderId(orderId);
+      if (!existingPayment) {
+        console.warn("Midtrans notification received for unknown order", orderId);
+        return res.json({ received: false, reason: 'order_not_found' });
+      }
+
+      await storage.updateSubscriptionPayment(orderId, {
+        status: notification.transaction_status,
+        transactionId: notification.transaction_id,
+        paymentType: notification.payment_type,
+        grossAmount,
+        fraudStatus: notification.fraud_status,
+        metadata: notification as Record<string, unknown>,
+      });
+
+      const transactionStatus = notification.transaction_status;
+      const fraudStatus = notification.fraud_status;
+
+      const isSuccessfulCapture = transactionStatus === "capture" && fraudStatus === "accept";
+      const isSettlement = transactionStatus === "settlement";
+
+      if (isSuccessfulCapture || isSettlement) {
+        try {
+          await activateSubscriptionFromPayment(existingPayment.userId, existingPayment.packageId);
+        } catch (activationError) {
+          console.error("Failed to activate subscription from payment:", activationError);
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Failed to handle Midtrans notification:", error);
+      res.status(500).json({ message: "Failed to process notification" });
+    }
+  });
+
+  app.post("/api/payment/midtrans/recurring", async (req, res) => {
+    console.log("Received Midtrans recurring notification:", req.body);
+    res.json({ received: true });
+  });
+
+  app.post("/api/payment/midtrans/pay-account", async (req, res) => {
+    console.log("Received Midtrans pay account notification:", req.body);
+    res.json({ received: true });
+  });
+
+  app.get("/payment/midtrans/finish", (_req, res) => {
+    res.send(renderMidtransRedirectPage("success", "Pembayaran berhasil diproses. Anda dapat menutup jendela ini."));
+  });
+
+  app.get("/payment/midtrans/unfinish", (_req, res) => {
+    res.send(renderMidtransRedirectPage("pending", "Transaksi belum selesai. Anda dapat melanjutkan pembayaran dari dashboard."));
+  });
+
+  app.get("/payment/midtrans/error", (_req, res) => {
+    res.send(renderMidtransRedirectPage("error", "Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali."));
   });
 
   // Enhanced Goals API endpoints

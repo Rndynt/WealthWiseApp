@@ -15,6 +15,7 @@ import {
   rolePermissions,
   subscriptionPackages,
   subscriptionPackageLimits,
+  subscriptionPayments,
   notifications,
   userSubscriptions,
   appSettings,
@@ -36,6 +37,7 @@ import {
   type RolePermission,
   type SubscriptionPackage,
   type SubscriptionPackageLimit,
+  type SubscriptionPayment,
   type UserSubscription,
   type WorkspaceSubscription,
   type AppSettings,
@@ -64,6 +66,7 @@ import {
   type InsertRolePermission,
   type InsertSubscriptionPackage,
   type InsertSubscriptionPackageLimit,
+  type InsertSubscriptionPayment,
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
   type Notification,
@@ -212,6 +215,18 @@ export interface IStorage {
     limits?: SubscriptionPackageLimitConfig[],
   ): Promise<SubscriptionPackageWithLimits>;
   deleteSubscriptionPackage(id: number): Promise<void>;
+
+  // Subscription Payments
+  createSubscriptionPayment(payment: InsertSubscriptionPayment): Promise<SubscriptionPayment>;
+  getSubscriptionPaymentByOrderId(orderId: string): Promise<SubscriptionPayment | undefined>;
+  updateSubscriptionPayment(
+    orderId: string,
+    updates: Partial<InsertSubscriptionPayment> & {
+      status?: string;
+      transactionId?: string;
+      metadata?: Record<string, unknown> | null;
+    },
+  ): Promise<SubscriptionPayment>;
 
   // User Subscriptions
   getUserSubscription(userId: string): Promise<UserSubscription | undefined>;
@@ -1108,6 +1123,48 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSubscriptionPackage(id: number): Promise<void> {
     await db.delete(subscriptionPackages).where(eq(subscriptionPackages.id, id));
+  }
+
+  async createSubscriptionPayment(payment: InsertSubscriptionPayment): Promise<SubscriptionPayment> {
+    const [created] = await db.insert(subscriptionPayments).values(payment).returning();
+    if (!created) {
+      throw new Error('Failed to create subscription payment');
+    }
+    return created;
+  }
+
+  async getSubscriptionPaymentByOrderId(orderId: string): Promise<SubscriptionPayment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(subscriptionPayments)
+      .where(eq(subscriptionPayments.orderId, orderId))
+      .limit(1);
+
+    return payment || undefined;
+  }
+
+  async updateSubscriptionPayment(
+    orderId: string,
+    updates: Partial<InsertSubscriptionPayment> & {
+      status?: string;
+      transactionId?: string;
+      metadata?: Record<string, unknown> | null;
+    },
+  ): Promise<SubscriptionPayment> {
+    const [updated] = await db
+      .update(subscriptionPayments)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptionPayments.orderId, orderId))
+      .returning();
+
+    if (!updated) {
+      throw new Error('Subscription payment not found');
+    }
+
+    return updated;
   }
 
   // User Subscriptions
