@@ -91,71 +91,75 @@ export default function AddWorkspaceModal({ open, onOpenChange, setCurrentWorksp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Buat Workspace Baru</DialogTitle>
-        </DialogHeader>
-        
-        {/* Subscription Status */}
-        {limits && <WorkspaceQuotaBanner limits={limits} />}
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-field">
-            <Label htmlFor="workspace-name">Nama Workspace</Label>
-            <Input
-              id="workspace-name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="mis. Anggaran Pribadi, Proyek Tim"
-              required
-            />
-          </div>
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 sm:w-full">
+        <div className="sticky top-0 z-10 bg-background px-6 pt-6 pb-4 pr-12 border-b border-border">
+          <DialogHeader className="text-left">
+            <DialogTitle>Buat Workspace Baru</DialogTitle>
+          </DialogHeader>
+        </div>
 
-          <div className="form-field">
-            <Label htmlFor="workspace-type">Tipe Workspace</Label>
-            <Select value={form.type} onValueChange={(value: any) => setForm({ ...form, type: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih tipe workspace..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="personal" disabled={personalLimitReached}>
-                  Personal (Solo)
-                </SelectItem>
-                <SelectItem value="shared" disabled={sharedLimitReached || limits?.sharedLimit === 0}>
-                  Shared (Kolaboratif)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500 mt-2">
-              Personal cocok untuk penggunaan individu tanpa anggota tambahan. Shared memungkinkan kolaborasi dengan hingga{' '}
-              {sharedMemberLimit} anggota (termasuk Anda) sesuai paket langganan Anda.
-            </p>
-          </div>
-          
-          <div className="flex space-x-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Batal
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1"
-              disabled={
-                createWorkspaceMutation.isPending ||
-                !form.name ||
-                !form.type ||
-                (form.type === 'personal' && personalLimitReached) ||
-                (form.type === 'shared' && (sharedLimitReached || limits?.sharedLimit === 0))
-              }
-            >
-              {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
-            </Button>
-          </div>
-        </form>
+        <div className="space-y-6 px-6 pb-6">
+          {/* Subscription Status */}
+          {limits && <WorkspaceQuotaBanner limits={limits} />}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="form-field">
+              <Label htmlFor="workspace-name">Nama Workspace</Label>
+              <Input
+                id="workspace-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="mis. Anggaran Pribadi, Proyek Tim"
+                required
+              />
+            </div>
+
+            <div className="form-field">
+              <Label htmlFor="workspace-type">Tipe Workspace</Label>
+              <Select value={form.type} onValueChange={(value: any) => setForm({ ...form, type: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih tipe workspace..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal" disabled={personalLimitReached}>
+                    Personal (Solo)
+                  </SelectItem>
+                  <SelectItem value="shared" disabled={sharedLimitReached || limits?.sharedLimit === 0}>
+                    Shared (Kolaboratif)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-2 text-xs text-gray-500">
+                Personal cocok untuk penggunaan individu tanpa anggota tambahan. Shared memungkinkan kolaborasi dengan hingga{' '}
+                {sharedMemberLimit} anggota (termasuk Anda) sesuai paket langganan Anda.
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:flex-1"
+                onClick={() => onOpenChange(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                className="w-full sm:flex-1"
+                disabled={
+                  createWorkspaceMutation.isPending ||
+                  !form.name ||
+                  !form.type ||
+                  (form.type === 'personal' && personalLimitReached) ||
+                  (form.type === 'shared' && (sharedLimitReached || limits?.sharedLimit === 0))
+                }
+              >
+                {createWorkspaceMutation.isPending ? 'Membuat...' : 'Buat Workspace'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
