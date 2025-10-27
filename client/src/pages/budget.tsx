@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Budget as BudgetType, Category, Transaction } from '@/types';
+import { Budget as BudgetType, Category, ResourceLimitInfo, Transaction } from '@/types';
 import AddBudgetModal from '@/components/modals/add-budget-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageContainer } from '@/components/ui/page-container';
@@ -79,7 +79,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
   });
 
   // Check budget limits
-  const { data: budgetLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
+  const { data: budgetLimits } = useQuery<ResourceLimitInfo>({
     queryKey: [budgetLimitsEndpoint],
     enabled: !!workspaceId,
   });
@@ -134,6 +134,17 @@ export default function Budget({ workspaceId }: BudgetProps) {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear + i - 2);
 
+  const scopeLabel = budgetLimits?.scope === 'global_user' ? 'Kuota global' : 'Kuota workspace';
+  const packageLabel = budgetLimits?.packageName
+    ? budgetLimits.packageName
+        .split(/[-_]/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : 'Current Plan';
+  const budgetsUsageText = budgetLimits
+    ? `${budgetLimits.current}/${budgetLimits.limit ?? '∞'} budgets used • ${scopeLabel} • ${packageLabel} Package`
+    : '';
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -182,7 +193,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
           </p>
           {budgetLimits && (
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
-              {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+              {budgetsUsageText}
             </p>
           )}
           <div className="flex justify-center">
@@ -220,7 +231,7 @@ export default function Budget({ workspaceId }: BudgetProps) {
               </p>
               {budgetLimits && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {budgetLimits.current}/{budgetLimits.limit ?? '∞'} budgets used • {budgetLimits.limit === 2 ? 'Basic' : budgetLimits.limit === null ? 'Premium' : 'Standard'} Package
+                  {budgetsUsageText}
                 </p>
               )}
             </div>
@@ -252,8 +263,8 @@ export default function Budget({ workspaceId }: BudgetProps) {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            Anda telah mencapai batas maksimal budget untuk periode ini pada paket {budgetLimits.limit === 2 ? 'Basic' : 'Standard'} ({budgetLimits.current}/{budgetLimits.limit}). 
-            Upgrade ke paket Premium untuk budget unlimited.
+            Anda telah mencapai batas budget ({budgetLimits.current}/{budgetLimits.limit ?? '∞'}) untuk {scopeLabel.toLowerCase()}.
+            Paket aktif: {packageLabel}. Upgrade paket untuk kapasitas lebih besar.
           </AlertDescription>
         </Alert>
       )}
