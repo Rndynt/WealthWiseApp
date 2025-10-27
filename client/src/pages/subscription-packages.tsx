@@ -88,7 +88,13 @@ const SCOPE_DESCRIPTIONS: Record<SubscriptionLimitScope, string> = {
   global_user: 'Limit dihitung secara agregat di semua workspace milik user.',
 };
 
-const formatLimitValue = (value: number | null) => (value === null ? '∞' : value.toString());
+const formatLimitValue = (value: number | null | undefined) => {
+  if (value === null || typeof value === 'undefined') {
+    return '∞';
+  }
+
+  return value.toString();
+};
 
 const createLimitState = (source?: SubscriptionPackageLimitConfig[]): SubscriptionPackageLimitConfig[] => {
   const map = new Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>();
@@ -291,12 +297,17 @@ export default function SubscriptionPackagesManagement() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Filter out empty features
-    const cleanedFeatures = formData.features.filter(feature => feature.trim() !== '');
+    const cleanedFeatures = Array.from(
+      new Set(
+        formData.features
+          .map((feature) => feature.trim())
+          .filter((feature) => feature.length > 0)
+      )
+    );
     const dataToSubmit = {
       ...formData,
       slug: formData.slug.trim(),
-      features: cleanedFeatures,
+      features: cleanedFeatures.length > 0 ? cleanedFeatures : ['Fitur utama'],
       limits: limitConfigs.map((limit) => ({ ...limit })),
     };
 
@@ -314,12 +325,12 @@ export default function SubscriptionPackagesManagement() {
       slug: pkg.slug,
       price: pkg.price,
       features: pkg.features.length > 0 ? pkg.features : [''],
-      maxWorkspaces: pkg.maxWorkspaces || 1,
-      maxAccounts: pkg.maxAccounts || 1,
-      maxMembers: pkg.maxMembers || 1,
+      maxWorkspaces: pkg.maxWorkspaces ?? 1,
+      maxAccounts: pkg.maxAccounts ?? 1,
+      maxMembers: pkg.maxMembers ?? 1,
       maxCategories: pkg.maxCategories,
       maxBudgets: pkg.maxBudgets,
-      maxSharedWorkspaces: pkg.maxSharedWorkspaces || 0,
+      maxSharedWorkspaces: pkg.maxSharedWorkspaces ?? null,
       canCreateSharedWorkspace: pkg.canCreateSharedWorkspace,
       type: pkg.type,
       description: pkg.description,
@@ -479,7 +490,13 @@ export default function SubscriptionPackagesManagement() {
                     type="number"
                     min="1"
                     value={formData.maxWorkspaces}
-                    onChange={(e) => setFormData({ ...formData, maxWorkspaces: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const numericValue = Number.parseInt(e.target.value, 10);
+                      setFormData((prev) => ({
+                        ...prev,
+                        maxWorkspaces: Number.isNaN(numericValue) ? prev.maxWorkspaces : Math.max(1, numericValue),
+                      }));
+                    }}
                     required
                   />
                 </div>
@@ -491,22 +508,16 @@ export default function SubscriptionPackagesManagement() {
                     type="number"
                     min="1"
                     value={formData.maxAccounts}
-                    onChange={(e) => setFormData({ ...formData, maxAccounts: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const numericValue = Number.parseInt(e.target.value, 10);
+                      setFormData((prev) => ({
+                        ...prev,
+                        maxAccounts: Number.isNaN(numericValue) ? prev.maxAccounts : Math.max(1, numericValue),
+                      }));
+                    }}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">Digunakan sebagai fallback default untuk limit akun.</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="maxMembers">Max Anggota per Shared Workspace</Label>
-                  <Input
-                    id="maxMembers"
-                    type="number"
-                    min="1"
-                    value={formData.maxMembers}
-                    onChange={(e) => setFormData({ ...formData, maxMembers: parseInt(e.target.value) || 1 })}
-                    required
-                  />
                 </div>
               </div>
 
@@ -517,8 +528,20 @@ export default function SubscriptionPackagesManagement() {
                     id="maxCategories"
                     type="number"
                     min="1"
-                    value={formData.maxCategories || ''}
-                    onChange={(e) => setFormData({ ...formData, maxCategories: e.target.value ? parseInt(e.target.value) : null })}
+                    value={formData.maxCategories ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '') {
+                        setFormData((prev) => ({ ...prev, maxCategories: null }));
+                        return;
+                      }
+
+                      const numericValue = Number.parseInt(e.target.value, 10);
+                      if (Number.isNaN(numericValue)) {
+                        return;
+                      }
+
+                      setFormData((prev) => ({ ...prev, maxCategories: Math.max(1, numericValue) }));
+                    }}
                     placeholder="Kosong = unlimited"
                   />
                 </div>
@@ -529,38 +552,22 @@ export default function SubscriptionPackagesManagement() {
                     id="maxBudgets"
                     type="number"
                     min="1"
-                    value={formData.maxBudgets || ''}
-                    onChange={(e) => setFormData({ ...formData, maxBudgets: e.target.value ? parseInt(e.target.value) : null })}
+                    value={formData.maxBudgets ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '') {
+                        setFormData((prev) => ({ ...prev, maxBudgets: null }));
+                        return;
+                      }
+
+                      const numericValue = Number.parseInt(e.target.value, 10);
+                      if (Number.isNaN(numericValue)) {
+                        return;
+                      }
+
+                      setFormData((prev) => ({ ...prev, maxBudgets: Math.max(1, numericValue) }));
+                    }}
                     placeholder="Kosong = unlimited"
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="maxSharedWorkspaces">Max Shared Workspace</Label>
-                  <Input
-                    id="maxSharedWorkspaces"
-                    type="number"
-                    min="0"
-                    value={formData.maxSharedWorkspaces || 0}
-                    onChange={(e) => setFormData({ ...formData, maxSharedWorkspaces: parseInt(e.target.value) || 0 })}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">0 = tidak bisa buat shared workspace, kosong = unlimited</p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="type">Tipe Paket</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih tipe paket" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="personal">Personal</SelectItem>
-                      <SelectItem value="shared">Shared Only</SelectItem>
-                      <SelectItem value="hybrid">Hybrid (Personal + Shared)</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
 
@@ -568,9 +575,80 @@ export default function SubscriptionPackagesManagement() {
                 <Switch
                   id="canCreateSharedWorkspace"
                   checked={formData.canCreateSharedWorkspace}
-                  onCheckedChange={(checked) => setFormData({ ...formData, canCreateSharedWorkspace: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      canCreateSharedWorkspace: checked,
+                      maxSharedWorkspaces:
+                        checked
+                          ? prev.maxSharedWorkspaces === null || prev.maxSharedWorkspaces === 0
+                            ? 1
+                            : prev.maxSharedWorkspaces
+                          : 0,
+                    }))
+                  }
                 />
                 <Label htmlFor="canCreateSharedWorkspace">Dapat Membuat Shared Workspace</Label>
+              </div>
+
+              {formData.canCreateSharedWorkspace && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="maxSharedWorkspaces">Max Shared Workspace</Label>
+                    <Input
+                      id="maxSharedWorkspaces"
+                      type="number"
+                      min="0"
+                      value={formData.maxSharedWorkspaces ?? ''}
+                      onChange={(e) => {
+                        if (e.target.value === '') {
+                          setFormData((prev) => ({ ...prev, maxSharedWorkspaces: null }));
+                          return;
+                        }
+
+                        const numericValue = Number.parseInt(e.target.value, 10);
+                        if (Number.isNaN(numericValue)) {
+                          return;
+                        }
+
+                        setFormData((prev) => ({ ...prev, maxSharedWorkspaces: Math.max(0, numericValue) }));
+                      }}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Kosong = unlimited, 0 menonaktifkan pembuatan workspace baru.</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="maxMembers">Max Anggota per Shared Workspace</Label>
+                    <Input
+                      id="maxMembers"
+                      type="number"
+                      min="1"
+                      value={formData.maxMembers}
+                      onChange={(e) => {
+                        const numericValue = Number.parseInt(e.target.value, 10);
+                        setFormData((prev) => ({
+                          ...prev,
+                          maxMembers: Number.isNaN(numericValue) ? prev.maxMembers : Math.max(1, numericValue),
+                        }));
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="type">Tipe Paket</Label>
+                <Select value={formData.type} onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih tipe paket" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    <SelectItem value="shared">Shared Only</SelectItem>
+                    <SelectItem value="hybrid">Hybrid (Personal + Shared)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 space-y-4">
@@ -750,31 +828,31 @@ export default function SubscriptionPackagesManagement() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
                   <span>Max Workspace Pribadi:</span>
-                  <span className="font-medium">{pkg.maxWorkspaces || '∞'}</span>
+                  <span className="font-medium">{formatLimitValue(pkg.maxWorkspaces)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Max Akun Keuangan:</span>
-                  <span className="font-medium">{pkg.maxAccounts || '∞'}</span>
+                  <span className="font-medium">{formatLimitValue(pkg.maxAccounts)}</span>
                 </div>
                 {pkg.canCreateSharedWorkspace && (
                   <>
                     <div className="flex justify-between text-sm">
                       <span>Max Shared Workspace:</span>
-                      <span className="font-medium">{pkg.maxSharedWorkspaces || '∞'}</span>
+                      <span className="font-medium">{formatLimitValue(pkg.maxSharedWorkspaces)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Max Anggota per Shared:</span>
-                      <span className="font-medium">{pkg.maxMembers || '∞'}</span>
+                      <span className="font-medium">{formatLimitValue(pkg.maxMembers)}</span>
                     </div>
                   </>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Max Kategori:</span>
-                  <span className="font-medium">{pkg.maxCategories || '∞'}</span>
+                  <span className="font-medium">{formatLimitValue(pkg.maxCategories)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Max Budget Plans:</span>
-                  <span className="font-medium">{pkg.maxBudgets || '∞'}</span>
+                  <span className="font-medium">{formatLimitValue(pkg.maxBudgets)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tipe:</span>
