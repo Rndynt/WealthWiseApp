@@ -1,45 +1,12 @@
 import crypto from 'node:crypto';
-import { createRequire } from 'node:module';
-import type { Snap } from 'midtrans-client';
-
-type MidtransClientModule = typeof import('midtrans-client');
+import MidtransClient from 'midtrans-client';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
 const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY;
 const MIDTRANS_MERCHANT_ID = process.env.MIDTRANS_MERCHANT_ID;
 const MIDTRANS_IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === 'true';
 
-let snapInstance: Snap | null = null;
-let midtransModule: MidtransClientModule | null = null;
-
-const requireModule = createRequire(import.meta.url);
-
-function ensureMidtransModule(): MidtransClientModule {
-  if (!midtransModule) {
-    try {
-      const required = requireModule('midtrans-client') as
-        | MidtransClientModule
-        | { default: MidtransClientModule };
-
-      midtransModule =
-        required && typeof required === 'object' && 'default' in required
-          ? required.default
-          : (required as MidtransClientModule);
-    } catch (error) {
-      const nodeError = error as NodeJS.ErrnoException;
-
-      if (nodeError?.code === 'MODULE_NOT_FOUND' || nodeError?.code === 'ERR_MODULE_NOT_FOUND') {
-        throw new Error(
-          "Midtrans dependency 'midtrans-client' is missing. Install it with `npm install midtrans-client` to enable Midtrans payments."
-        );
-      }
-
-      throw error;
-    }
-  }
-
-  return midtransModule!;
-}
+let snapInstance: InstanceType<typeof MidtransClient.Snap> | null = null;
 
 function ensureConfigured(): void {
   if (!MIDTRANS_SERVER_KEY || !MIDTRANS_CLIENT_KEY || !MIDTRANS_MERCHANT_ID) {
@@ -47,13 +14,11 @@ function ensureConfigured(): void {
   }
 }
 
-export function getMidtransSnap(): Snap {
+export function getMidtransSnap(): InstanceType<typeof MidtransClient.Snap> {
   ensureConfigured();
 
   if (!snapInstance) {
-    const midtransClient = ensureMidtransModule();
-
-    snapInstance = new midtransClient.Snap({
+    snapInstance = new MidtransClient.Snap({
       isProduction: MIDTRANS_IS_PRODUCTION,
       serverKey: MIDTRANS_SERVER_KEY!,
       clientKey: MIDTRANS_CLIENT_KEY!,
@@ -91,14 +56,5 @@ export function verifyMidtransSignature(params: {
 }
 
 export function isMidtransConfigured(): boolean {
-  if (!MIDTRANS_SERVER_KEY || !MIDTRANS_CLIENT_KEY || !MIDTRANS_MERCHANT_ID) {
-    return false;
-  }
-
-  try {
-    ensureMidtransModule();
-    return true;
-  } catch {
-    return false;
-  }
+  return Boolean(MIDTRANS_SERVER_KEY && MIDTRANS_CLIENT_KEY && MIDTRANS_MERCHANT_ID);
 }
