@@ -346,10 +346,18 @@ export class DatabaseStorage implements IStorage {
       .from(subscriptionPackageLimits)
       .where(eq(subscriptionPackageLimits.packageId, pkg.id));
 
+    const baseDefinitions = this.fallbackLimitsFromPackage(pkg);
     const normalized = this.normalizeLimitDefinitions(rows);
-    const definitions = normalized.length > 0 ? normalized : this.fallbackLimitsFromPackage(pkg);
 
-    return new Map(definitions.map((definition) => [definition.resource, definition]));
+    const definitions = new Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>(
+      baseDefinitions.map((definition) => [definition.resource, definition]),
+    );
+
+    for (const definition of normalized) {
+      definitions.set(definition.resource, definition);
+    }
+
+    return definitions;
   }
 
   private orderLimitMap(limits: Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>): SubscriptionPackageLimitConfig[] {
