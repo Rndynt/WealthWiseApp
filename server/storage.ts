@@ -416,11 +416,17 @@ export class DatabaseStorage implements IStorage {
 
   private async countAccountsByScope(scope: SubscriptionLimitScope, workspaceId: string, userId: string): Promise<number> {
     if (scope === 'global_user') {
+      const membershipCondition = or(eq(workspaces.ownerId, userId), eq(workspaceMembers.userId, userId));
+
       const [{ count }] = await db
-        .select({ count: sql<number>`COUNT(*)` })
+        .select({ count: sql<number>`COUNT(DISTINCT ${accounts.id})` })
         .from(accounts)
         .innerJoin(workspaces, eq(accounts.workspaceId, workspaces.id))
-        .where(eq(workspaces.ownerId, userId));
+        .leftJoin(
+          workspaceMembers,
+          and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, userId)),
+        )
+        .where(membershipCondition);
 
       return Number(count ?? 0);
     }
@@ -435,11 +441,17 @@ export class DatabaseStorage implements IStorage {
 
   private async countCategoriesByScope(scope: SubscriptionLimitScope, workspaceId: string, userId: string): Promise<number> {
     if (scope === 'global_user') {
+      const membershipCondition = or(eq(workspaces.ownerId, userId), eq(workspaceMembers.userId, userId));
+
       const [{ count }] = await db
-        .select({ count: sql<number>`COUNT(*)` })
+        .select({ count: sql<number>`COUNT(DISTINCT ${categories.id})` })
         .from(categories)
         .innerJoin(workspaces, eq(categories.workspaceId, workspaces.id))
-        .where(eq(workspaces.ownerId, userId));
+        .leftJoin(
+          workspaceMembers,
+          and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, userId)),
+        )
+        .where(membershipCondition);
 
       return Number(count ?? 0);
     }
@@ -460,15 +472,20 @@ export class DatabaseStorage implements IStorage {
     month?: number
   ): Promise<number> {
     if (scope === 'global_user') {
-      let condition = and(eq(workspaces.ownerId, userId), eq(budgets.year, year));
+      const membershipCondition = or(eq(workspaces.ownerId, userId), eq(workspaceMembers.userId, userId));
+      let condition = and(membershipCondition, eq(budgets.year, year));
       if (month !== undefined) {
         condition = and(condition, eq(budgets.month, month));
       }
 
       const [{ count }] = await db
-        .select({ count: sql<number>`COUNT(*)` })
+        .select({ count: sql<number>`COUNT(DISTINCT ${budgets.id})` })
         .from(budgets)
         .innerJoin(workspaces, eq(budgets.workspaceId, workspaces.id))
+        .leftJoin(
+          workspaceMembers,
+          and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, userId)),
+        )
         .where(condition);
 
       return Number(count ?? 0);
