@@ -63,6 +63,7 @@ import {
   type InsertPermission,
   type InsertRolePermission,
   type InsertSubscriptionPackage,
+  type InsertSubscriptionPackageLimit,
   type InsertUserSubscription,
   type InsertWorkspaceSubscription,
   type Notification,
@@ -82,6 +83,12 @@ export type WorkspaceWithMembership = Workspace & {
 export type SubscriptionLimitScope = 'per_workspace' | 'global_user';
 export type SubscriptionLimitResource = 'accounts' | 'categories' | 'budgets';
 
+export interface SubscriptionPackageLimitConfig {
+  resource: SubscriptionLimitResource;
+  scope: SubscriptionLimitScope;
+  limit: number | null;
+}
+
 export interface ResourceLimitStatus {
   canCreate: boolean;
   limit: number | null;
@@ -90,24 +97,22 @@ export interface ResourceLimitStatus {
   packageName?: string;
 }
 
-interface ResolvedLimitDefinition {
-  resource: SubscriptionLimitResource;
-  scope: SubscriptionLimitScope;
-  limit: number | null;
-}
-
 interface UserLimitContext {
   packageName: string;
-  limits: Map<SubscriptionLimitResource, ResolvedLimitDefinition>;
+  limits: Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>;
 }
 
 const SUPPORTED_LIMIT_RESOURCES: readonly SubscriptionLimitResource[] = ['accounts', 'categories', 'budgets'] as const;
 
-const DEFAULT_BASIC_LIMITS: readonly ResolvedLimitDefinition[] = [
+const DEFAULT_BASIC_LIMITS: readonly SubscriptionPackageLimitConfig[] = [
   { resource: 'accounts', scope: 'per_workspace', limit: 2 },
   { resource: 'categories', scope: 'per_workspace', limit: 3 },
   { resource: 'budgets', scope: 'per_workspace', limit: 2 },
 ];
+
+export interface SubscriptionPackageWithLimits extends SubscriptionPackage {
+  limits: SubscriptionPackageLimitConfig[];
+}
 
 export interface IStorage {
   // Users
@@ -194,11 +199,18 @@ export interface IStorage {
   removeRolePermission(roleId: number, permissionId: number): Promise<void>;
 
   // Subscription Packages
-  getAllSubscriptionPackages(): Promise<SubscriptionPackage[]>;
+  getAllSubscriptionPackages(): Promise<SubscriptionPackageWithLimits[]>;
   getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined>;
   getSubscriptionPackageBySlug(slug: string): Promise<SubscriptionPackage | undefined>;
-  createSubscriptionPackage(subscriptionPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
-  updateSubscriptionPackage(id: number, subscriptionPackage: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage>;
+  createSubscriptionPackage(
+    subscriptionPackage: InsertSubscriptionPackage,
+    limits?: SubscriptionPackageLimitConfig[],
+  ): Promise<SubscriptionPackageWithLimits>;
+  updateSubscriptionPackage(
+    id: number,
+    subscriptionPackage: Partial<InsertSubscriptionPackage>,
+    limits?: SubscriptionPackageLimitConfig[],
+  ): Promise<SubscriptionPackageWithLimits>;
   deleteSubscriptionPackage(id: number): Promise<void>;
 
   // User Subscriptions
@@ -301,9 +313,9 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  private normalizeLimitDefinitions(rows: SubscriptionPackageLimit[]): ResolvedLimitDefinition[] {
+  private normalizeLimitDefinitions(rows: SubscriptionPackageLimit[]): SubscriptionPackageLimitConfig[] {
     return rows
-      .map((row): ResolvedLimitDefinition | null => {
+      .map((row): SubscriptionPackageLimitConfig | null => {
         if (!SUPPORTED_LIMIT_RESOURCES.includes(row.resource as SubscriptionLimitResource)) {
           return null;
         }
@@ -317,10 +329,10 @@ export class DatabaseStorage implements IStorage {
           limit: limitValue,
         };
       })
-      .filter((definition): definition is ResolvedLimitDefinition => definition !== null);
+      .filter((definition): definition is SubscriptionPackageLimitConfig => definition !== null);
   }
 
-  private fallbackLimitsFromPackage(pkg: SubscriptionPackage): ResolvedLimitDefinition[] {
+  private fallbackLimitsFromPackage(pkg: SubscriptionPackage): SubscriptionPackageLimitConfig[] {
     return [
       { resource: 'accounts', scope: 'per_workspace', limit: pkg.maxAccounts ?? null },
       { resource: 'categories', scope: 'per_workspace', limit: pkg.maxCategories ?? null },
@@ -328,7 +340,7 @@ export class DatabaseStorage implements IStorage {
     ];
   }
 
-  private async resolveLimitDefinitionsForPackage(pkg: SubscriptionPackage): Promise<Map<SubscriptionLimitResource, ResolvedLimitDefinition>> {
+  private async resolveLimitDefinitionsForPackage(pkg: SubscriptionPackage): Promise<Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>> {
     const rows = await db
       .select()
       .from(subscriptionPackageLimits)
@@ -338,6 +350,43 @@ export class DatabaseStorage implements IStorage {
     const definitions = normalized.length > 0 ? normalized : this.fallbackLimitsFromPackage(pkg);
 
     return new Map(definitions.map((definition) => [definition.resource, definition]));
+  }
+
+  private orderLimitMap(limits: Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>): SubscriptionPackageLimitConfig[] {
+    return SUPPORTED_LIMIT_RESOURCES
+      .map((resource) => limits.get(resource))
+      .filter((definition): definition is SubscriptionPackageLimitConfig => Boolean(definition))
+      .map((definition) => ({ ...definition }));
+  }
+
+  private prepareLimitInserts(
+    packageId: number,
+    limits?: SubscriptionPackageLimitConfig[],
+  ): InsertSubscriptionPackageLimit[] {
+    if (!limits || limits.length === 0) {
+      return [];
+    }
+
+    const byResource = new Map<SubscriptionLimitResource, InsertSubscriptionPackageLimit>();
+
+    for (const limit of limits) {
+      if (!SUPPORTED_LIMIT_RESOURCES.includes(limit.resource)) {
+        continue;
+      }
+
+      const rawLimit = limit.limit === undefined ? null : limit.limit;
+      const parsedLimit = rawLimit === null ? null : Number(rawLimit);
+      const sanitizedLimit = parsedLimit === null || Number.isNaN(parsedLimit) ? null : parsedLimit;
+
+      byResource.set(limit.resource, {
+        packageId,
+        resource: limit.resource,
+        scope: limit.scope === 'global_user' ? 'global_user' : 'per_workspace',
+        limit: sanitizedLimit,
+      });
+    }
+
+    return Array.from(byResource.values());
   }
 
   private async resolveUserLimitContext(userId: string): Promise<UserLimitContext> {
@@ -959,8 +1008,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription Packages
-  async getAllSubscriptionPackages(): Promise<SubscriptionPackage[]> {
-    return await db.select().from(subscriptionPackages);
+  async getAllSubscriptionPackages(): Promise<SubscriptionPackageWithLimits[]> {
+    const packages = await db.select().from(subscriptionPackages);
+
+    if (packages.length === 0) {
+      return [];
+    }
+
+    return await Promise.all(
+      packages.map(async (pkg) => {
+        const limits = await this.resolveLimitDefinitionsForPackage(pkg);
+        return {
+          ...pkg,
+          limits: this.orderLimitMap(limits),
+        };
+      })
+    );
   }
 
   async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
@@ -973,14 +1036,65 @@ export class DatabaseStorage implements IStorage {
     return pkg || undefined;
   }
 
-  async createSubscriptionPackage(subscriptionPackage: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
-    const [pkg] = await db.insert(subscriptionPackages).values(subscriptionPackage).returning();
-    return pkg;
+  async createSubscriptionPackage(
+    subscriptionPackage: InsertSubscriptionPackage,
+    limits?: SubscriptionPackageLimitConfig[],
+  ): Promise<SubscriptionPackageWithLimits> {
+    const pkg = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(subscriptionPackages).values(subscriptionPackage).returning();
+
+      if (!created) {
+        throw new Error('Failed to create subscription package');
+      }
+
+      const limitInserts = this.prepareLimitInserts(created.id, limits);
+      if (limitInserts.length > 0) {
+        await tx.insert(subscriptionPackageLimits).values(limitInserts);
+      }
+
+      return created;
+    });
+
+    const resolvedLimits = await this.resolveLimitDefinitionsForPackage(pkg);
+    return {
+      ...pkg,
+      limits: this.orderLimitMap(resolvedLimits),
+    };
   }
 
-  async updateSubscriptionPackage(id: number, subscriptionPackage: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage> {
-    const [updatedPackage] = await db.update(subscriptionPackages).set(subscriptionPackage).where(eq(subscriptionPackages.id, id)).returning();
-    return updatedPackage;
+  async updateSubscriptionPackage(
+    id: number,
+    subscriptionPackage: Partial<InsertSubscriptionPackage>,
+    limits?: SubscriptionPackageLimitConfig[],
+  ): Promise<SubscriptionPackageWithLimits> {
+    const pkg = await db.transaction(async (tx) => {
+      const [updatedPackage] = await tx
+        .update(subscriptionPackages)
+        .set(subscriptionPackage)
+        .where(eq(subscriptionPackages.id, id))
+        .returning();
+
+      if (!updatedPackage) {
+        throw new Error('Subscription package not found');
+      }
+
+      if (limits) {
+        await tx.delete(subscriptionPackageLimits).where(eq(subscriptionPackageLimits.packageId, id));
+
+        const limitInserts = this.prepareLimitInserts(id, limits);
+        if (limitInserts.length > 0) {
+          await tx.insert(subscriptionPackageLimits).values(limitInserts);
+        }
+      }
+
+      return updatedPackage;
+    });
+
+    const resolvedLimits = await this.resolveLimitDefinitionsForPackage(pkg);
+    return {
+      ...pkg,
+      limits: this.orderLimitMap(resolvedLimits),
+    };
   }
 
   async deleteSubscriptionPackage(id: number): Promise<void> {
