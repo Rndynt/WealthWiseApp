@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingUp, AlertCircle, Heart, Edit, Lock, Tags } from 'lucide-react';
-import { Category } from '@/types';
+import { Category, ResourceLimitInfo } from '@/types';
 import AddCategoryModal from '@/components/modals/add-category-modal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageContainer } from '@/components/ui/page-container';
@@ -48,13 +48,21 @@ const iconMap: Record<string, string> = {
 export default function Categories({ workspaceId }: CategoriesProps) {
   const [showAddModal, setShowAddModal] = useState(false);
 
+  const formatPackageLabel = (slug?: string) =>
+    slug
+      ? slug
+          .split(/[-_]/)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' ')
+      : 'Current Plan';
+
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: [`/api/workspaces/${workspaceId}/categories`],
     enabled: !!workspaceId,
   });
 
   // Check category limits
-  const { data: categoryLimits } = useQuery<{ canCreate: boolean; limit: number | null; current: number }>({
+  const { data: categoryLimits } = useQuery<ResourceLimitInfo>({
     queryKey: [`/api/workspaces/${workspaceId}/category-limits`],
     enabled: !!workspaceId,
   });
@@ -68,8 +76,11 @@ export default function Categories({ workspaceId }: CategoriesProps) {
   }, {} as Record<string, Category[]>) || {};
 
   const isLimitReached = categoryLimits ? !categoryLimits.canCreate : false;
-  const limitText = categoryLimits ? `${categoryLimits.current}/${categoryLimits.limit ?? '∞'}` : '';
-  const packageType = categoryLimits?.limit === 3 ? 'Basic' : categoryLimits?.limit === null ? 'Premium' : 'Standard';
+  const scopeLabel = categoryLimits?.scope === 'global_user' ? 'Kuota global' : 'Kuota workspace';
+  const packageLabel = formatPackageLabel(categoryLimits?.packageName);
+  const categoriesUsageText = categoryLimits
+    ? `${categoryLimits.current}/${categoryLimits.limit ?? '∞'} categories used • ${scopeLabel} • ${packageLabel} Package`
+    : '';
 
   if (!workspaceId) {
     return (
@@ -97,7 +108,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
               </p>
               {categoryLimits && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-left mb-4">
-                  {limitText} categories used • {packageType} Package
+                  {categoriesUsageText}
                 </p>
               )}
             </div>
@@ -140,7 +151,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
           </p>
           {categoryLimits && (
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
-              {limitText} categories used • {packageType} Package
+              {categoriesUsageText}
             </p>
           )}
           <div className="flex justify-center">
@@ -179,7 +190,7 @@ export default function Categories({ workspaceId }: CategoriesProps) {
               </p>
               {categoryLimits && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {limitText} categories used • {packageType} Package
+                  {categoriesUsageText}
                 </p>
               )}
             </div>
@@ -212,8 +223,8 @@ export default function Categories({ workspaceId }: CategoriesProps) {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            Anda telah mencapai batas maksimal kategori untuk paket {packageType} ({categoryLimits!.current}/{categoryLimits!.limit}). 
-            Upgrade ke paket Premium untuk kategori unlimited.
+            Anda telah mencapai batas kategori ({categoryLimits!.current}/{categoryLimits!.limit ?? '∞'}) untuk {scopeLabel.toLowerCase()}.
+            Paket aktif: {packageLabel}. Upgrade paket untuk kapasitas lebih besar.
           </AlertDescription>
         </Alert>
       )}

@@ -24,6 +24,16 @@ export interface WorkspaceSubscriptionLimits {
   maxMembers: number | null;
 }
 
+export type SubscriptionLimitScope = 'per_workspace' | 'global_user';
+
+export interface ResourceLimitInfo {
+  canCreate: boolean;
+  limit: number | null;
+  current: number;
+  scope: SubscriptionLimitScope;
+  packageName?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
