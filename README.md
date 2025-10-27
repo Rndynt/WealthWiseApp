@@ -60,6 +60,10 @@ Buat file `.env`, `.env.local`, atau gunakan variable environment langsung pada 
 | `JWT_SECRET` | Ya | Secret untuk menandatangani token JWT auth.【F:server/routes.ts†L36-L45】 |
 | `SESSION_SECRET` | Disarankan | Secret untuk session Netlify Function/API serverless.【F:netlify/functions/api.ts†L10-L35】 |
 | `OPENAI_API_KEY` | Opsional | Mengaktifkan AI Goals &amp; Smart Matching.【F:server/ai-goals-service.ts†L1-L18】【F:server/smart-goal-matcher-service.ts†L1-L36】 |
+| `MIDTRANS_SERVER_KEY` | Ya (jika pembayaran diaktifkan) | Server key Midtrans untuk memverifikasi notifikasi dan membuat transaksi Snap.【F:server/midtrans.ts†L1-L63】【F:server/routes.ts†L2460-L2595】 |
+| `MIDTRANS_CLIENT_KEY` | Ya (jika pembayaran diaktifkan) | Client key Midtrans yang digunakan frontend untuk memuat Snap.js.【F:server/midtrans.ts†L1-L63】【F:client/src/pages/upgrade.tsx†L1-L240】 |
+| `MIDTRANS_MERCHANT_ID` | Ya (jika pembayaran diaktifkan) | Merchant ID Midtrans untuk identifikasi akun pembayaran.【F:server/midtrans.ts†L1-L63】 |
+| `MIDTRANS_IS_PRODUCTION` | Opsional | Set ke `true` untuk environment produksi; default `false` menggunakan sandbox Midtrans.【F:server/midtrans.ts†L1-L63】 |
 
 Tambahkan variabel lain sesuai kebutuhan (mis. integrasi pembayaran Stripe jika diaktifkan di masa depan).
 

@@ -1,26 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { API_ENDPOINTS } from '@/lib/apiEndpoints';
-import { 
-  Crown, 
-  Star, 
-  CheckCircle, 
-  CreditCard, 
-  Calendar,
+import {
+  Crown,
+  Star,
+  CheckCircle,
+  CreditCard,
   Shield,
-  Zap,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 import { PageContainer } from '@/components/ui/page-container';
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        callbacks?: {
+          onSuccess?: (result: unknown) => void;
+          onPending?: (result: unknown) => void;
+          onError?: (error: unknown) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
 
 interface SubscriptionPackage {
   id: number;
@@ -47,14 +58,19 @@ interface UserSubscription {
   package: SubscriptionPackage;
 }
 
-interface PaymentData {
-  packageId: number;
-  paymentMethod: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-  cardHolder: string;
-  billingCycle: string;
+interface PaymentConfigResponse {
+  clientKey: string | null;
+  merchantId: string | null;
+  snapScriptUrl: string;
+  isProduction: boolean;
+  isConfigured: boolean;
+}
+
+interface MidtransTransactionResponse {
+  token: string;
+  redirectUrl: string;
+  orderId: string;
+  grossAmount: number;
 }
 
 export default function UpgradePage() {
@@ -62,75 +78,135 @@ export default function UpgradePage() {
   const queryClient = useQueryClient();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<SubscriptionPackage | null>(null);
-  const [paymentData, setPaymentData] = useState<PaymentData>({
-    packageId: 0,
-    paymentMethod: 'credit_card',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardHolder: '',
-    billingCycle: 'monthly'
-  });
+  const [isSnapLoaded, setIsSnapLoaded] = useState(false);
 
-  // Formatter harga IDR
   const formatPrice = (price: string) => {
     const num = parseFloat(price);
-    return num === 0 ? 'Gratis' : `Rp ${num.toLocaleString('id-ID')}`;
+    return Number.isNaN(num) || num === 0 ? 'Gratis' : `Rp ${num.toLocaleString('id-ID')}`;
   };
 
-  // Fetch current user subscription
   const { data: currentSubscription } = useQuery<{ subscription: UserSubscription }>({
     queryKey: [API_ENDPOINTS.userSubscription],
   });
 
-  // Fetch available packages
   const { data: packages, isLoading } = useQuery<SubscriptionPackage[]>({
     queryKey: [API_ENDPOINTS.publicSubscriptionPackages],
     retry: false,
   });
 
-  // Payment processing mutation
-  const processPAymentMutation = useMutation({
-    mutationFn: (data: PaymentData) =>
-      apiRequest('POST', API_ENDPOINTS.paymentProcess, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscriptionLimits] });
-      setShowPaymentModal(false);
-      toast({
-        title: "Payment Successful!",
-        description: "Your subscription has been upgraded successfully.",
-      });
+  const { data: paymentConfig } = useQuery<PaymentConfigResponse>({
+    queryKey: [API_ENDPOINTS.paymentConfig],
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!paymentConfig?.clientKey || !paymentConfig.snapScriptUrl) {
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      `script[src="${paymentConfig.snapScriptUrl}"]`
+    );
+
+    if (existingScript) {
+      setIsSnapLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = paymentConfig.snapScriptUrl;
+    script.async = true;
+    script.dataset.clientKey = paymentConfig.clientKey;
+    script.onload = () => setIsSnapLoaded(true);
+    script.onerror = () => setIsSnapLoaded(false);
+    document.body.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, [paymentConfig]);
+
+  const processPaymentMutation = useMutation<MidtransTransactionResponse, Error, number>({
+    mutationFn: async (packageId) => {
+      const response = await apiRequest('POST', API_ENDPOINTS.paymentProcess, { packageId });
+      return response.json();
     },
-    onError: (error: any) => {
+    onSuccess: (response) => {
+      setShowPaymentModal(false);
+
+      const openSnapCheckout = () => {
+        if (!window.snap) {
+          window.location.href = response.redirectUrl;
+          return;
+        }
+
+        window.snap.pay(response.token, {
+          onSuccess: () => {
+            toast({
+              title: 'Pembayaran berhasil',
+              description: 'Langganan Anda akan diperbarui setelah Midtrans mengonfirmasi pembayaran.',
+            });
+            queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscription] });
+            queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.userSubscriptionLimits] });
+          },
+          onPending: () => {
+            toast({
+              title: 'Menunggu pembayaran',
+              description: 'Transaksi Anda masih diproses oleh Midtrans.',
+            });
+          },
+          onError: () => {
+            toast({
+              title: 'Pembayaran gagal',
+              description: 'Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali.',
+              variant: 'destructive',
+            });
+          },
+          onClose: () => {
+            toast({
+              title: 'Pembayaran dibatalkan',
+              description: 'Anda menutup jendela pembayaran sebelum transaksi selesai.',
+            });
+          },
+        });
+      };
+
+      if (isSnapLoaded) {
+        openSnapCheckout();
+      } else {
+        setTimeout(openSnapCheckout, 100);
+      }
+    },
+    onError: (error) => {
       toast({
-        title: "Payment Failed",
-        description: error.message || "Failed to process payment. Please try again.",
-        variant: "destructive",
+        title: 'Gagal memulai pembayaran',
+        description: error.message || 'Tidak dapat memproses permintaan pembayaran. Coba lagi nanti.',
+        variant: 'destructive',
       });
     },
   });
 
   const handleSelectPackage = (pkg: SubscriptionPackage) => {
     setSelectedPackage(pkg);
-    setPaymentData(prev => ({ ...prev, packageId: pkg.id }));
     setShowPaymentModal(true);
   };
 
   const handlePayment = () => {
-    if (!selectedPackage) return;
+    if (!selectedPackage) {
+      return;
+    }
 
-    // Validate payment data
-    if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardHolder) {
+    if (!paymentConfig?.isConfigured || !paymentConfig.clientKey) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all payment details.",
-        variant: "destructive",
+        title: 'Gateway pembayaran belum siap',
+        description: 'Silakan hubungi administrator untuk mengonfigurasi Midtrans.',
+        variant: 'destructive',
       });
       return;
     }
 
-    processPAymentMutation.mutate(paymentData);
+    processPaymentMutation.mutate(selectedPackage.id);
   };
 
   const currentPackage = currentSubscription?.subscription?.package;
@@ -150,7 +226,6 @@ export default function UpgradePage() {
 
   return (
     <PageContainer>
-      {/* Current Subscription */}
       {currentPackage && (
         <Card className="mb-8">
           <CardHeader>
@@ -188,7 +263,6 @@ export default function UpgradePage() {
         </Card>
       )}
 
-      {/* Available Packages */}
       <div className="mb-8">
         <div className="text-center mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
@@ -204,13 +278,13 @@ export default function UpgradePage() {
             {packages.filter(pkg => pkg.isActive).map((pkg) => {
               const isCurrentPackage = currentPackage?.id === pkg.id;
               const isDowngrade = currentPackage && parseFloat(pkg.price) < parseFloat(currentPackage.price);
-              
+
               return (
-                <Card 
-                  key={pkg.id} 
+                <Card
+                  key={pkg.id}
                   className={`relative ${
-                    pkg.name.toLowerCase().includes('premium') 
-                      ? 'border-blue-500 shadow-xl' 
+                    pkg.name.toLowerCase().includes('premium')
+                      ? 'border-blue-500 shadow-xl'
                       : ''
                   } ${isCurrentPackage ? 'ring-2 ring-green-500' : ''}`}
                 >
@@ -222,14 +296,14 @@ export default function UpgradePage() {
                   )}
 
                   {isCurrentPackage && (
-                    <Badge 
-                      variant="default" 
+                    <Badge
+                      variant="default"
                       className="absolute -top-2 right-4 bg-green-500"
                     >
                       Current Plan
                     </Badge>
                   )}
-                  
+
                   <CardHeader className="text-center">
                     <div className="flex justify-center mb-2">
                       {pkg.name.toLowerCase().includes('premium') ? (
@@ -245,7 +319,7 @@ export default function UpgradePage() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">{pkg.description}</p>
                   </CardHeader>
-                  
+
                   <CardContent>
                     <ul className="space-y-3 mb-6">
                       {pkg.features.map((feature, index) => (
@@ -267,18 +341,18 @@ export default function UpgradePage() {
                         </span>
                       </li>
                     </ul>
-                    
-                    <Button 
+
+                    <Button
                       className={`w-full ${
-                        pkg.name.toLowerCase().includes('premium') 
-                          ? 'bg-blue-600 hover:bg-blue-700' 
+                        pkg.name.toLowerCase().includes('premium')
+                          ? 'bg-blue-600 hover:bg-blue-700'
                           : ''
                       }`}
                       variant={
-                        isCurrentPackage 
-                          ? 'secondary' 
-                          : pkg.name.toLowerCase().includes('premium') 
-                            ? 'default' 
+                        isCurrentPackage
+                          ? 'secondary'
+                          : pkg.name.toLowerCase().includes('premium')
+                            ? 'default'
                             : 'outline'
                       }
                       disabled={isCurrentPackage}
@@ -303,25 +377,23 @@ export default function UpgradePage() {
         )}
       </div>
 
-      {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <CreditCard className="h-5 w-5" />
-              <span>Payment Details</span>
+              <span>Konfirmasi Pembayaran</span>
             </DialogTitle>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Selected Package Info */}
-            {selectedPackage && (
+
+          {selectedPackage && (
+            <div className="space-y-5">
               <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">{selectedPackage.name} Plan</p>
-                      <p className="text-sm text-gray-500">Monthly subscription</p>
+                      <p className="text-sm text-gray-500">Langganan bulanan</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold">{formatPrice(selectedPackage.price)}</p>
@@ -330,108 +402,32 @@ export default function UpgradePage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Billing Cycle */}
-            <div>
-              <Label htmlFor="billingCycle">Billing Cycle</Label>
-              <Select
-                value={paymentData.billingCycle}
-                onValueChange={(value) => setPaymentData(prev => ({ ...prev, billingCycle: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly (2 months free!)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Card Details */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="cardHolder">Card Holder Name</Label>
-                <Input
-                  id="cardHolder"
-                  value={paymentData.cardHolder}
-                  onChange={(e) => setPaymentData(prev => ({ ...prev, cardHolder: e.target.value }))}
-                  placeholder="John Doe"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <Input
-                  id="cardNumber"
-                  value={paymentData.cardNumber}
-                  onChange={(e) => setPaymentData(prev => ({ ...prev, cardNumber: e.target.value }))}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
-                    id="expiryDate"
-                    value={paymentData.expiryDate}
-                    onChange={(e) => setPaymentData(prev => ({ ...prev, expiryDate: e.target.value }))}
-                    placeholder="MM/YY"
-                    maxLength={5}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    value={paymentData.cvv}
-                    onChange={(e) => setPaymentData(prev => ({ ...prev, cvv: e.target.value }))}
-                    placeholder="123"
-                    maxLength={3}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Demo Notice */}
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-              <div className="flex items-center space-x-2 text-yellow-800 dark:text-yellow-200">
-                <Zap size={16} />
-                <p className="text-sm font-medium">Demo Mode</p>
-              </div>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                This is a demo payment system. No real charges will be made. Use any test card details.
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowPaymentModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handlePayment}
-                disabled={processPAymentMutation.isPending}
-              >
-                {processPAymentMutation.isPending ? (
-                  'Processing...'
-                ) : (
-                  <>
-                    <CreditCard size={16} className="mr-2" />
-                    Pay {selectedPackage ? formatPrice(selectedPackage.price) : ''}
-                  </>
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4 text-sm text-slate-600 dark:text-slate-300">
+                <p className="font-medium">Pembayaran diproses melalui Midtrans Snap.</p>
+                <p className="mt-2">
+                  Anda akan diarahkan ke halaman Midtrans untuk menyelesaikan pembayaran dengan aman. Setelah selesai, status langganan akan diperbarui secara otomatis.
+                </p>
+                {!isSnapLoaded && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Menyiapkan Midtrans Snap... jika tidak terbuka otomatis, kami akan mengarahkan Anda ke halaman pembayaran.
+                  </p>
                 )}
-              </Button>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
+                  Batal
+                </Button>
+                <Button
+                  onClick={handlePayment}
+                  disabled={processPaymentMutation.isPending}
+                >
+                  {processPaymentMutation.isPending ? 'Memproses...' : `Bayar ${formatPrice(selectedPackage.price)}`}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </PageContainer>
