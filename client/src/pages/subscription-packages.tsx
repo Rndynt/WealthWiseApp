@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2, Package, Star, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { PageContainer } from '@/components/ui/page-container';
+import { SubscriptionLimitScope, SubscriptionPackageLimitConfig, SubscriptionLimitResource } from '@/types';
 
 interface SubscriptionPackage {
   id: number;
@@ -28,6 +29,7 @@ interface SubscriptionPackage {
   price: string;
   features: string[];
   maxWorkspaces: number;
+  maxAccounts: number;
   maxMembers: number;
   maxCategories: number | null;
   maxBudgets: number | null;
@@ -37,6 +39,7 @@ interface SubscriptionPackage {
   description: string;
   isActive: boolean;
   createdAt: string;
+  limits: SubscriptionPackageLimitConfig[];
 }
 
 interface PackageFormData {
@@ -45,6 +48,7 @@ interface PackageFormData {
   price: string;
   features: string[];
   maxWorkspaces: number;
+  maxAccounts: number;
   maxMembers: number;
   maxCategories: number | null;
   maxBudgets: number | null;
@@ -54,6 +58,59 @@ interface PackageFormData {
   description: string;
   isActive: boolean;
 }
+
+type PackageSubmitPayload = PackageFormData & { limits: SubscriptionPackageLimitConfig[] };
+
+const LIMIT_RESOURCE_ORDER: SubscriptionLimitResource[] = ['accounts', 'categories', 'budgets'];
+
+const LIMIT_RESOURCE_METADATA: Record<SubscriptionLimitResource, { label: string; description: string }> = {
+  accounts: {
+    label: 'Akun Keuangan',
+    description: 'Batas jumlah akun atau rekening yang dapat dibuat user.',
+  },
+  categories: {
+    label: 'Kategori Transaksi',
+    description: 'Mengatur jumlah kategori custom yang bisa dimiliki user.',
+  },
+  budgets: {
+    label: 'Rencana Anggaran',
+    description: 'Kontrol berapa banyak budget plan aktif per user/workspace.',
+  },
+};
+
+const SCOPE_LABELS: Record<SubscriptionLimitScope, string> = {
+  per_workspace: 'Per Workspace',
+  global_user: 'Global User',
+};
+
+const SCOPE_DESCRIPTIONS: Record<SubscriptionLimitScope, string> = {
+  per_workspace: 'Limit akan diterapkan pada setiap workspace secara terpisah.',
+  global_user: 'Limit dihitung secara agregat di semua workspace milik user.',
+};
+
+const formatLimitValue = (value: number | null) => (value === null ? '∞' : value.toString());
+
+const createLimitState = (source?: SubscriptionPackageLimitConfig[]): SubscriptionPackageLimitConfig[] => {
+  const map = new Map<SubscriptionLimitResource, SubscriptionPackageLimitConfig>();
+  (source ?? []).forEach((limit) => {
+    if (!map.has(limit.resource)) {
+      map.set(limit.resource, { ...limit });
+    }
+  });
+
+  return LIMIT_RESOURCE_ORDER.map((resource) => {
+    const existing = map.get(resource);
+    if (existing) {
+      return { ...existing };
+    }
+
+    return {
+      resource,
+      scope: 'per_workspace',
+      limit: null,
+    };
+  });
+};
 
 export default function SubscriptionPackagesManagement() {
   const [showPackageModal, setShowPackageModal] = useState(false);
@@ -64,6 +121,7 @@ export default function SubscriptionPackagesManagement() {
     price: '0',
     features: [''],
     maxWorkspaces: 1,
+    maxAccounts: 1,
     maxMembers: 1,
     maxCategories: null,
     maxBudgets: null,
@@ -73,16 +131,79 @@ export default function SubscriptionPackagesManagement() {
     description: '',
     isActive: true
   });
+  const [limitConfigs, setLimitConfigs] = useState<SubscriptionPackageLimitConfig[]>(() => createLimitState());
+  const lastFiniteLimitRef = useRef<Record<SubscriptionLimitResource, number>>({
+    accounts: 1,
+    categories: 1,
+    budgets: 1,
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const updateLimitConfig = (resource: SubscriptionLimitResource, updates: Partial<SubscriptionPackageLimitConfig>) => {
+    setLimitConfigs((prev) =>
+      prev.map((limit) => (limit.resource === resource ? { ...limit, ...updates } : limit))
+    );
+  };
+
+  const handleLimitScopeChange = (resource: SubscriptionLimitResource, scope: SubscriptionLimitScope) => {
+    updateLimitConfig(resource, { scope });
+  };
+
+  const handleLimitValueChange = (resource: SubscriptionLimitResource, value: string) => {
+    if (value === '') {
+      updateLimitConfig(resource, { limit: null });
+      return;
+    }
+
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) {
+      return;
+    }
+
+    const nextValue = Math.max(0, Math.floor(numericValue));
+    lastFiniteLimitRef.current[resource] = nextValue;
+    updateLimitConfig(resource, { limit: nextValue });
+  };
+
+  const handleUnlimitedToggle = (resource: SubscriptionLimitResource, unlimited: boolean) => {
+    setLimitConfigs((prev) =>
+      prev.map((limit) => {
+        if (limit.resource !== resource) {
+          return limit;
+        }
+
+        if (unlimited) {
+          return { ...limit, limit: null };
+        }
+
+        const fallbackValue = lastFiniteLimitRef.current[resource] ?? 1;
+        return { ...limit, limit: fallbackValue > 0 ? fallbackValue : 1 };
+      })
+    );
+  };
+
+  const hydrateLastFiniteLimits = (limits: SubscriptionPackageLimitConfig[]) => {
+    const snapshot: Record<SubscriptionLimitResource, number> = {
+      accounts: 1,
+      categories: 1,
+      budgets: 1,
+    };
+    limits.forEach((limit) => {
+      if (limit.limit !== null) {
+        snapshot[limit.resource] = limit.limit;
+      }
+    });
+    lastFiniteLimitRef.current = snapshot;
+  };
 
   const { data: packages, isLoading: packagesLoading } = useQuery<SubscriptionPackage[]>({
     queryKey: ['/api/subscription-packages'],
   });
 
   const createPackageMutation = useMutation({
-    mutationFn: async (packageData: PackageFormData) => {
+    mutationFn: async (packageData: PackageSubmitPayload) => {
       return apiRequest('POST', '/api/subscription-packages', packageData);
     },
     onSuccess: () => {
@@ -104,7 +225,7 @@ export default function SubscriptionPackagesManagement() {
   });
 
   const updatePackageMutation = useMutation({
-    mutationFn: async ({ id, ...packageData }: { id: number } & PackageFormData) => {
+    mutationFn: async ({ id, ...packageData }: { id: number } & PackageSubmitPayload) => {
       return apiRequest('PUT', `/api/subscription-packages/${id}`, packageData);
     },
     onSuccess: () => {
@@ -152,6 +273,7 @@ export default function SubscriptionPackagesManagement() {
       price: '0',
       features: [''],
       maxWorkspaces: 1,
+      maxAccounts: 1,
       maxMembers: 1,
       maxCategories: null,
       maxBudgets: null,
@@ -162,6 +284,8 @@ export default function SubscriptionPackagesManagement() {
       isActive: true
     });
     setEditingPackage(null);
+    setLimitConfigs(createLimitState());
+    lastFiniteLimitRef.current = { accounts: 1, categories: 1, budgets: 1 };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -173,6 +297,7 @@ export default function SubscriptionPackagesManagement() {
       ...formData,
       slug: formData.slug.trim(),
       features: cleanedFeatures,
+      limits: limitConfigs.map((limit) => ({ ...limit })),
     };
 
     if (editingPackage) {
@@ -190,6 +315,7 @@ export default function SubscriptionPackagesManagement() {
       price: pkg.price,
       features: pkg.features.length > 0 ? pkg.features : [''],
       maxWorkspaces: pkg.maxWorkspaces || 1,
+      maxAccounts: pkg.maxAccounts || 1,
       maxMembers: pkg.maxMembers || 1,
       maxCategories: pkg.maxCategories,
       maxBudgets: pkg.maxBudgets,
@@ -199,6 +325,8 @@ export default function SubscriptionPackagesManagement() {
       description: pkg.description,
       isActive: pkg.isActive
     });
+    setLimitConfigs(createLimitState(pkg.limits));
+    hydrateLastFiniteLimits(pkg.limits);
     setShowPackageModal(true);
   };
 
@@ -355,7 +483,20 @@ export default function SubscriptionPackagesManagement() {
                     required
                   />
                 </div>
-                
+
+                <div>
+                  <Label htmlFor="maxAccounts">Max Akun Keuangan</Label>
+                  <Input
+                    id="maxAccounts"
+                    type="number"
+                    min="1"
+                    value={formData.maxAccounts}
+                    onChange={(e) => setFormData({ ...formData, maxAccounts: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Digunakan sebagai fallback default untuk limit akun.</p>
+                </div>
+
                 <div>
                   <Label htmlFor="maxMembers">Max Anggota per Shared Workspace</Label>
                   <Input
@@ -431,7 +572,87 @@ export default function SubscriptionPackagesManagement() {
                 />
                 <Label htmlFor="canCreateSharedWorkspace">Dapat Membuat Shared Workspace</Label>
               </div>
-              
+
+              <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Konfigurasi Limit Resource</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Tentukan scope limit (per workspace atau global user) beserta jumlah maksimum untuk setiap resource utama.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {limitConfigs.map((limit) => {
+                    const meta = LIMIT_RESOURCE_METADATA[limit.resource];
+                    return (
+                      <div
+                        key={limit.resource}
+                        className="space-y-3 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/60 p-3 shadow-sm"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{meta.label}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{meta.description}</p>
+                          </div>
+                          <Badge variant="outline" className="whitespace-nowrap">
+                            {formatLimitValue(limit.limit)}
+                          </Badge>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Scope Limit</Label>
+                            <Select
+                              value={limit.scope}
+                              onValueChange={(value) => handleLimitScopeChange(limit.resource, value as SubscriptionLimitScope)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih scope" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(SCOPE_LABELS).map(([scopeKey, label]) => (
+                                  <SelectItem key={scopeKey} value={scopeKey}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{SCOPE_DESCRIPTIONS[limit.scope]}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`limit-${limit.resource}`} className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                              Jumlah Maksimum
+                            </Label>
+                            <div className="flex items-center gap-3">
+                              <Input
+                                id={`limit-${limit.resource}`}
+                                type="number"
+                                min="0"
+                                disabled={limit.limit === null}
+                                value={limit.limit === null ? '' : limit.limit}
+                                onChange={(e) => handleLimitValueChange(limit.resource, e.target.value)}
+                              />
+                              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                                <Switch
+                                  id={`limit-${limit.resource}-unlimited`}
+                                  checked={limit.limit === null}
+                                  onCheckedChange={(checked) => handleUnlimitedToggle(limit.resource, checked)}
+                                />
+                                <span>Unlimited</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Kosongkan nilai atau aktifkan unlimited untuk memberikan akses tanpa batas.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="description">Deskripsi</Label>
                 <Textarea
@@ -531,6 +752,10 @@ export default function SubscriptionPackagesManagement() {
                   <span>Max Workspace Pribadi:</span>
                   <span className="font-medium">{pkg.maxWorkspaces || '∞'}</span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span>Max Akun Keuangan:</span>
+                  <span className="font-medium">{pkg.maxAccounts || '∞'}</span>
+                </div>
                 {pkg.canCreateSharedWorkspace && (
                   <>
                     <div className="flex justify-between text-sm">
@@ -554,6 +779,29 @@ export default function SubscriptionPackagesManagement() {
                 <div className="flex justify-between text-sm">
                   <span>Tipe:</span>
                   <span className="font-medium capitalize">{pkg.type}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-6">
+                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-200">Limit Resource</h4>
+                <div className="space-y-2">
+                  {pkg.limits.map((limit) => {
+                    const meta = LIMIT_RESOURCE_METADATA[limit.resource];
+                    return (
+                      <div
+                        key={limit.resource}
+                        className="flex items-center justify-between rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-3 py-2 text-sm"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-gray-100">{meta.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{SCOPE_LABELS[limit.scope]}</p>
+                        </div>
+                        <Badge variant="secondary" className="ml-4">
+                          {formatLimitValue(limit.limit)}
+                        </Badge>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

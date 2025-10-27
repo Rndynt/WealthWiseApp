@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { DatabaseStorage } from "./storage";
+import { DatabaseStorage, type SubscriptionPackageLimitConfig, type SubscriptionLimitResource, type SubscriptionLimitScope } from "./storage";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
@@ -50,6 +50,61 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const DEFAULT_USER_ROLE_NAME = "user_basic";
 
 const roleIdCache = new Map<string, number>();
+
+const LIMIT_RESOURCES: SubscriptionLimitResource[] = ['accounts', 'categories', 'budgets'];
+const LIMIT_SCOPES: SubscriptionLimitScope[] = ['per_workspace', 'global_user'];
+
+function parseLimitValue(value: unknown): number | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === '') {
+    return null;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return undefined;
+  }
+
+  return Math.floor(numeric);
+}
+
+function parseLimitConfigurations(input: unknown): SubscriptionPackageLimitConfig[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  const configs: SubscriptionPackageLimitConfig[] = [];
+
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') {
+      continue;
+    }
+
+    const resource = (raw as any).resource;
+    if (!LIMIT_RESOURCES.includes(resource)) {
+      continue;
+    }
+
+    const rawScope = (raw as any).scope;
+    const scope: SubscriptionLimitScope = LIMIT_SCOPES.includes(rawScope) ? rawScope : 'per_workspace';
+
+    const parsedLimit = parseLimitValue((raw as any).limit);
+    if (parsedLimit === undefined) {
+      continue;
+    }
+
+    configs.push({
+      resource,
+      scope,
+      limit: parsedLimit ?? null,
+    });
+  }
+
+  return configs;
+}
 
 async function resolveRoleId(roleName: string): Promise<number> {
   if (roleIdCache.has(roleName)) {
@@ -716,8 +771,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check category limits untuk basic package users
       const categoryLimit = await storage.checkCategoryLimit(workspaceId, req.user.userId);
       if (!categoryLimit.canCreate) {
+        const scopeLabel = categoryLimit.scope === 'global_user' ? 'kuota global kategori' : 'kuota kategori di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal kategori untuk paket basic (${categoryLimit.current}/${categoryLimit.limit}). Upgrade ke paket premium untuk kategori unlimited.`,
+          message: `Anda telah mencapai batas kategori (${categoryLimit.current}/${categoryLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: categoryLimit
         });
       }
@@ -852,8 +908,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check category limits untuk basic package users
       const accountLimit = await storage.checkAccountLimit(workspaceId, req.user!.userId);
       if (!accountLimit.canCreate) {
+        const scopeLabel = accountLimit.scope === 'global_user' ? 'kuota global akun' : 'kuota akun di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal account untuk paket basic (${accountLimit.current}/${accountLimit.limit}). Upgrade ke paket premium untuk account lebih banyak.`,
+          message: `Anda telah mencapai batas akun (${accountLimit.current}/${accountLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: accountLimit
         });
       }
@@ -1384,8 +1441,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check budget limits untuk basic package users
       const budgetLimit = await storage.checkBudgetLimit(workspaceId, req.user.userId, year, month);
       if (!budgetLimit.canCreate) {
+        const scopeLabel = budgetLimit.scope === 'global_user' ? 'kuota global budget plan' : 'kuota budget di workspace ini';
         return res.status(403).json({
-          message: `Anda telah mencapai batas maksimal budget plan untuk paket basic (${budgetLimit.current}/${budgetLimit.limit} per periode). Upgrade ke paket premium untuk budget unlimited.`,
+          message: `Anda telah mencapai batas budget (${budgetLimit.current}/${budgetLimit.limit ?? '∞'}) untuk ${scopeLabel}. Upgrade paket untuk kapasitas lebih besar.`,
           limits: budgetLimit
         });
       }
@@ -1757,7 +1815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Slug paket wajib diisi." });
       }
 
-      const pkg = await storage.createSubscriptionPackage(normalizedData);
+      const limitConfigs = parseLimitConfigurations(req.body?.limits);
+      const pkg = await storage.createSubscriptionPackage(normalizedData, limitConfigs);
       res.json(pkg);
     } catch (error) {
       console.error("Package creation error:", error);
@@ -1778,7 +1837,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Slug paket tidak boleh kosong." });
         }
       }
-      const pkg = await storage.updateSubscriptionPackage(id, updates);
+      const limitConfigs = Object.prototype.hasOwnProperty.call(req.body, 'limits')
+        ? parseLimitConfigurations(req.body.limits)
+        : undefined;
+      const pkg = await storage.updateSubscriptionPackage(id, updates, limitConfigs);
       res.json(pkg);
     } catch (error) {
       res.status(400).json({ message: "Failed to update subscription package" });

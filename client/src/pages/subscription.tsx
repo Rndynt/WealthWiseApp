@@ -15,6 +15,7 @@ interface SubscriptionPackage {
   price: string;
   features: string[];
   maxWorkspaces: number | null;
+  maxAccounts: number | null;
   maxMembers: number | null;
   maxCategories: number | null;
   maxBudgets: number | null;
